@@ -26,11 +26,19 @@
    npm install
    ```
 
-2. **Set environment variables** in `.env`:
+2. **Set environment variables** in `.env` (copy `.env.example` and fill in your values):
    ```
    OPENAI_API_KEY=sk-...your-key...
    PORT=3000
    SITE_URL=http://localhost:3000
+   SHOPIFY_STORE_URL=https://your-store.myshopify.com/products/resume-template-pack
+   SHOPIFY_WEBHOOK_SECRET=your_shopify_webhook_secret
+   PRODUCT_DOWNLOAD_URL=https://your-download-file-link
+   SMTP_HOST=your_smtp_host
+   SMTP_PORT=587
+   SMTP_USER=your_smtp_user
+   SMTP_PASS=your_smtp_password
+   FROM_EMAIL=you@yourdomain.com
    ```
 
 3. **Run locally:**
@@ -47,6 +55,14 @@
 2. **Set environment variables** in Vercel project settings:
    - `OPENAI_API_KEY` → your actual OpenAI key
    - `SITE_URL` → `https://myresumebullets.com` (or your domain)
+   - `SHOPIFY_STORE_URL` → `https://your-store.myshopify.com/products/resume-template-pack`
+   - `SHOPIFY_WEBHOOK_SECRET` → your Shopify webhook secret
+   - `PRODUCT_DOWNLOAD_URL` → `https://your-download-file-link`
+   - `SMTP_HOST` → your SMTP host
+   - `SMTP_PORT` → `587`
+   - `SMTP_USER` → your SMTP username
+   - `SMTP_PASS` → your SMTP password
+   - `FROM_EMAIL` → `you@yourdomain.com`
 3. **Push to production branch** — Vercel auto-deploys
 
 ### Option 2: Vercel CLI
@@ -74,6 +90,38 @@ When prompted, link the existing Vercel project.
 
    - **Name:** `SITE_URL`  
      **Value:** `https://myresumebullets.com`  
+     **Environments:** Production
+
+   - **Name:** `SHOPIFY_STORE_URL`  
+     **Value:** `https://your-store.myshopify.com/products/resume-template-pack`  
+     **Environments:** Production
+
+   - **Name:** `SHOPIFY_WEBHOOK_SECRET`  
+     **Value:** `your_shopify_webhook_secret`  
+     **Environments:** Production
+
+   - **Name:** `PRODUCT_DOWNLOAD_URL`  
+     **Value:** `https://your-download-file-link`  
+     **Environments:** Production
+
+   - **Name:** `SMTP_HOST`  
+     **Value:** `your_smtp_host`  
+     **Environments:** Production
+
+   - **Name:** `SMTP_PORT`  
+     **Value:** `587`  
+     **Environments:** Production
+
+   - **Name:** `SMTP_USER`  
+     **Value:** `your_smtp_user`  
+     **Environments:** Production
+
+   - **Name:** `SMTP_PASS`  
+     **Value:** `your_smtp_password`  
+     **Environments:** Production
+
+   - **Name:** `FROM_EMAIL`  
+     **Value:** `you@yourdomain.com`  
      **Environments:** Production
 
 3. Click **Save**
