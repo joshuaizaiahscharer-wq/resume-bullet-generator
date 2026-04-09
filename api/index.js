@@ -21,6 +21,22 @@ const processedWebhookIds = new Map();
 const inFlightWebhookIds = new Set();
 const WEBHOOK_ID_TTL_MS = 1000 * 60 * 60 * 24;
 
+// ─── Usage tracking ───────────────────────────────────────────────────────────
+// Tracks generator usage in memory. Resets on server restart / cold start.
+// Capped at 1000 events (~200 KB) to limit memory consumption while retaining
+// enough recent history to be useful between deploys.
+const MAX_USAGE_EVENTS = 1000;
+const usageLog = [];
+
+function recordUsage(jobTitle, ip) {
+  const event = { timestamp: new Date().toISOString(), jobTitle, ip };
+  console.log("[usage]", JSON.stringify(event));
+  usageLog.push(event);
+  if (usageLog.length > MAX_USAGE_EVENTS) {
+    usageLog.shift();
+  }
+}
+
 function pruneProcessedWebhookIds() {
   const now = Date.now();
   for (const [id, ts] of processedWebhookIds.entries()) {
@@ -318,13 +334,34 @@ app.post("/api/generate", async (req, res) => {
       .map((line) => line.replace(/^[\s•\-–—*]+/, "").trim())
       .filter((line) => line.length > 0);
 
-    return res.json({ bullets });
+    const response = res.json({ bullets });
+    recordUsage(sanitizedTitle, req.ip);
+    return response;
   } catch (err) {
     console.error("OpenAI error:", err.message);
     const status = err.status ?? 500;
     const message = err.message ?? "Failed to generate bullet points.";
     return res.status(status).json({ error: message });
   }
+});
+
+// ─── GET /api/usage ───────────────────────────────────────────────────────────
+app.get("/api/usage", (req, res) => {
+  const jobCounts = {};
+  for (const event of usageLog) {
+    jobCounts[event.jobTitle] = (jobCounts[event.jobTitle] || 0) + 1;
+  }
+
+  const topJobs = Object.entries(jobCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 20)
+    .map(([jobTitle, count]) => ({ jobTitle, count }));
+
+  return res.json({
+    total: usageLog.length,
+    topJobs,
+    recent: usageLog.slice(-20).reverse(),
+  });
 });
 
 // ─── SEO routes ───────────────────────────────────────────────────────────────
