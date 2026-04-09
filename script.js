@@ -119,7 +119,6 @@ async function fetchBullets(jobTitle) {
 function inferPageType(pathname) {
   if (!pathname || pathname === "/") return "generator";
   if (pathname === "/jobs") return "jobs";
-  if (pathname === "/templates") return "templates";
   if (pathname.endsWith("-resume-summary-examples")) return "summary";
   if (pathname.endsWith("-skills-for-resume")) return "skills";
   if (pathname.endsWith("-cover-letter-examples")) return "cover-letter";
