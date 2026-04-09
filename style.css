@@ -459,3 +459,29 @@ body {
   color: #c7d2fe;
   background: #0f1629;
 }
+
+/* ── Cluster layouts ─────────────────────────────────────────── */
+.cluster-list-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.cluster-group {
+  padding-top: 4px;
+}
+
+.cluster-group + .cluster-group {
+  border-top: 1px solid #1e293b;
+  padding-top: 20px;
+}
+
+.cluster-group-title {
+  font-size: 1.05rem;
+  color: #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.related-resources-card {
+  border-color: #273249;
+}

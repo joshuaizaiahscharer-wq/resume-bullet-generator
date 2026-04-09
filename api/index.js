@@ -21,9 +21,49 @@ app.use(express.static(path.join(process.cwd())));
 // ─── OpenAI client ────────────────────────────────────────────────────────────
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// ─── Jobs data ────────────────────────────────────────────────────────────────
-const jobs = require("../data/jobs");
-const jobMap = Object.fromEntries(jobs.map((j) => [j.slug, j]));
+// ─── Job cluster data ─────────────────────────────────────────────────────────
+const jobClusters = require("../data/jobClusters");
+const clusterByJobSlug = Object.fromEntries(jobClusters.map((cluster) => [cluster.jobSlug, cluster]));
+
+const PAGE_TYPE_ORDER = [
+  "bulletPoints",
+  "resumeSummary",
+  "skills",
+  "coverLetter",
+  "noExperienceBulletPoints",
+];
+
+const PAGE_TYPE_META = {
+  bulletPoints: {
+    label: "Resume Bullet Points",
+    heading: "10 Resume Bullet Point Examples",
+  },
+  resumeSummary: {
+    label: "Resume Summary Examples",
+    heading: "5 Resume Summary Examples",
+  },
+  skills: {
+    label: "Skills for Resume",
+    heading: "15 Skills for Resume",
+  },
+  coverLetter: {
+    label: "Cover Letter Examples",
+    heading: "3 Cover Letter Examples",
+  },
+  noExperienceBulletPoints: {
+    label: "No Experience Resume Bullet Points",
+    heading: "10 No-Experience Bullet Point Examples",
+  },
+};
+
+const allClusterPages = jobClusters.flatMap((cluster) =>
+  PAGE_TYPE_ORDER.map((type) => ({
+    jobSlug: cluster.jobSlug,
+    jobTitle: cluster.jobTitle,
+    pageType: type,
+    ...cluster.pages[type],
+  }))
+);
 
 // ─── POST /api/generate ───────────────────────────────────────────────────────
 app.post("/api/generate", async (req, res) => {
@@ -86,7 +126,7 @@ app.get("/robots.txt", (req, res) => {
 });
 
 app.get("/sitemap.xml", (req, res) => {
-  const paths = ["/", "/jobs", ...jobs.map((job) => `/resume-bullet-points-for-${job.slug}`)];
+  const paths = ["/", "/jobs", ...allClusterPages.map((page) => `/${page.slug}`)];
 
   const urlEntries = paths
     .map((urlPath) => `  <url><loc>${escapeXml(`${SITE_URL}${urlPath}`)}</loc></url>`)
@@ -101,16 +141,41 @@ app.get("/sitemap.xml", (req, res) => {
   res.type("application/xml").send(xml);
 });
 
-// ─── Jobs pages ───────────────────────────────────────────────────────────────
-app.get("/resume-bullet-points-for-:slug", (req, res) => {
-  const job = jobMap[req.params.slug];
-  if (!job) return res.status(404).send("Page not found.");
-  res.send(renderJobPage(job));
+// ─── Cluster routes (5 page types per job) ───────────────────────────────────
+app.get("/resume-bullet-points-for-:jobSlug", (req, res) => {
+  renderClusterRoute(req, res, req.params.jobSlug, "bulletPoints");
+});
+
+app.get("/:jobSlug-resume-summary-examples", (req, res) => {
+  renderClusterRoute(req, res, req.params.jobSlug, "resumeSummary");
+});
+
+app.get("/:jobSlug-skills-for-resume", (req, res) => {
+  renderClusterRoute(req, res, req.params.jobSlug, "skills");
+});
+
+app.get("/:jobSlug-cover-letter-examples", (req, res) => {
+  renderClusterRoute(req, res, req.params.jobSlug, "coverLetter");
+});
+
+app.get("/:jobSlug-resume-bullets-no-experience", (req, res) => {
+  renderClusterRoute(req, res, req.params.jobSlug, "noExperienceBulletPoints");
 });
 
 app.get("/jobs", (req, res) => {
   res.send(renderJobsPage());
 });
+
+function renderClusterRoute(req, res, jobSlug, pageType) {
+  const cluster = clusterByJobSlug[jobSlug];
+  const page = cluster?.pages?.[pageType];
+
+  if (!cluster || !page) {
+    return res.status(404).send("Page not found.");
+  }
+
+  return res.send(renderClusterPage(cluster, pageType));
+}
 
 // ─── HTML helpers ─────────────────────────────────────────────────────────────
 function escapeHtml(str) {
@@ -142,43 +207,25 @@ const PAGE_HEAD = (title, description) => `
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/style.css" />`;
 
-function renderJobPage(job) {
-  const bulletItems = job.bullets
-    .map((b) => `          <li>${escapeHtml(b)}</li>`)
+function renderClusterPage(cluster, pageType) {
+  const page = cluster.pages[pageType];
+  const pageMeta = PAGE_TYPE_META[pageType];
+
+  const contentItems = page.content
+    .map((item) => `          <li>${escapeHtml(item)}</li>`)
     .join("\n");
 
-  return `<!DOCTYPE html>
-<html lang="en">
-  <head>${PAGE_HEAD(
-    `Resume Bullet Points for ${job.title} | BulletAI`,
-    job.metaDescription
-  )}
-  </head>
-  <body>
-    <nav class="nav">
-      <a href="/" class="nav-logo">&#10022; BulletAI</a>
-      <a href="/" class="nav-link">&#8592; Home</a>
-    </nav>
+  const relatedLinks = PAGE_TYPE_ORDER.filter((type) => type !== pageType)
+    .map((type) => {
+      const relatedPage = cluster.pages[type];
+      const label = PAGE_TYPE_META[type].label;
+      return `          <a href="/${escapeHtml(relatedPage.slug)}">${escapeHtml(cluster.jobTitle)} ${escapeHtml(label)}</a>`;
+    })
+    .join("\n");
 
-    <header class="hero">
-      <nav class="breadcrumb" aria-label="Breadcrumb">
-        <a href="/">Home</a>
-        <span>&#8250;</span>
-        <span>${escapeHtml(job.title)}</span>
-      </nav>
-      <h1>Resume Bullet Points<br /><span class="gradient-text">for ${escapeHtml(job.title)}</span></h1>
-      <p class="hero-sub">${escapeHtml(job.intro)}</p>
-    </header>
-
-    <section class="main" aria-labelledby="examples-heading">
-      <div class="card">
-        <p class="input-label" id="examples-heading">10 Example Bullet Points</p>
-        <ul class="example-bullets">
-${bulletItems}
-        </ul>
-      </div>
-    </section>
-
+  const generatorSection =
+    pageType === "bulletPoints" || pageType === "noExperienceBulletPoints"
+      ? `
     <div class="section-divider">
       <span>&#10022; Generate your own</span>
     </div>
@@ -190,7 +237,7 @@ ${bulletItems}
           <input
             type="text"
             id="jobTitle"
-            value="${escapeHtml(job.title)}"
+            value="${escapeHtml(cluster.jobTitle)}"
             placeholder="e.g. Bartender, Software Engineer"
             aria-label="Job title"
             autocomplete="off"
@@ -211,28 +258,78 @@ ${bulletItems}
       </div>
     </main>
 
+    <script src="/script.js"></script>`
+      : "";
+
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>${PAGE_HEAD(`${page.pageTitle} | BulletAI`, page.metaDescription)}
+  </head>
+  <body>
+    <nav class="nav">
+      <a href="/" class="nav-logo">&#10022; BulletAI</a>
+      <a href="/jobs" class="nav-link">Browse All Clusters</a>
+    </nav>
+
+    <header class="hero">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span>&#8250;</span>
+        <a href="/jobs">Jobs</a>
+        <span>&#8250;</span>
+        <span>${escapeHtml(cluster.jobTitle)}</span>
+      </nav>
+      <h1><span class="gradient-text">${escapeHtml(page.pageTitle)}</span></h1>
+      <p class="hero-sub">${escapeHtml(page.intro)}</p>
+    </header>
+
+    <section class="main" aria-labelledby="content-heading">
+      <div class="card">
+        <p class="input-label" id="content-heading">${escapeHtml(pageMeta.heading)}</p>
+        <ul class="example-bullets">
+${contentItems}
+        </ul>
+      </div>
+    </section>
+
+    <section class="main" aria-labelledby="related-resources-heading">
+      <div class="card related-resources-card">
+        <p class="input-label" id="related-resources-heading">Related Resume Resources</p>
+        <div class="job-links-grid">
+${relatedLinks}
+        </div>
+      </div>
+    </section>
+${generatorSection}
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
     </footer>
-
-    <script src="/script.js"></script>
   </body>
 </html>`;
 }
 
 function renderJobsPage() {
-  const links = jobs
-    .map(
-      (j) =>
-        `          <a href="/resume-bullet-points-for-${j.slug}">${escapeHtml(j.title)}</a>`
-    )
+  const groups = jobClusters
+    .map((cluster) => {
+      const pageLinks = PAGE_TYPE_ORDER.map((type) => {
+        const page = cluster.pages[type];
+        return `            <a href="/${escapeHtml(page.slug)}">${escapeHtml(PAGE_TYPE_META[type].label)}</a>`;
+      }).join("\n");
+
+      return `        <section class="cluster-group" aria-labelledby="cluster-${escapeHtml(cluster.jobSlug)}">
+          <h2 class="cluster-group-title" id="cluster-${escapeHtml(cluster.jobSlug)}">${escapeHtml(cluster.jobTitle)}</h2>
+          <div class="job-links-grid">
+${pageLinks}
+          </div>
+        </section>`;
+    })
     .join("\n");
 
   return `<!DOCTYPE html>
 <html lang="en">
   <head>${PAGE_HEAD(
-    "Resume Bullets by Job Title | BulletAI",
-    "Browse free AI-generated resume bullet points for specific job titles. Pick your role and get 10 strong, action-verb-led bullets instantly."
+    "Resume Resource Clusters by Job Title | BulletAI",
+    "Browse resume bullet points, summaries, skills, cover letters, and no-experience examples grouped by job title."
   )}
   </head>
   <body>
@@ -242,20 +339,17 @@ function renderJobsPage() {
     </nav>
 
     <header class="hero">
-      <span class="badge">&#10022; All Job Pages</span>
-      <h1>Resume Bullets by <span class="gradient-text">Job Title</span></h1>
+      <span class="badge">&#10022; Job Clusters</span>
+      <h1>Resume Resources by <span class="gradient-text">Job Title</span></h1>
       <p class="hero-sub">
-        Browse example resume bullet points for specific roles, or use the AI
-        generator on any page to create a personalized set.
+        Explore complete content clusters for each role, including bullet points,
+        summaries, skills, cover letters, and no-experience examples.
       </p>
     </header>
 
     <main class="main">
-      <div class="card">
-        <p class="input-label">Browse job pages</p>
-        <div class="job-links-grid">
-${links}
-        </div>
+      <div class="card cluster-list-card">
+${groups}
       </div>
     </main>
 
