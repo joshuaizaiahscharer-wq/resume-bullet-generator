@@ -49,17 +49,32 @@
             autocomplete="off"
           />
           <button id="generateBtn">
-            <span class="btn-text">Generate Bullet Points</span>
+            <span class="btn-text">Generate</span>
             <span class="btn-arrow">→</span>
           </button>
+        </div>
+
+        <!-- Quick-pick chips -->
+        <div class="chips" id="chips" aria-label="Quick-pick job titles">
+          <button class="chip" type="button">Software Engineer</button>
+          <button class="chip" type="button">Product Manager</button>
+          <button class="chip" type="button">Data Analyst</button>
+          <button class="chip" type="button">Marketing Manager</button>
+          <button class="chip" type="button">Bartender</button>
+          <button class="chip" type="button">Cashier</button>
+          <button class="chip" type="button">Nurse</button>
+          <button class="chip" type="button">Teacher</button>
         </div>
 
         <div id="status" class="status hidden" aria-live="polite"></div>
 
         <section id="resultsSection" class="results hidden" aria-live="polite">
           <div class="results-header">
-            <h2>Your Bullet Points</h2>
-            <button id="copyBtn" class="copy-btn">Copy All</button>
+            <h2 id="resultsHeading">Bullet Points</h2>
+            <div class="results-actions">
+              <button id="regenerateBtn" class="icon-btn" title="Regenerate">↻ Regenerate</button>
+              <button id="copyBtn" class="copy-btn">Copy All</button>
+            </div>
           </div>
           <ul id="bulletList"></ul>
         </section>

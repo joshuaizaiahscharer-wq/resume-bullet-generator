@@ -14,6 +14,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(99,102,241,0.12) 0%, transparent 70%);
 }
 
 /* ── Nav ────────────────────────────────────────────────────── */
@@ -240,6 +242,31 @@ body {
   color: #64748b;
 }
 
+.results-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Regenerate button ───────────────────────────────────────── */
+.icon-btn {
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: #94a3b8;
+  background: transparent;
+  border: 1.5px solid #1e293b;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.icon-btn:hover {
+  border-color: #6366f1;
+  color: #818cf8;
+}
+
 #bulletList {
   list-style: none;
   padding: 0;
@@ -262,6 +289,7 @@ body {
   cursor: text;
   user-select: text;
   transition: border-color 0.15s, background 0.15s;
+  position: relative;
 }
 
 #bulletList li::before {
@@ -275,6 +303,83 @@ body {
 #bulletList li:hover {
   border-color: #334155;
   background: #111827;
+}
+
+/* Per-bullet copy button */
+.bullet-text {
+  flex: 1;
+}
+
+.bullet-copy {
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: center;
+  padding: 3px 9px;
+  font-size: 0.72rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: #475569;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+#bulletList li:hover .bullet-copy {
+  opacity: 1;
+  border-color: #334155;
+}
+
+.bullet-copy:hover {
+  border-color: #6366f1;
+  color: #818cf8;
+}
+
+#bulletList li:hover .bullet-copy:hover {
+  border-color: #6366f1;
+  color: #818cf8;
+}
+
+.bullet-copy.copied {
+  color: #22c55e;
+  border-color: #22c55e;
+  opacity: 1;
+}
+
+/* ── Quick-pick chips ────────────────────────────────────────── */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.chip {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-family: inherit;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid #1e293b;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.chip:hover {
+  border-color: #6366f1;
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.07);
+}
+
+.chip.active {
+  border-color: #6366f1;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.12);
 }
 
 /* ── Copy button ────────────────────────────────────────────── */
@@ -332,6 +437,14 @@ body {
 
   h1 {
     font-size: 1.75rem;
+  }
+
+  .chips {
+    gap: 6px;
+  }
+
+  .bullet-copy {
+    opacity: 1;
   }
 }
 

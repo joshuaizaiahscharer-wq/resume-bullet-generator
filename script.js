@@ -7,17 +7,41 @@ const generateBtn    = document.getElementById("generateBtn");
 const jobTitleInput  = document.getElementById("jobTitle");
 const statusEl       = document.getElementById("status");
 const resultsSection = document.getElementById("resultsSection");
+const resultsHeading = document.getElementById("resultsHeading");
 const bulletList     = document.getElementById("bulletList");
 const copyBtn        = document.getElementById("copyBtn");
+const regenerateBtn  = document.getElementById("regenerateBtn");
+const chipsContainer = document.getElementById("chips");
 
 // ─── Event listeners ─────────────────────────────────────────────────────────
 generateBtn.addEventListener("click", handleGenerate);
+regenerateBtn.addEventListener("click", handleGenerate);
 
 jobTitleInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleGenerate();
 });
 
+// Clear active chip when user types manually
+jobTitleInput.addEventListener("input", () => {
+  setActiveChip(null);
+});
+
 copyBtn.addEventListener("click", handleCopy);
+
+// ─── Quick-pick chips ─────────────────────────────────────────────────────────
+chipsContainer.addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip");
+  if (!chip) return;
+  jobTitleInput.value = chip.textContent.trim();
+  setActiveChip(chip);
+  handleGenerate();
+});
+
+function setActiveChip(activeChip) {
+  chipsContainer.querySelectorAll(".chip").forEach((c) => {
+    c.classList.toggle("active", c === activeChip);
+  });
+}
 
 // ─── Core logic ──────────────────────────────────────────────────────────────
 async function handleGenerate() {
@@ -33,7 +57,7 @@ async function handleGenerate() {
 
   try {
     const bullets = await fetchBullets(jobTitle);
-    displayBullets(bullets);
+    displayBullets(bullets, jobTitle);
   } catch (err) {
     showError(err.message || "Something went wrong. Please try again.");
   } finally {
@@ -62,15 +86,34 @@ async function fetchBullets(jobTitle) {
 }
 
 // ─── UI helpers ──────────────────────────────────────────────────────────────
-function displayBullets(bullets) {
+function displayBullets(bullets, jobTitle) {
   clearStatus();
+
+  // Update heading with count and title
+  const count = bullets.length;
+  resultsHeading.textContent = `${count} Bullet Point${count !== 1 ? "s" : ""} — ${jobTitle}`;
 
   // Clear previous results
   bulletList.innerHTML = "";
 
   bullets.forEach((text) => {
     const li = document.createElement("li");
-    li.textContent = text;
+
+    const span = document.createElement("span");
+    span.className = "bullet-text";
+    span.textContent = text;
+    li.appendChild(span);
+
+    const btn = document.createElement("button");
+    btn.className = "bullet-copy";
+    btn.textContent = "Copy";
+    btn.setAttribute("aria-label", "Copy this bullet point");
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      copySingleBullet(btn, text);
+    });
+    li.appendChild(btn);
+
     bulletList.appendChild(li);
   });
 
@@ -83,9 +126,32 @@ function displayBullets(bullets) {
   resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function copySingleBullet(btn, text) {
+  const write = () => {
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => {
+      btn.textContent = "Copy";
+      btn.classList.remove("copied");
+    }, 1800);
+  };
+
+  navigator.clipboard.writeText(`• ${text}`).then(write).catch(() => {
+    const ta = document.createElement("textarea");
+    ta.value = `• ${text}`;
+    ta.style.cssText = "position:fixed;opacity:0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    write();
+  });
+}
+
 function setLoading(isLoading) {
-  generateBtn.disabled = isLoading;
-  copyBtn.disabled     = isLoading;
+  generateBtn.disabled   = isLoading;
+  regenerateBtn.disabled = isLoading;
+  copyBtn.disabled       = isLoading;
 
   if (isLoading) {
     resultsSection.classList.add("hidden");
@@ -111,10 +177,10 @@ function clearStatus() {
 }
 
 async function handleCopy() {
-  const items = [...bulletList.querySelectorAll("li")];
+  const items = [...bulletList.querySelectorAll("li span")];
   if (items.length === 0) return;
 
-  const text = items.map((li) => `• ${li.textContent}`).join("\n");
+  const text = items.map((s) => `• ${s.textContent}`).join("\n");
 
   try {
     await navigator.clipboard.writeText(text);
