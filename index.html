@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume Bullet Generator — AI-Powered</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Nav -->
+    <nav class="nav">
+      <a href="/" class="nav-logo">&#10022; BulletAI</a>
+      <a
+        href="https://platform.openai.com/api-keys"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="nav-link"
+        >Get API Key ↗</a
+      >
+    </nav>
+
+    <!-- Hero -->
+    <header class="hero">
+      <span class="badge">✦ Powered by GPT</span>
+      <h1>Write better resume bullets,<br /><span class="gradient-text">in seconds.</span></h1>
+      <p class="hero-sub">
+        Enter any job title and get 10 strong, action-verb-led bullet points
+        ready to drop straight into your resume.
+      </p>
+    </header>
+
+    <!-- Card -->
+    <main class="main">
+      <div class="card">
+        <label class="input-label" for="jobTitle">Job Title</label>
+        <div class="input-group">
+          <input
+            type="text"
+            id="jobTitle"
+            placeholder="e.g. Bartender, Software Engineer, Project Manager"
+            aria-label="Job title"
+            autocomplete="off"
+          />
+          <button id="generateBtn">
+            <span class="btn-text">Generate Bullet Points</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </div>
+
+        <div id="status" class="status hidden" aria-live="polite"></div>
+
+        <section id="resultsSection" class="results hidden" aria-live="polite">
+          <div class="results-header">
+            <h2>Your Bullet Points</h2>
+            <button id="copyBtn" class="copy-btn">Copy All</button>
+          </div>
+          <ul id="bulletList"></ul>
+        </section>
+      </div>
+    </main>
+
+    <!-- Popular Job Pages -->
+    <section class="job-links" aria-labelledby="popular-jobs-heading">
+      <p class="input-label" id="popular-jobs-heading">Popular job pages</p>
+      <div class="job-links-grid">
+        <a href="/resume-bullet-points-for-bartender">Bartender</a>
+        <a href="/resume-bullet-points-for-cashier">Cashier</a>
+        <a href="/resume-bullet-points-for-sales-associate">Sales Associate</a>
+        <a href="/jobs">View all jobs &rarr;</a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      Built with the OpenAI API &mdash; results may vary.
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

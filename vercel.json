@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build",
+  "devCommand": "npm start",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
+    { "source": "/jobs", "destination": "/api/index.js" },
+    { "source": "/resume-bullet-points-for-(.*)", "destination": "/api/index.js" },
+    { "source": "/robots.txt", "destination": "/api/index.js" },
+    { "source": "/sitemap.xml", "destination": "/api/index.js" }
+  ]
+}
