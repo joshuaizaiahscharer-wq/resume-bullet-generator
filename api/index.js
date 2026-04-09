@@ -134,6 +134,7 @@ function escapeXml(str) {
 const PAGE_HEAD = (title, description) => `
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="google-site-verification" content="VEIGdEbFNNwkV64kj97Igmt_5KO8trlNUXJtaIqVAw0" />
   <meta name="description" content="${escapeHtml(description)}" />
   <title>${escapeHtml(title)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
