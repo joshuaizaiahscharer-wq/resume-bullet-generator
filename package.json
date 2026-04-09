@@ -4,8 +4,7 @@
   "description": "AI-powered resume bullet point generator",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "build": "echo 'Build complete'"
+    "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
