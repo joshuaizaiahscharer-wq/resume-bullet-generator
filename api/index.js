@@ -561,7 +561,7 @@ function renderAdminPage() {
   <div class="card" id="login-card">
     <h1>Admin Login</h1>
     <label for="user-input">Username</label>
-    <input type="text" id="user-input" placeholder="Username" autocomplete="username" />
+    <input type="text" id="user-input" placeholder="admin" autocomplete="username" />
     <label for="pw-input">Password</label>
     <input type="password" id="pw-input" placeholder="Password" autocomplete="current-password" />
     <button id="login-btn">Login</button>
@@ -608,11 +608,12 @@ function renderAdminPage() {
 
     // ── Login ───────────────────────────────────────────────────────────────────
     async function handleLogin() {
-      const username = userInput.value.trim();
+      const username = (userInput.value || "admin").trim().toLowerCase();
       const password = pwInput.value.trim();
 
       // Username gate on the client. Password is validated by backend.
       if (username !== "admin" || !password) {
+        errorMsg.textContent = "Invalid login";
         errorMsg.style.display = "block";
         pwInput.value = "";
         pwInput.focus();
@@ -622,8 +623,9 @@ function renderAdminPage() {
       errorMsg.style.display = "none";
 
       // Validate password by attempting to load analytics.
-      const ok = await loadAnalytics(password);
-      if (!ok) {
+      const result = await loadAnalytics(password);
+      if (!result.ok) {
+        errorMsg.textContent = result.message || "Invalid login";
         errorMsg.style.display = "block";
         pwInput.value = "";
         pwInput.focus();
@@ -644,7 +646,7 @@ function renderAdminPage() {
         const json = await res.json();
 
         if (!res.ok) {
-          return false;
+          return { ok: false, message: json.error === "Unauthorized." ? "Invalid login" : (json.error || "Login failed") };
         }
 
         statTotal.textContent = json.totalRecords.toLocaleString();
@@ -665,9 +667,9 @@ function renderAdminPage() {
 
         renderRecentJobs(json.recentJobs || []);
 
-        return true;
+        return { ok: true };
       } catch (err) {
-        return false;
+        return { ok: false, message: "Network error" };
       } finally {
         loading.style.display = "none";
       }
