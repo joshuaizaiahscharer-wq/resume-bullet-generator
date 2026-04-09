@@ -65,7 +65,6 @@ module.exports = [
       "Onboarded 4 new associates, sharing product knowledge, selling techniques, and store procedures",
     ],
   },
-];
   {
     slug: "barista",
     title: "Barista",
