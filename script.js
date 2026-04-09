@@ -2,6 +2,30 @@
 // The API key lives in .env on the server — nothing sensitive here.
 const API_URL = "/api/generate";
 
+// ─── Hero typing cycle ────────────────────────────────────────────────────────
+(function initHeroTyping() {
+  const el = document.getElementById("heroTyped");
+  if (!el) return;
+  const words = ["interviews.", "callbacks.", "offers.", "results."];
+  let idx = 0;
+
+  function cycle() {
+    idx = (idx + 1) % words.length;
+    el.style.opacity = "0";
+    el.style.transform = "translateY(8px)";
+    setTimeout(() => {
+      el.textContent = words[idx];
+      el.style.opacity = "1";
+      el.style.transform = "translateY(0)";
+    }, 300);
+  }
+
+  el.style.transition = "opacity 0.3s ease, transform 0.3s ease";
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    setInterval(cycle, 2800);
+  }
+})();
+
 // ─── DOM references ──────────────────────────────────────────────────────────
 const generateBtn    = document.getElementById("generateBtn");
 const jobTitleInput  = document.getElementById("jobTitle");
