@@ -243,7 +243,15 @@ app.post("/api/generate", async (req, res) => {
     // Record usage after successful generation.
     // Wrapped in its own try/catch so tracking issues never affect users.
     try {
-      const trackedUserId = getAuthenticatedUserId(req) || (bodyUserId ? String(bodyUserId) : null);
+      const ipAddress =
+        req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+        req.socket?.remoteAddress ||
+        null;
+
+      const trackedUserId =
+        getAuthenticatedUserId(req) ||
+        (bodyUserId ? String(bodyUserId) : null) ||
+        ipAddress;
 
       await recordGeneratorUsage({
         jobTitle: sanitizedTitle,
@@ -251,10 +259,7 @@ app.post("/api/generate", async (req, res) => {
         pageType: pageType || null,
         userId: trackedUserId,
         userAgent: req.headers["user-agent"] || null,
-        ipAddress:
-          req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-          req.socket?.remoteAddress ||
-          null,
+        ipAddress,
       });
     } catch (trackingErr) {
       // Double-safety guard; helper already handles failures internally.
