@@ -528,7 +528,7 @@ function renderAdminPage() {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin — Usage Analytics</title>
+  <title>Admin Login</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -537,29 +537,23 @@ function renderAdminPage() {
       color: #e2e8f0;
       min-height: 100vh;
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: center;
-      padding: 48px 16px;
+      padding: 24px 16px;
     }
     .card {
       background: #131929;
       border: 1px solid rgba(255,255,255,0.07);
       border-radius: 16px;
-      padding: 40px;
+      padding: 36px 32px;
       width: 100%;
-      max-width: 600px;
+      max-width: 380px;
     }
-    h1 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #f1f5f9;
-      margin-bottom: 8px;
-    }
-    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-bottom: 32px; }
-    label { display: block; font-size: 0.875rem; color: #94a3b8; margin-bottom: 8px; }
-    .input-row { display: flex; gap: 10px; margin-bottom: 24px; }
-    input[type="password"] {
-      flex: 1;
+    h1 { font-size: 1.25rem; font-weight: 700; color: #f1f5f9; margin-bottom: 24px; }
+    label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 6px; }
+    input {
+      display: block;
+      width: 100%;
       background: #0b0f1a;
       border: 1px solid rgba(255,255,255,0.12);
       border-radius: 8px;
@@ -568,161 +562,164 @@ function renderAdminPage() {
       padding: 10px 14px;
       font-family: inherit;
       outline: none;
+      margin-bottom: 16px;
     }
-    input[type="password"]:focus { border-color: #6366f1; }
+    input:focus { border-color: #6366f1; }
     button {
+      width: 100%;
       background: linear-gradient(135deg, #6366f1, #8b5cf6);
       color: #fff;
       border: none;
       border-radius: 8px;
-      padding: 10px 20px;
+      padding: 11px;
       font-size: 0.95rem;
       font-family: inherit;
       font-weight: 600;
       cursor: pointer;
-      white-space: nowrap;
+      margin-top: 4px;
     }
     button:hover { opacity: 0.9; }
-    #error-msg {
-      color: #f87171;
-      font-size: 0.85rem;
-      margin-bottom: 16px;
-      display: none;
-    }
-    #results { display: none; }
-    .stats-bar {
-      display: flex;
-      gap: 16px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-    }
+    #error-msg { color: #f87171; font-size: 0.82rem; margin-top: 10px; display: none; }
+    /* ── Dashboard ── */
+    #dashboard { display: none; }
+    #dashboard h1 { margin-bottom: 20px; }
     .stat {
-      flex: 1;
-      min-width: 100px;
       background: rgba(99,102,241,0.1);
       border: 1px solid rgba(99,102,241,0.2);
       border-radius: 10px;
       padding: 16px;
       text-align: center;
+      margin-bottom: 24px;
     }
-    .stat-value { font-size: 1.75rem; font-weight: 700; color: #a78bfa; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: #a78bfa; }
     .stat-label { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
-    h2 { font-size: 1rem; font-weight: 600; color: #cbd5e1; margin-bottom: 14px; }
+    h2 { font-size: 0.95rem; font-weight: 600; color: #cbd5e1; margin-bottom: 12px; }
     ol { list-style: none; padding: 0; }
     ol li {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 11px 14px;
+      padding: 10px 12px;
       border-radius: 8px;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.05);
     }
-    ol li:hover { background: rgba(99,102,241,0.08); }
-    .rank { color: #475569; font-size: 0.8rem; width: 22px; flex-shrink: 0; }
-    .job-name { flex: 1; padding: 0 10px; text-transform: capitalize; }
+    .rank { color: #475569; font-size: 0.8rem; width: 20px; flex-shrink: 0; }
+    .job-name { flex: 1; padding: 0 10px; text-transform: capitalize; font-size: 0.9rem; }
     .badge {
       background: rgba(99,102,241,0.2);
       color: #818cf8;
       border-radius: 20px;
       padding: 2px 10px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       white-space: nowrap;
     }
-    .empty { color: #475569; font-size: 0.9rem; text-align: center; padding: 24px 0; }
-    #loading { color: #64748b; font-size: 0.875rem; display: none; }
+    #loading { color: #64748b; font-size: 0.875rem; margin-top: 12px; display: none; }
   </style>
 </head>
 <body>
-  <div class="card">
+
+  <!-- Login form -->
+  <div class="card" id="login-card">
+    <h1>Admin Login</h1>
+    <label for="user-input">Username</label>
+    <input type="text" id="user-input" placeholder="Username" autocomplete="username" />
+    <label for="pw-input">Password</label>
+    <input type="password" id="pw-input" placeholder="Password" autocomplete="current-password" />
+    <button id="login-btn">Login</button>
+    <p id="error-msg">Invalid login</p>
+  </div>
+
+  <!-- Dashboard (hidden until login) -->
+  <div class="card" id="dashboard">
     <h1>Analytics Dashboard</h1>
-    <p class="subtitle">Generator usage — top searched job titles</p>
-
-    <label for="pw-input">Admin password</label>
-    <div class="input-row">
-      <input type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password" />
-      <button id="load-btn">Load</button>
+    <div class="stat">
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-label">Total generations</div>
     </div>
-    <p id="error-msg"></p>
+    <h2>Top 20 searched job titles</h2>
     <p id="loading">Loading…</p>
-
-    <div id="results">
-      <div class="stats-bar">
-        <div class="stat">
-          <div class="stat-value" id="stat-total">—</div>
-          <div class="stat-label">Total generations</div>
-        </div>
-      </div>
-      <h2>Top 20 searched job titles</h2>
-      <ol id="job-list"></ol>
-    </div>
+    <ol id="job-list"></ol>
   </div>
 
   <script>
-    const btn = document.getElementById("load-btn");
-    const input = document.getElementById("pw-input");
-    const errorMsg = document.getElementById("error-msg");
-    const loading = document.getElementById("loading");
-    const results = document.getElementById("results");
-    const jobList = document.getElementById("job-list");
+    const loginCard = document.getElementById("login-card");
+    const dashboard = document.getElementById("dashboard");
+    const userInput = document.getElementById("user-input");
+    const pwInput   = document.getElementById("pw-input");
+    const loginBtn  = document.getElementById("login-btn");
+    const errorMsg  = document.getElementById("error-msg");
+    const loading   = document.getElementById("loading");
+    const jobList   = document.getElementById("job-list");
     const statTotal = document.getElementById("stat-total");
 
-    async function load() {
-      const pw = input.value.trim();
-      if (!pw) { showError("Please enter the admin password."); return; }
+    // ── Login ───────────────────────────────────────────────────────────────────
+    async function handleLogin() {
+      const username = userInput.value.trim();
+      const password = pwInput.value.trim();
+
+      // Client-side credential check.
+      if (username !== "admin" || password !== "admin") {
+        errorMsg.style.display = "block";
+        pwInput.value = "";
+        pwInput.focus();
+        return;
+      }
 
       errorMsg.style.display = "none";
+      loginCard.style.display = "none";
+      dashboard.style.display = "block";
+      loadAnalytics(password);
+    }
+
+    // ── Load analytics from backend ─────────────────────────────────────────────
+    async function loadAnalytics(password) {
       loading.style.display = "block";
-      results.style.display = "none";
-      btn.disabled = true;
+      jobList.innerHTML = "";
 
       try {
-        const res = await fetch("/api/admin/usage?password=" + encodeURIComponent(pw));
+        const res = await fetch("/api/admin/usage?password=" + encodeURIComponent(password));
         const json = await res.json();
 
         if (!res.ok) {
-          showError(json.error || "Request failed (" + res.status + ").");
+          jobList.innerHTML = '<li style="color:#f87171;font-size:.85rem;padding:8px 0">' +
+            escapeHtml(json.error || "Failed to load data.") + '</li>';
           return;
         }
 
         statTotal.textContent = json.totalRecords.toLocaleString();
 
-        jobList.innerHTML = "";
         if (!json.topJobs || json.topJobs.length === 0) {
-          jobList.innerHTML = '<li class="empty">No data yet.</li>';
+          jobList.innerHTML = '<li style="color:#475569;font-size:.9rem;padding:8px 0">No data yet.</li>';
         } else {
           json.topJobs.forEach(({ job, count }, i) => {
             const li = document.createElement("li");
             li.innerHTML =
               '<span class="rank">' + (i + 1) + '</span>' +
               '<span class="job-name">' + escapeHtml(job) + '</span>' +
-              '<span class="badge">' + count.toLocaleString() + ' ' + (count === 1 ? 'search' : 'searches') + '</span>';
+              '<span class="badge">' + count.toLocaleString() +
+              ' ' + (count === 1 ? 'search' : 'searches') + '</span>';
             jobList.appendChild(li);
           });
         }
-
-        results.style.display = "block";
       } catch (err) {
-        showError("Network error: " + err.message);
+        jobList.innerHTML = '<li style="color:#f87171;font-size:.85rem;padding:8px 0">Network error: ' +
+          escapeHtml(err.message) + '</li>';
       } finally {
         loading.style.display = "none";
-        btn.disabled = false;
       }
     }
 
-    function showError(msg) {
-      errorMsg.textContent = msg;
-      errorMsg.style.display = "block";
-    }
-
     function escapeHtml(str) {
-      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+      return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     }
 
-    btn.addEventListener("click", load);
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
+    loginBtn.addEventListener("click", handleLogin);
+    [userInput, pwInput].forEach(el => {
+      el.addEventListener("keydown", (e) => { if (e.key === "Enter") handleLogin(); });
+    });
   </script>
 </body>
 </html>`;
