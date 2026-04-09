@@ -660,8 +660,8 @@ function renderAdminPage() {
       const username = userInput.value.trim();
       const password = pwInput.value.trim();
 
-      // Client-side credential check.
-      if (username !== "admin" || password !== "admin") {
+      // Username gate on the client. Password is validated by backend.
+      if (username !== "admin" || !password) {
         errorMsg.style.display = "block";
         pwInput.value = "";
         pwInput.focus();
@@ -669,9 +669,18 @@ function renderAdminPage() {
       }
 
       errorMsg.style.display = "none";
+
+      // Validate password by attempting to load analytics.
+      const ok = await loadAnalytics(password);
+      if (!ok) {
+        errorMsg.style.display = "block";
+        pwInput.value = "";
+        pwInput.focus();
+        return;
+      }
+
       loginCard.style.display = "none";
       dashboard.style.display = "block";
-      loadAnalytics(password);
     }
 
     // ── Load analytics from backend ─────────────────────────────────────────────
@@ -684,9 +693,7 @@ function renderAdminPage() {
         const json = await res.json();
 
         if (!res.ok) {
-          jobList.innerHTML = '<li style="color:#f87171;font-size:.85rem;padding:8px 0">' +
-            escapeHtml(json.error || "Failed to load data.") + '</li>';
-          return;
+          return false;
         }
 
         statTotal.textContent = json.totalRecords.toLocaleString();
@@ -704,9 +711,10 @@ function renderAdminPage() {
             jobList.appendChild(li);
           });
         }
+
+        return true;
       } catch (err) {
-        jobList.innerHTML = '<li style="color:#f87171;font-size:.85rem;padding:8px 0">Network error: ' +
-          escapeHtml(err.message) + '</li>';
+        return false;
       } finally {
         loading.style.display = "none";
       }
