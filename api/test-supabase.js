@@ -25,8 +25,8 @@ module.exports = async function handler(req, res) {
 
   try {
     const { data, error } = await supabase
-      .from("purchases")
-      .select("id, email, product, created_at")
+      .from("generator_usage")
+      .select("id, job_title, normalized_job_title, created_at, page_path, page_type")
       .limit(5);
 
     if (error) {
@@ -41,17 +41,21 @@ module.exports = async function handler(req, res) {
   }
 };
 
-// ─── Example: record a purchase ───────────────────────────────────────────────
-// Import this function wherever you need to log a purchase (e.g. inside the
-// Shopify webhook handler after a successful paid order).
+// ─── Example: record generator usage ──────────────────────────────────────────
+// Import this function wherever you need to log usage events.
 //
-// async function recordPurchase(email, product) {
+// async function recordGeneratorUsage(jobTitle) {
 //   const { error } = await supabase
-//     .from("purchases")
-//     .insert([{ email, product }]);
+//     .from("generator_usage")
+//     .insert([
+//       {
+//         job_title: jobTitle,
+//         normalized_job_title: jobTitle.trim().toLowerCase(),
+//       },
+//     ]);
 //
 //   if (error) {
-//     console.error("[recordPurchase] insert error:", error.message);
+//     console.error("[recordGeneratorUsage] insert error:", error.message);
 //     throw error;
 //   }
 // }
