@@ -320,8 +320,9 @@ app.post("/api/generate", async (req, res) => {
       .map((line) => line.replace(/^[\s•\-–—*]+/, "").trim())
       .filter((line) => line.length > 0);
 
-    // Record usage — fire and forget. Never blocks or throws.
-    recordGeneratorUsage({
+    // Record usage without breaking generation on failures.
+    // Awaiting here makes tracking reliable in serverless environments.
+    await recordGeneratorUsage({
       jobTitle: sanitizedTitle,
       pagePath: pagePath || null,
       pageType: pageType || null,
@@ -346,8 +347,8 @@ app.post("/api/generate", async (req, res) => {
 app.get("/api/test-supabase", async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from("purchases")
-      .select("id, email, product, created_at")
+      .from("generator_usage")
+      .select("id, job_title, normalized_job_title, created_at, page_path, page_type")
       .limit(5);
 
     if (error) {
