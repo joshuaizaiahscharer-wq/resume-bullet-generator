@@ -90,13 +90,16 @@ async function handleGenerate() {
 }
 
 async function fetchBullets(jobTitle) {
+  const pagePath = window.location.pathname;
+
   const response = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       jobTitle,
-      // Send the current page path so the backend can log which page triggered generation.
-      pagePath: window.location.pathname,
+      // Send page metadata for backend usage tracking.
+      pagePath,
+      pageType: inferPageType(pagePath),
     }),
   });
 
@@ -111,6 +114,18 @@ async function fetchBullets(jobTitle) {
   }
 
   return data.bullets;
+}
+
+function inferPageType(pathname) {
+  if (!pathname || pathname === "/") return "generator";
+  if (pathname === "/jobs") return "jobs";
+  if (pathname === "/templates") return "templates";
+  if (pathname.endsWith("-resume-summary-examples")) return "summary";
+  if (pathname.endsWith("-skills-for-resume")) return "skills";
+  if (pathname.endsWith("-cover-letter-examples")) return "cover-letter";
+  if (pathname.endsWith("-resume-bullets-no-experience")) return "no-experience";
+  if (pathname.startsWith("/resume-bullet-points-for-")) return "job-generator";
+  return "unknown";
 }
 
 // ─── UI helpers ──────────────────────────────────────────────────────────────

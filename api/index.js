@@ -320,17 +320,23 @@ app.post("/api/generate", async (req, res) => {
       .map((line) => line.replace(/^[\s•\-–—*]+/, "").trim())
       .filter((line) => line.length > 0);
 
-    // Record usage without breaking generation on failures.
-    // Awaiting here makes tracking reliable in serverless environments.
-    await recordGeneratorUsage({
-      jobTitle: sanitizedTitle,
-      pagePath: pagePath || null,
-      pageType: pageType || null,
-      userAgent: req.headers["user-agent"] || null,
-      ipAddress: req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-                 req.socket?.remoteAddress ||
-                 null,
-    });
+    // Record usage after successful generation.
+    // Wrapped in its own try/catch so tracking issues never affect users.
+    try {
+      await recordGeneratorUsage({
+        jobTitle: sanitizedTitle,
+        pagePath: pagePath || null,
+        pageType: pageType || null,
+        userAgent: req.headers["user-agent"] || null,
+        ipAddress:
+          req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+          req.socket?.remoteAddress ||
+          null,
+      });
+    } catch (trackingErr) {
+      // Double-safety guard; helper already handles failures internally.
+      console.warn("[usageTracking] Route-level tracking error:", trackingErr.message);
+    }
 
     return res.json({ bullets });
   } catch (err) {
