@@ -21,9 +21,14 @@ app.use(express.static(path.join(process.cwd())));
 // ─── OpenAI client ────────────────────────────────────────────────────────────
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// ─── Job cluster data ─────────────────────────────────────────────────────────
+// ─── Job data ─────────────────────────────────────────────────────────────────
+const allJobs = require("../data/jobs");
+const baseJobs = allJobs.baseJobs;
+const jobBySlug = Object.fromEntries(allJobs.map((j) => [j.slug, j]));
+
+// Hand-crafted overrides for jobs that have rich cluster content
 const jobClusters = require("../data/jobClusters");
-const clusterByJobSlug = Object.fromEntries(jobClusters.map((cluster) => [cluster.jobSlug, cluster]));
+const clusterOverrides = Object.fromEntries(jobClusters.map((c) => [c.jobSlug, c]));
 
 const PAGE_TYPE_ORDER = [
   "bulletPoints",
@@ -56,7 +61,111 @@ const PAGE_TYPE_META = {
   },
 };
 
-const allClusterPages = jobClusters.flatMap((cluster) =>
+// ─── Cluster content generators ───────────────────────────────────────────────
+function generateSummaries(title) {
+  return [
+    `Dedicated ${title} with a strong track record of delivering consistent results and maintaining professional standards.`,
+    `Detail-oriented ${title} known for reliability, clear communication, and effective execution under pressure.`,
+    `Motivated ${title} with hands-on experience applying core skills to meet team and organizational goals daily.`,
+    `Experienced ${title} who thrives in fast-paced environments and consistently meets or exceeds performance expectations.`,
+    `Results-driven ${title} with proven ability to contribute quickly, collaborate across teams, and grow in the role.`,
+  ];
+}
+
+function generateSkills(title) {
+  return [
+    `${title} operations`,
+    "Customer service",
+    "Team collaboration",
+    "Time management",
+    "Problem solving",
+    "Communication",
+    "Attention to detail",
+    "Multitasking",
+    "Organization",
+    "Process efficiency",
+    "Training and mentorship",
+    "Documentation",
+    "Performance tracking",
+    "Quality assurance",
+    "Adaptability",
+  ];
+}
+
+function generateCoverLetters(title) {
+  return [
+    `I am excited to apply for the ${title} position. My background includes hands-on experience with the core responsibilities of this role, and I am confident I can contribute effectively from day one.`,
+    `Your organization's focus on excellence and teamwork closely aligns with my approach as a ${title}. I have a track record of reliable execution and working collaboratively to meet goals on time.`,
+    `I am applying for the ${title} opening with a strong foundation in the skills and work ethic needed to succeed. I take pride in professionalism and continuous improvement, and I welcome the chance to bring that to your team.`,
+  ];
+}
+
+function buildClusterFromJob(job) {
+  const title = job.title;
+  const noExpJob = jobBySlug[`${job.slug}-no-experience`];
+  const noExpBullets = noExpJob
+    ? noExpJob.bullets
+    : [
+        `Demonstrated reliability and strong work ethic while learning foundational ${title} responsibilities.`,
+        `Applied transferable skills from prior experience to support ${title} team goals effectively.`,
+        `Learned key ${title} workflows and procedures quickly through observation and participation.`,
+        `Maintained organized, professional conduct in a ${title} environment from day one.`,
+        `Communicated clearly with teammates and customers while building core ${title} skills.`,
+        `Followed established ${title} procedures closely to ensure consistent quality and accuracy.`,
+        `Supported team priorities during busy periods with a positive, can-do attitude.`,
+        `Accepted coaching and feedback from supervisors to steadily improve ${title} performance.`,
+        `Maintained punctual, dependable attendance across all scheduled ${title} shifts.`,
+        `Expressed strong enthusiasm for growing into an experienced ${title} through continuous learning.`,
+      ];
+
+  return {
+    jobSlug: job.slug,
+    jobTitle: title,
+    pages: {
+      bulletPoints: {
+        slug: `resume-bullet-points-for-${job.slug}`,
+        pageTitle: `Resume Bullet Points for ${title}`,
+        metaDescription: job.metaDescription,
+        intro: job.intro,
+        content: job.bullets,
+      },
+      resumeSummary: {
+        slug: `${job.slug}-resume-summary-examples`,
+        pageTitle: `${title} Resume Summary Examples`,
+        metaDescription: `5 ${title} resume summary examples to help you write a polished professional profile.`,
+        intro: `Use these ${title} resume summary examples to craft a strong opening statement that highlights your experience and value to hiring managers.`,
+        content: generateSummaries(title),
+      },
+      skills: {
+        slug: `${job.slug}-skills-for-resume`,
+        pageTitle: `${title} Skills for Resume`,
+        metaDescription: `15 key ${title} skills to add to your resume and demonstrate to hiring managers.`,
+        intro: `Add these ${title} resume skills to your skills section to showcase both technical and interpersonal strengths.`,
+        content: generateSkills(title),
+      },
+      coverLetter: {
+        slug: `${job.slug}-cover-letter-examples`,
+        pageTitle: `${title} Cover Letter Examples`,
+        metaDescription: `3 short ${title} cover letter examples you can adapt and personalize for your application.`,
+        intro: `These ${title} cover letter examples give you a professional starting point you can customize with your own background and achievements.`,
+        content: generateCoverLetters(title),
+      },
+      noExperienceBulletPoints: {
+        slug: `${job.slug}-resume-bullets-no-experience`,
+        pageTitle: `${title} Resume Bullet Points (No Experience)`,
+        metaDescription: `10 no-experience ${title} resume bullet points focused on transferable skills and readiness to learn.`,
+        intro: `New to ${title} roles? These bullet points help you present transferable strengths and a strong work ethic confidently to employers.`,
+        content: noExpBullets,
+      },
+    },
+  };
+}
+
+// Build a cluster for every base job; use jobClusters.js override where available
+const allClusters = baseJobs.map((job) => clusterOverrides[job.slug] || buildClusterFromJob(job));
+const clusterByJobSlug = Object.fromEntries(allClusters.map((c) => [c.jobSlug, c]));
+
+const allClusterPages = allClusters.flatMap((cluster) =>
   PAGE_TYPE_ORDER.map((type) => ({
     jobSlug: cluster.jobSlug,
     jobTitle: cluster.jobTitle,

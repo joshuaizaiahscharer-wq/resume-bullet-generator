@@ -951,4 +951,6 @@ const variantJobs = baseJobs.flatMap((job) =>
   VARIANT_CONFIGS.map((variant) => createVariantJob(job, variant))
 );
 
-module.exports = [...baseJobs, ...variantJobs];
+const exportedJobs = [...baseJobs, ...variantJobs];
+exportedJobs.baseJobs = baseJobs;
+module.exports = exportedJobs;
