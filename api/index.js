@@ -17,18 +17,24 @@ const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/
 const SUPPORT_NOTIFY_EMAIL = process.env.SUPPORT_NOTIFY_EMAIL;
 
 async function sendSupportNotificationEmail(supportRequest) {
-  if (!SUPPORT_NOTIFY_EMAIL || !process.env.SENDGRID_API_KEY) {
-    console.warn("[email] SUPPORT_NOTIFY_EMAIL or SENDGRID_API_KEY not configured.");
+  const gmailUser = process.env.GMAIL_USER;
+  const gmailPass = process.env.GMAIL_APP_PASSWORD;
+
+  if (!SUPPORT_NOTIFY_EMAIL || !gmailUser || !gmailPass) {
+    console.warn("[email] GMAIL_USER, GMAIL_APP_PASSWORD, or SUPPORT_NOTIFY_EMAIL not configured — skipping notification.");
     return;
   }
 
   try {
-    // Require sendgrid lazily so a missing package never crashes the server
-    const sgMail = require("@sendgrid/mail");
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    await sgMail.send({
+    const nodemailer = require("nodemailer");
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user: gmailUser, pass: gmailPass },
+    });
+
+    await transporter.sendMail({
+      from: `"BulletAI Support" <${gmailUser}>`,
       to: SUPPORT_NOTIFY_EMAIL,
-      from: "noreply@bulletai.com",
       replyTo: supportRequest.email,
       subject: `New support message from ${supportRequest.name || supportRequest.email}`,
       html: `
