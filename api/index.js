@@ -519,6 +519,7 @@ app.get("/template-builder", async (req, res) => {
   const access = await validateTemplateAccessToken(token);
 
   if (!access.ok) {
+    console.warn("[template-builder] Access denied:", access.reason || "unknown", access.error || "");
     return res.status(403).send(renderTemplateAccessDeniedPage());
   }
 
