@@ -468,26 +468,23 @@ app.post("/api/support", async (req, res) => {
 
       if (!error) {
         console.log("[/api/support] Support request inserted successfully:", email);
-        
-        // Send notification email asynchronously (don't await, don't block response)
-        (async () => {
-          try {
-            // Fetch the just-inserted row to get full data
-            const { data: createdRequest, error: fetchErr } = await supabase
-              .from("support_requests")
-              .select("*")
-              .eq("email", email)
-              .order("created_at", { ascending: false })
-              .limit(1);
-            
-            if (!fetchErr && createdRequest && createdRequest.length > 0) {
-              await sendSupportNotificationEmail(createdRequest[0]);
-            }
-          } catch (err) {
-            console.warn("[/api/support] Error in async email send:", err.message);
+
+        // Await email before responding — Vercel kills the function when res.json() is
+        // called, so fire-and-forget never completes in a serverless environment.
+        try {
+          const { data: createdRequest, error: fetchErr } = await supabase
+            .from("support_requests")
+            .select("*")
+            .eq("email", email)
+            .order("created_at", { ascending: false })
+            .limit(1);
+          if (!fetchErr && createdRequest && createdRequest.length > 0) {
+            await sendSupportNotificationEmail(createdRequest[0]);
           }
-        })();
-        
+        } catch (emailErr) {
+          console.warn("[/api/support] Email notification error:", emailErr.message);
+        }
+
         return res.json({ ok: true });
       }
 
