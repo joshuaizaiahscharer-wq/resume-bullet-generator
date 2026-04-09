@@ -7,6 +7,7 @@ const cors = require("cors");
 const OpenAI = require("openai");
 const { sendDigitalDownloadEmail } = require("../lib/email");
 const { verifyShopifyWebhook, isOrderPaid } = require("../lib/shopifyWebhook");
+const supabase = require("../lib/supabase");
 
 const app = express();
 
@@ -324,6 +325,28 @@ app.post("/api/generate", async (req, res) => {
     const status = err.status ?? 500;
     const message = err.message ?? "Failed to generate bullet points.";
     return res.status(status).json({ error: message });
+  }
+});
+
+// ─── GET /api/test-supabase ──────────────────────────────────────────────────
+// Health-check route to verify the Supabase connection is working.
+// Remove or protect this route before going to production if desired.
+app.get("/api/test-supabase", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("purchases")
+      .select("id, email, product, created_at")
+      .limit(5);
+
+    if (error) {
+      console.error("[/api/test-supabase] Supabase error:", error.message);
+      return res.status(500).json({ status: "error", message: error.message });
+    }
+
+    return res.json({ status: "connected", data: data ?? [] });
+  } catch (err) {
+    console.error("[/api/test-supabase] Unexpected error:", err.message);
+    return res.status(500).json({ status: "error", message: err.message });
   }
 });
 
