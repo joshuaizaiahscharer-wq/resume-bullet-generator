@@ -644,13 +644,229 @@ function renderTemplatesPage() {
             ═══════════════════════════════════════════════════════════════
             -->
             <div id="shopify-buy-btn" class="shopify-buy-btn-wrapper">
-              <!--
-              Paste your Shopify Buy Button embed code below.
-              Keep this code server-rendered only on /templates.
-              -->
-              <div class="shopify-hint">Optional: paste Shopify Buy Button embed code here.</div>
-              <!-- Shopify Buy Button embed starts -->
-              <!-- Shopify Buy Button embed ends -->
+              <div id='product-component-1775724747930'></div>
+              <script type="text/javascript">
+              /*<![CDATA[*/
+              (function () {
+                var scriptURL = 'https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js';
+                if (window.ShopifyBuy) {
+                  if (window.ShopifyBuy.UI) {
+                    ShopifyBuyInit();
+                  } else {
+                    loadScript();
+                  }
+                } else {
+                  loadScript();
+                }
+                function loadScript() {
+                  var script = document.createElement('script');
+                  script.async = true;
+                  script.src = scriptURL;
+                  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(script);
+                  script.onload = ShopifyBuyInit;
+                }
+                function ShopifyBuyInit() {
+                  var client = ShopifyBuy.buildClient({
+                    domain: 'dz5m3m-e8.myshopify.com',
+                    storefrontAccessToken: '3c766236ce0998319a1473b5ce12127e',
+                  });
+                  ShopifyBuy.UI.onReady(client).then(function (ui) {
+                    ui.createComponent('product', {
+                      id: '11008480051473',
+                      node: document.getElementById('product-component-1775724747930'),
+                      moneyFormat: '%24%7B%7Bamount%7D%7D',
+                      options: {
+                        "product": {
+                          "styles": {
+                            "product": {
+                              "@media (min-width: 601px)": {
+                                "max-width": "calc(25% - 20px)",
+                                "margin-left": "20px",
+                                "margin-bottom": "50px"
+                              }
+                            },
+                            "button": {
+                              ":hover": {
+                                "background-color": "#064373"
+                              },
+                              "background-color": "#074a80",
+                              ":focus": {
+                                "background-color": "#064373"
+                              },
+                              "border-radius": "40px",
+                              "padding-left": "64px",
+                              "padding-right": "64px"
+                            }
+                          },
+                          "text": {
+                            "button": "Add to cart"
+                          }
+                        },
+                        "productSet": {
+                          "styles": {
+                            "products": {
+                              "@media (min-width: 601px)": {
+                                "margin-left": "-20px"
+                              }
+                            }
+                          }
+                        },
+                        "modalProduct": {
+                          "contents": {
+                            "img": false,
+                            "imgWithCarousel": true,
+                            "button": false,
+                            "buttonWithQuantity": true
+                          },
+                          "styles": {
+                            "product": {
+                              "@media (min-width: 601px)": {
+                                "max-width": "100%",
+                                "margin-left": "0px",
+                                "margin-bottom": "0px"
+                              }
+                            },
+                            "button": {
+                              ":hover": {
+                                "background-color": "#064373"
+                              },
+                              "background-color": "#074a80",
+                              ":focus": {
+                                "background-color": "#064373"
+                              },
+                              "border-radius": "40px",
+                              "padding-left": "64px",
+                              "padding-right": "64px"
+                            }
+                          },
+                          "text": {
+                            "button": "Add to cart"
+                          }
+                        },
+                        "option": {},
+                        "cart": {
+                          "styles": {
+                            "button": {
+                              ":hover": {
+                                "background-color": "#064373"
+                              },
+                              "background-color": "#074a80",
+                              ":focus": {
+                                "background-color": "#064373"
+                              },
+                              "border-radius": "40px"
+                            },
+                            "title": {
+                              "color": "#f1eeee"
+                            },
+                            "header": {
+                              "color": "#f1eeee"
+                            },
+                            "lineItems": {
+                              "color": "#f1eeee"
+                            },
+                            "subtotalText": {
+                              "color": "#f1eeee"
+                            },
+                            "subtotal": {
+                              "color": "#f1eeee"
+                            },
+                            "notice": {
+                              "color": "#f1eeee"
+                            },
+                            "currency": {
+                              "color": "#f1eeee"
+                            },
+                            "close": {
+                              "color": "#f1eeee",
+                              ":hover": {
+                                "color": "#f1eeee"
+                              }
+                            },
+                            "empty": {
+                              "color": "#f1eeee"
+                            },
+                            "noteDescription": {
+                              "color": "#f1eeee"
+                            },
+                            "discountText": {
+                              "color": "#f1eeee"
+                            },
+                            "discountIcon": {
+                              "fill": "#f1eeee"
+                            },
+                            "discountAmount": {
+                              "color": "#f1eeee"
+                            },
+                            "cart": {
+                              "background-color": "#041639"
+                            },
+                            "footer": {
+                              "background-color": "#041639"
+                            }
+                          },
+                          "text": {
+                            "total": "Subtotal",
+                            "button": "Checkout"
+                          }
+                        },
+                        "toggle": {
+                          "styles": {
+                            "toggle": {
+                              "background-color": "#074a80",
+                              ":hover": {
+                                "background-color": "#064373"
+                              },
+                              ":focus": {
+                                "background-color": "#064373"
+                              }
+                            }
+                          }
+                        },
+                        "lineItem": {
+                          "styles": {
+                            "variantTitle": {
+                              "color": "#f1eeee"
+                            },
+                            "title": {
+                              "color": "#f1eeee"
+                            },
+                            "price": {
+                              "color": "#f1eeee"
+                            },
+                            "fullPrice": {
+                              "color": "#f1eeee"
+                            },
+                            "discount": {
+                              "color": "#f1eeee"
+                            },
+                            "discountIcon": {
+                              "fill": "#f1eeee"
+                            },
+                            "quantity": {
+                              "color": "#f1eeee"
+                            },
+                            "quantityIncrement": {
+                              "color": "#f1eeee",
+                              "border-color": "#f1eeee"
+                            },
+                            "quantityDecrement": {
+                              "color": "#f1eeee",
+                              "border-color": "#f1eeee"
+                            },
+                            "quantityInput": {
+                              "color": "#f1eeee",
+                              "border-color": "#f1eeee"
+                            }
+                          }
+                        }
+                      },
+                    });
+                  });
+                }
+              })();
+              /*]]>*/
+              </script>
             </div>
 
           </div>
