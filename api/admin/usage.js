@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
     // and aggregate in JS. Capped at 5000 rows — plenty for a hobby project.
     const { data, error } = await supabase
       .from("generator_usage")
-      .select("normalized_job_title, created_at")
+      .select("normalized_job_title, created_at, user_id")
       .order("created_at", { ascending: false })
       .limit(5000);
 
@@ -57,9 +57,16 @@ module.exports = async function handler(req, res) {
       .slice(0, 20)
       .map(([job, count]) => ({ job, count }));
 
+    const recentJobs = rows.slice(0, 50).map((row) => ({
+      job: (row.normalized_job_title || "").trim(),
+      userId: row.user_id || null,
+      createdAt: row.created_at,
+    }));
+
     return res.status(200).json({
       totalRecords: rows.length,
       topJobs,
+      recentJobs,
     });
   } catch (err) {
     console.error("[/api/admin/usage] Unexpected error:", err.message);

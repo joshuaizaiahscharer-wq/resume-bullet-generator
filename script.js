@@ -91,6 +91,7 @@ async function handleGenerate() {
 
 async function fetchBullets(jobTitle) {
   const pagePath = window.location.pathname;
+  const userId = getCurrentUserId();
 
   const response = await fetch(API_URL, {
     method: "POST",
@@ -100,6 +101,7 @@ async function fetchBullets(jobTitle) {
       // Send page metadata for backend usage tracking.
       pagePath,
       pageType: inferPageType(pagePath),
+      userId,
     }),
   });
 
@@ -114,6 +116,21 @@ async function fetchBullets(jobTitle) {
   }
 
   return data.bullets;
+}
+
+function getCurrentUserId() {
+  try {
+    // Common places where apps expose authenticated user id.
+    return (
+      window.__USER__?.id ||
+      window.__AUTH_USER_ID ||
+      window.Clerk?.user?.id ||
+      window.firebase?.auth?.()?.currentUser?.uid ||
+      null
+    );
+  } catch (_err) {
+    return null;
+  }
 }
 
 function inferPageType(pathname) {

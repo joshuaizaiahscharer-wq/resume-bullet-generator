@@ -13,6 +13,29 @@ const app = express();
 // Use SITE_URL for sitemap/robots. In production, set this in Vercel env vars.
 const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 
+function getAuthenticatedUserId(req) {
+  // Works with common auth middlewares if present in the future.
+  const directUserId =
+    req?.user?.id ||
+    req?.userId ||
+    req?.auth?.userId ||
+    req?.session?.user?.id ||
+    req?.session?.uid ||
+    null;
+
+  if (directUserId) {
+    return String(directUserId);
+  }
+
+  // Safe fallback when upstream proxy forwards user identity.
+  const headerUserId = req.get("x-user-id");
+  if (headerUserId) {
+    return String(headerUserId);
+  }
+
+  return null;
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors());
 
@@ -179,7 +202,7 @@ const allClusterPages = allClusters.flatMap((cluster) =>
 
 // ─── POST /api/generate ───────────────────────────────────────────────────────
 app.post("/api/generate", async (req, res) => {
-  const { jobTitle, pagePath, pageType } = req.body;
+  const { jobTitle, pagePath, pageType, userId: bodyUserId } = req.body;
 
   if (!jobTitle || typeof jobTitle !== "string" || !jobTitle.trim()) {
     return res.status(400).json({ error: "A valid jobTitle is required." });
@@ -220,10 +243,13 @@ app.post("/api/generate", async (req, res) => {
     // Record usage after successful generation.
     // Wrapped in its own try/catch so tracking issues never affect users.
     try {
+      const trackedUserId = getAuthenticatedUserId(req) || (bodyUserId ? String(bodyUserId) : null);
+
       await recordGeneratorUsage({
         jobTitle: sanitizedTitle,
         pagePath: pagePath || null,
         pageType: pageType || null,
+        userId: trackedUserId,
         userAgent: req.headers["user-agent"] || null,
         ipAddress:
           req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
@@ -251,7 +277,7 @@ app.get("/api/test-supabase", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("generator_usage")
-      .select("id, job_title, normalized_job_title, created_at, page_path, page_type")
+      .select("id, job_title, normalized_job_title, created_at, page_path, page_type, user_id")
       .limit(5);
 
     if (error) {
@@ -272,7 +298,7 @@ app.get("/api/usage-summary", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("generator_usage")
-      .select("normalized_job_title, created_at")
+      .select("normalized_job_title, created_at, user_id")
       .order("created_at", { ascending: false })
       .limit(5000);
 
@@ -491,6 +517,42 @@ function renderAdminPage() {
       white-space: nowrap;
     }
     #loading { color: #64748b; font-size: 0.875rem; margin-top: 12px; display: none; }
+    .jobs-table-wrap {
+      margin-top: 20px;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      overflow-x: auto;
+      background: rgba(255,255,255,0.02);
+    }
+    .jobs-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 520px;
+      font-size: 0.82rem;
+    }
+    .jobs-table th,
+    .jobs-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      text-align: left;
+      vertical-align: middle;
+    }
+    .jobs-table th { color: #94a3b8; font-weight: 600; }
+    .jobs-table td { color: #cbd5e1; }
+    .jobs-table tr:last-child td { border-bottom: none; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    .copy-user-btn {
+      border: 1px solid rgba(129,140,248,0.35);
+      background: transparent;
+      color: #a5b4fc;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      margin-left: 8px;
+      width: auto;
+    }
+    .copy-user-btn:hover { border-color: #818cf8; color: #c7d2fe; }
   </style>
 </head>
 <body>
@@ -516,6 +578,20 @@ function renderAdminPage() {
     <h2>Top 20 searched job titles</h2>
     <p id="loading">Loading…</p>
     <ol id="job-list"></ol>
+
+    <h2 style="margin-top:20px;">Recent generated jobs</h2>
+    <div class="jobs-table-wrap">
+      <table class="jobs-table" aria-label="Recent generated jobs">
+        <thead>
+          <tr>
+            <th>Job</th>
+            <th>User ID</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="recent-jobs-body"></tbody>
+      </table>
+    </div>
   </div>
 
   <script>
@@ -527,6 +603,7 @@ function renderAdminPage() {
     const errorMsg  = document.getElementById("error-msg");
     const loading   = document.getElementById("loading");
     const jobList   = document.getElementById("job-list");
+    const recentJobsBody = document.getElementById("recent-jobs-body");
     const statTotal = document.getElementById("stat-total");
 
     // ── Login ───────────────────────────────────────────────────────────────────
@@ -586,6 +663,8 @@ function renderAdminPage() {
           });
         }
 
+        renderRecentJobs(json.recentJobs || []);
+
         return true;
       } catch (err) {
         return false;
@@ -597,6 +676,57 @@ function renderAdminPage() {
     function escapeHtml(str) {
       return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     }
+
+    function truncateUserId(id) {
+      const value = String(id || "");
+      if (!value) return "—";
+      if (value.length <= 18) return value;
+      return value.slice(0, 7) + "..." + value.slice(-4);
+    }
+
+    function formatDate(value) {
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return "—";
+      return d.toLocaleString();
+    }
+
+    function renderRecentJobs(rows) {
+      recentJobsBody.innerHTML = "";
+
+      if (!rows.length) {
+        recentJobsBody.innerHTML = '<tr><td colspan="3" style="color:#64748b;">No recent rows.</td></tr>';
+        return;
+      }
+
+      rows.forEach((row) => {
+        const userId = row.userId || "";
+        const tr = document.createElement("tr");
+        tr.innerHTML =
+          '<td>' + escapeHtml(row.job || "—") + '</td>' +
+          '<td class="mono" title="' + escapeHtml(userId || "No user id") + '">' +
+            escapeHtml(truncateUserId(userId)) +
+            (userId ? '<button type="button" class="copy-user-btn" data-user-id="' + escapeHtml(userId) + '">Copy</button>' : '') +
+          '</td>' +
+          '<td>' + escapeHtml(formatDate(row.createdAt)) + '</td>';
+        recentJobsBody.appendChild(tr);
+      });
+    }
+
+    recentJobsBody.addEventListener("click", async (e) => {
+      const btn = e.target.closest(".copy-user-btn");
+      if (!btn) return;
+      const userId = btn.getAttribute("data-user-id") || "";
+      if (!userId) return;
+
+      try {
+        await navigator.clipboard.writeText(userId);
+        const original = btn.textContent;
+        btn.textContent = "Copied";
+        setTimeout(() => { btn.textContent = original; }, 900);
+      } catch (_err) {
+        // Clipboard can fail in some browsers; ignore silently.
+      }
+    });
 
     loginBtn.addEventListener("click", handleLogin);
     [userInput, pwInput].forEach(el => {
