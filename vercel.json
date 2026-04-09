@@ -2,6 +2,7 @@
   "version": 2,
   "buildCommand": "npm run build",
   "devCommand": "npm start",
+  "outputDirectory": ".",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/jobs", "destination": "/api/index.js" },
