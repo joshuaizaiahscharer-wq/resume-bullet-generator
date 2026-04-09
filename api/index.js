@@ -32,7 +32,9 @@ async function sendSupportNotificationEmail(supportRequest) {
       auth: { user: gmailUser, pass: gmailPass },
     });
 
-    await transporter.sendMail({
+    await transporter.verify();
+
+    const info = await transporter.sendMail({
       from: `"BulletAI Support" <${gmailUser}>`,
       to: SUPPORT_NOTIFY_EMAIL,
       replyTo: supportRequest.email,
@@ -51,7 +53,13 @@ async function sendSupportNotificationEmail(supportRequest) {
         </p>
       `,
     });
-    console.log("[email] Support notification sent to", SUPPORT_NOTIFY_EMAIL);
+    console.log("[email] Support notification sent", {
+      to: SUPPORT_NOTIFY_EMAIL,
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+      response: info?.response,
+    });
   } catch (err) {
     console.error("[email] Failed to send notification:", err.message);
   }
@@ -472,15 +480,10 @@ app.post("/api/support", async (req, res) => {
         // Await email before responding — Vercel kills the function when res.json() is
         // called, so fire-and-forget never completes in a serverless environment.
         try {
-          const { data: createdRequest, error: fetchErr } = await supabase
-            .from("support_requests")
-            .select("*")
-            .eq("email", email)
-            .order("created_at", { ascending: false })
-            .limit(1);
-          if (!fetchErr && createdRequest && createdRequest.length > 0) {
-            await sendSupportNotificationEmail(createdRequest[0]);
-          }
+          await sendSupportNotificationEmail({
+            ...payload,
+            created_at: new Date().toISOString(),
+          });
         } catch (emailErr) {
           console.warn("[/api/support] Email notification error:", emailErr.message);
         }
