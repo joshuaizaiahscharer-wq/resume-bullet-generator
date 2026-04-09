@@ -8,6 +8,7 @@ const OpenAI = require("openai");
 const { sendDigitalDownloadEmail } = require("../lib/email");
 const { verifyShopifyWebhook, isOrderPaid } = require("../lib/shopifyWebhook");
 const supabase = require("../lib/supabase");
+const { recordGeneratorUsage } = require("../lib/usageTracking");
 
 const app = express();
 
@@ -281,7 +282,7 @@ const allClusterPages = allClusters.flatMap((cluster) =>
 
 // ─── POST /api/generate ───────────────────────────────────────────────────────
 app.post("/api/generate", async (req, res) => {
-  const { jobTitle } = req.body;
+  const { jobTitle, pagePath, pageType } = req.body;
 
   if (!jobTitle || typeof jobTitle !== "string" || !jobTitle.trim()) {
     return res.status(400).json({ error: "A valid jobTitle is required." });
@@ -318,6 +319,17 @@ app.post("/api/generate", async (req, res) => {
       .split("\n")
       .map((line) => line.replace(/^[\s•\-–—*]+/, "").trim())
       .filter((line) => line.length > 0);
+
+    // Record usage — fire and forget. Never blocks or throws.
+    recordGeneratorUsage({
+      jobTitle: sanitizedTitle,
+      pagePath: pagePath || null,
+      pageType: pageType || null,
+      userAgent: req.headers["user-agent"] || null,
+      ipAddress: req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+                 req.socket?.remoteAddress ||
+                 null,
+    });
 
     return res.json({ bullets });
   } catch (err) {

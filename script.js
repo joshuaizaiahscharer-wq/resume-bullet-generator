@@ -93,7 +93,11 @@ async function fetchBullets(jobTitle) {
   const response = await fetch(API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jobTitle }),
+    body: JSON.stringify({
+      jobTitle,
+      // Send the current page path so the backend can log which page triggered generation.
+      pagePath: window.location.pathname,
+    }),
   });
 
   const data = await response.json();
