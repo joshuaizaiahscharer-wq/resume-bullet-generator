@@ -5,13 +5,53 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
+const sgMail = require("@sendgrid/mail");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 
 const app = express();
 
+// SendGrid setup (initialize only if API key is available)
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
+
 // Use SITE_URL for sitemap/robots. In production, set this in Vercel env vars.
 const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+
+// Support email address for notifications
+const SUPPORT_NOTIFY_EMAIL = process.env.SUPPORT_NOTIFY_EMAIL;
+
+async function sendSupportNotificationEmail(supportRequest) {
+  if (!SUPPORT_NOTIFY_EMAIL || !process.env.SENDGRID_API_KEY) {
+    console.warn("[email] SUPPORT_NOTIFY_EMAIL or SENDGRID_API_KEY not configured.");
+    return;
+  }
+
+  try {
+    await sgMail.send({
+      to: SUPPORT_NOTIFY_EMAIL,
+      from: "noreply@bulletai.com",
+      subject: `New support message from ${supportRequest.name || supportRequest.email}`,
+      html: `
+        <h2>New Support Message</h2>
+        <p><strong>From:</strong> ${escapeHtml(supportRequest.name || "Anonymous")} (${escapeHtml(supportRequest.email)})</p>
+        <p><strong>Message:</strong></p>
+        <p style="white-space: pre-wrap;">${escapeHtml(supportRequest.message)}</p>
+        <hr />
+        <p style="font-size: 0.85em; color: #666;">
+          <strong>Metadata:</strong><br />
+          Page: ${escapeHtml(supportRequest.page_path || "Home")}<br />
+          IP: ${escapeHtml(supportRequest.ip_address || "Unknown")}<br />
+          Time: ${supportRequest.created_at || new Date().toISOString()}
+        </p>
+      `,
+    });
+    console.log("[email] Support notification sent to", SUPPORT_NOTIFY_EMAIL);
+  } catch (err) {
+    console.error("[email] Failed to send notification:", err.message);
+  }
+}
 
 function getAuthenticatedUserId(req) {
   // Works with common auth middlewares if present in the future.
@@ -422,6 +462,24 @@ app.post("/api/support", async (req, res) => {
 
       if (!error) {
         console.log("[/api/support] Support request inserted successfully:", email);
+        
+        // Send notification email (fire and forget)
+        try {
+          const { data: createdRequest } = await supabase
+            .from("support_requests")
+            .select("*")
+            .eq("email", email)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (createdRequest) {
+            await sendSupportNotificationEmail(createdRequest);
+          }
+        } catch (emailErr) {
+          console.warn("[/api/support] Error sending email notification:", emailErr.message);
+        }
+        
         return res.json({ ok: true });
       }
 
@@ -446,6 +504,53 @@ app.post("/api/support", async (req, res) => {
       stack: err.stack,
     });
     return res.status(500).json({ error: "Unable to submit your message right now." });
+  }
+});
+
+// ─── GET /api/admin/support ───────────────────────────────────────────────────
+// Fetch support messages for admin dashboard
+app.get("/api/admin/support", async (req, res) => {
+  const password = (req.query.password || "").trim();
+
+  if (!password || password !== process.env.ADMIN_PASSWORD) {
+    return res.status(401).json({ error: "Unauthorized." });
+  }
+
+  try {
+    const { data: recentSupportRequests, error } = await supabase
+      .from("support_requests")
+      .select("id, name, email, message, created_at, page_path, ip_address")
+      .order("created_at", { ascending: false })
+      .limit(50);
+
+    if (error) {
+      console.error("[/api/admin/support] Supabase error:", error.message);
+      return res.status(500).json({ error: "Unable to fetch support messages." });
+    }
+
+    const { data: allRequests, error: countError } = await supabase
+      .from("support_requests")
+      .select("id", { count: "exact" });
+
+    if (countError) {
+      console.error("[/api/admin/support] Count error:", countError.message);
+    }
+
+    return res.json({
+      totalRequests: allRequests?.length || 0,
+      recentMessages: (recentSupportRequests || []).map((msg) => ({
+        id: msg.id,
+        name: msg.name,
+        email: msg.email,
+        message: msg.message.slice(0, 100) + (msg.message.length > 100 ? "..." : ""),
+        createdAt: msg.created_at,
+        pagePath: msg.page_path,
+        ipAddress: msg.ip_address,
+      })),
+    });
+  } catch (err) {
+    console.error("[/api/admin/support] Unexpected error:", err.message);
+    return res.status(500).json({ error: "Unable to fetch support messages." });
   }
 });
 
@@ -642,6 +747,65 @@ function renderAdminPage() {
       width: auto;
     }
     .copy-user-btn:hover { border-color: #818cf8; color: #c7d2fe; }
+    /* ── Tabs ── */
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .tab-btn {
+      padding: 10px 14px;
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn.active {
+      color: #a78bfa;
+      border-bottom-color: #a78bfa;
+    }
+    .tab-btn:hover { color: #c7d2fe; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .support-message-item {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+    .support-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .support-from {
+      font-weight: 600;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+    }
+    .support-date {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .support-msg {
+      color: #cbd5e1;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin-bottom: 6px;
+    }
+    .support-meta {
+      font-size: 0.75rem;
+      color: #64748b;
+    }
   </style>
 </head>
 <body>
@@ -659,27 +823,47 @@ function renderAdminPage() {
 
   <!-- Dashboard (hidden until login) -->
   <div class="card" id="dashboard">
-    <h1>Analytics Dashboard</h1>
-    <div class="stat">
-      <div class="stat-value" id="stat-total">—</div>
-      <div class="stat-label">Total generations</div>
+    <h1>Admin Dashboard</h1>
+    
+    <div class="admin-tabs">
+      <button class="tab-btn active" id="tab-analytics">Analytics</button>
+      <button class="tab-btn" id="tab-support">Support Messages</button>
     </div>
-    <h2>Top 20 searched job titles</h2>
-    <p id="loading">Loading…</p>
-    <ol id="job-list"></ol>
 
-    <h2 style="margin-top:20px;">Recent generated jobs</h2>
-    <div class="jobs-table-wrap">
-      <table class="jobs-table" aria-label="Recent generated jobs">
-        <thead>
-          <tr>
-            <th>Job</th>
-            <th>User ID</th>
-            <th>Created</th>
-          </tr>
-        </thead>
-        <tbody id="recent-jobs-body"></tbody>
-      </table>
+    <!-- Analytics tab -->
+    <div id="analytics-tab" class="tab-content active">
+      <div class="stat">
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-label">Total generations</div>
+      </div>
+      <h2>Top 20 searched job titles</h2>
+      <p id="loading">Loading…</p>
+      <ol id="job-list"></ol>
+
+      <h2 style="margin-top:20px;">Recent generated jobs</h2>
+      <div class="jobs-table-wrap">
+        <table class="jobs-table" aria-label="Recent generated jobs">
+          <thead>
+            <tr>
+              <th>Job</th>
+              <th>User ID</th>
+              <th>Created</th>
+            </tr>
+          </thead>
+          <tbody id="recent-jobs-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Support Messages tab -->
+    <div id="support-tab" class="tab-content">
+      <div class="stat">
+        <div class="stat-value" id="support-total">—</div>
+        <div class="stat-label">Total support messages</div>
+      </div>
+      <h2 style="margin-top:16px;">Recent messages</h2>
+      <p id="support-loading" style="display:none;">Loading…</p>
+      <div id="support-list" style="max-height: 500px; overflow-y: auto;"></div>
     </div>
   </div>
 
@@ -694,7 +878,14 @@ function renderAdminPage() {
     const jobList   = document.getElementById("job-list");
     const recentJobsBody = document.getElementById("recent-jobs-body");
     const statTotal = document.getElementById("stat-total");
-
+    const tabAnalytics = document.getElementById("tab-analytics");
+    const tabSupport = document.getElementById("tab-support");
+    const analyticsTab = document.getElementById("analytics-tab");
+    const supportTab = document.getElementById("support-tab");
+    const supportLoading = document.getElementById("support-loading");
+    const supportList = document.getElementById("support-list");
+    const supportTotal = document.getElementById("support-total");
+    let currentPassword = "";
     // ── Login ───────────────────────────────────────────────────────────────────
     async function handleLogin() {
       const username = (userInput.value || "admin").trim().toLowerCase();
@@ -721,9 +912,31 @@ function renderAdminPage() {
         return;
       }
 
+      currentPassword = password;
       loginCard.style.display = "none";
       dashboard.style.display = "block";
+      
+      // Load support messages initially
+      await loadSupportMessages(password);
     }
+
+    // ── Tab switching ──────────────────────────────────────────────────────────
+    function switchTab(tab) {
+      if (tab === "analytics") {
+        analyticsTab.classList.add("active");
+        supportTab.classList.remove("active");
+        tabAnalytics.classList.add("active");
+        tabSupport.classList.remove("active");
+      } else {
+        supportTab.classList.add("active");
+        analyticsTab.classList.remove("active");
+        tabSupport.classList.add("active");
+        tabAnalytics.classList.remove("active");
+      }
+    }
+
+    if (tabAnalytics) tabAnalytics.addEventListener("click", () => switchTab("analytics"));
+    if (tabSupport) tabSupport.addEventListener("click", () => switchTab("support"));
 
     // ── Load analytics from backend ─────────────────────────────────────────────
     async function loadAnalytics(password) {
@@ -818,6 +1031,52 @@ function renderAdminPage() {
         // Clipboard can fail in some browsers; ignore silently.
       }
     });
+
+    // ── Load support messages ──────────────────────────────────────────────────
+    async function loadSupportMessages(password) {
+      supportLoading.style.display = "block";
+      supportList.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/admin/support?password=" + encodeURIComponent(password));
+        const json = await res.json();
+
+        if (!res.ok) {
+          supportList.innerHTML = '<p style="color:#f87171;">Error loading messages</p>';
+          return;
+        }
+
+        supportTotal.textContent = json.totalRequests.toLocaleString();
+
+        if (!json.recentMessages || json.recentMessages.length === 0) {
+          supportList.innerHTML = '<p style="color:#64748b;">No support messages yet.</p>';
+        } else {
+          renderSupportMessages(json.recentMessages);
+        }
+      } catch (err) {
+        supportList.innerHTML = '<p style="color:#f87171;">Network error</p>';
+      } finally {
+        supportLoading.style.display = "none";
+      }
+    }
+
+    function renderSupportMessages(rows) {
+      supportList.innerHTML = "";
+      rows.forEach((msg) => {
+        const div = document.createElement("div");
+        div.className = "support-message-item";
+        const date = new Date(msg.createdAt);
+        const dateStr = date.toLocaleString();
+        div.innerHTML =
+          '<div class="support-header">' +
+            '<div class="support-from">' + escapeHtml(msg.name || msg.email) + ' <' + escapeHtml(msg.email) + '></div>' +
+            '<div class="support-date">' + escapeHtml(dateStr) + '</div>' +
+          '</div>' +
+          '<div class="support-msg">' + escapeHtml(msg.message) + '</div>' +
+          '<div class="support-meta">From: ' + escapeHtml(msg.pagePath || "Home") + ' | IP: ' + escapeHtml(msg.ipAddress || "—") + '</div>';
+        supportList.appendChild(div);
+      });
+    }
 
     loginBtn.addEventListener("click", handleLogin);
     [userInput, pwInput].forEach(el => {
