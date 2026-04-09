@@ -457,32 +457,37 @@ app.post("/api/support", async (req, res) => {
       ip_address: ipAddress,
     };
 
+    // Insert into Supabase with retry logic for missing columns
+    let insertError = null;
     while (true) {
       const { error } = await supabase.from("support_requests").insert([payload]);
 
       if (!error) {
         console.log("[/api/support] Support request inserted successfully:", email);
         
-        // Send notification email (fire and forget)
-        try {
-          const { data: createdRequest } = await supabase
-            .from("support_requests")
-            .select("*")
-            .eq("email", email)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .single();
-          
-          if (createdRequest) {
-            await sendSupportNotificationEmail(createdRequest);
+        // Send notification email asynchronously (don't await, don't block response)
+        (async () => {
+          try {
+            // Fetch the just-inserted row to get full data
+            const { data: createdRequest, error: fetchErr } = await supabase
+              .from("support_requests")
+              .select("*")
+              .eq("email", email)
+              .order("created_at", { ascending: false })
+              .limit(1);
+            
+            if (!fetchErr && createdRequest && createdRequest.length > 0) {
+              await sendSupportNotificationEmail(createdRequest[0]);
+            }
+          } catch (err) {
+            console.warn("[/api/support] Error in async email send:", err.message);
           }
-        } catch (emailErr) {
-          console.warn("[/api/support] Error sending email notification:", emailErr.message);
-        }
+        })();
         
         return res.json({ ok: true });
       }
 
+      // If column is missing, retry without it
       const missingColumn = getMissingColumnName(error);
       if (missingColumn && Object.prototype.hasOwnProperty.call(payload, missingColumn)) {
         console.warn("[/api/support] Missing column, retrying without:", missingColumn);
@@ -490,20 +495,25 @@ app.post("/api/support", async (req, res) => {
         continue;
       }
 
-      console.error("[/api/support] Supabase insert error:", {
-        code: error?.code,
-        message: error?.message,
-        details: error?.details,
-        hint: error?.hint,
-      });
-      return res.status(500).json({ error: "Unable to submit your message right now." });
+      // Store error and break retry loop
+      insertError = error;
+      break;
     }
-  } catch (err) {
-    console.error("[/api/support] Unexpected error:", {
-      message: err.message,
-      stack: err.stack,
+
+    // If we get here, insert failed after retries
+    console.error("[/api/support] Supabase insert error after retries:", {
+      code: insertError?.code,
+      message: insertError?.message,
+      details: insertError?.details,
     });
-    return res.status(500).json({ error: "Unable to submit your message right now." });
+    
+    return res.status(500).json({ error: "Unable to submit your message right now. Please try again later." });
+  } catch (err) {
+    console.error("[/api/support] Unexpected server error:", {
+      message: err.message,
+      stack: err.stack?.slice(0, 500), // Truncate stack for logging
+    });
+    return res.status(500).json({ error: "Unable to submit your message right now. Please try again later." });
   }
 });
 
