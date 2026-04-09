@@ -36,6 +36,25 @@ function getAuthenticatedUserId(req) {
   return null;
 }
 
+function getMissingColumnName(error) {
+  const message = error?.message || "";
+  const patterns = [
+    /column ["']?([a-zA-Z0-9_]+)["']? does not exist/i,
+    /Could not find the ['"]([a-zA-Z0-9_]+)['"] column/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors());
 
@@ -362,6 +381,61 @@ app.get("/api/usage-summary", async (req, res) => {
   } catch (err) {
     console.error("[/api/usage-summary] Unexpected error:", err.message);
     return res.status(500).json({ status: "error", message: err.message });
+  }
+});
+
+// ─── POST /api/support ───────────────────────────────────────────────────────
+// Saves support requests to Supabase so the team can follow up.
+app.post("/api/support", async (req, res) => {
+  const name = (req.body?.name || "").trim().slice(0, 120);
+  const email = (req.body?.email || "").trim().toLowerCase().slice(0, 200);
+  const message = (req.body?.message || "").trim().slice(0, 4000);
+  const pagePath = (req.body?.pagePath || "").trim().slice(0, 300);
+
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ error: "Please provide a valid email address." });
+  }
+
+  if (!message || message.length < 10) {
+    return res
+      .status(400)
+      .json({ error: "Please add a short message (at least 10 characters)." });
+  }
+
+  try {
+    const ipAddress =
+      req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+      req.socket?.remoteAddress ||
+      null;
+
+    const payload = {
+      name: name || null,
+      email,
+      message,
+      page_path: pagePath || null,
+      user_agent: req.headers["user-agent"] || null,
+      ip_address: ipAddress,
+    };
+
+    while (true) {
+      const { error } = await supabase.from("support_requests").insert([payload]);
+
+      if (!error) {
+        return res.json({ ok: true });
+      }
+
+      const missingColumn = getMissingColumnName(error);
+      if (missingColumn && Object.prototype.hasOwnProperty.call(payload, missingColumn)) {
+        delete payload[missingColumn];
+        continue;
+      }
+
+      console.error("[/api/support] Supabase insert error:", error.message);
+      return res.status(500).json({ error: "Unable to submit your message right now." });
+    }
+  } catch (err) {
+    console.error("[/api/support] Unexpected error:", err.message);
+    return res.status(500).json({ error: "Unable to submit your message right now." });
   }
 });
 
@@ -881,6 +955,7 @@ ${relatedLinks}
 ${generatorSection}
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
+      <a href="/#support">Contact support</a>
     </footer>
   </body>
 </html>`;
@@ -933,6 +1008,7 @@ ${groups}
 
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
+      <a href="/#support">Contact support</a>
     </footer>
   </body>
 </html>`;

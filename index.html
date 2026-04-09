@@ -20,6 +20,7 @@
       <div class="nav-actions">
         <a href="#how-it-works" class="nav-link nav-link--hiw">How it works</a>
         <a href="#faq" class="nav-link nav-link--faq">FAQ</a>
+        <a href="#support" class="nav-link nav-link--support">Support</a>
       </div>
     </nav>
 
@@ -242,6 +243,44 @@
       </div>
     </section>
 
+    <!-- Support -->
+    <section class="support-section" id="support" aria-labelledby="support-heading">
+      <div class="section-header">
+        <p class="section-eyebrow">Need help?</p>
+        <h2 class="section-title" id="support-heading">Contact support</h2>
+        <p class="section-desc">Send our team a message and we&apos;ll get back to you as soon as possible.</p>
+      </div>
+      <div class="support-card">
+        <form id="supportForm" class="support-form" novalidate>
+          <div class="support-row support-row--two">
+            <div>
+              <label class="input-label" for="supportName">Name (optional)</label>
+              <input type="text" id="supportName" name="name" maxlength="120" placeholder="Your name" />
+            </div>
+            <div>
+              <label class="input-label" for="supportEmail">Email</label>
+              <input type="email" id="supportEmail" name="email" maxlength="200" placeholder="you@example.com" required />
+            </div>
+          </div>
+          <div class="support-row">
+            <label class="input-label" for="supportMessage">How can we help?</label>
+            <textarea
+              id="supportMessage"
+              name="message"
+              rows="5"
+              maxlength="4000"
+              placeholder="Describe your issue, question, or feedback."
+              required
+            ></textarea>
+          </div>
+          <div class="support-actions">
+            <button id="supportSubmitBtn" type="submit">Send message</button>
+            <p id="supportStatus" class="support-status hidden" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
       <div class="footer-inner">
@@ -249,6 +288,7 @@
         <p class="footer-copy">Built with the OpenAI API &mdash; results may vary. Always personalize bullets with your own experience.</p>
         <div class="footer-links">
           <a href="/jobs">All job pages</a>
+          <a href="#support">Contact support</a>
           <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI API</a>
         </div>
       </div>

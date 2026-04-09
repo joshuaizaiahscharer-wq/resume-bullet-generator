@@ -36,32 +36,51 @@ const bulletList     = document.getElementById("bulletList");
 const copyBtn        = document.getElementById("copyBtn");
 const regenerateBtn  = document.getElementById("regenerateBtn");
 const chipsContainer = document.getElementById("chips");
+const supportForm    = document.getElementById("supportForm");
+const supportStatus  = document.getElementById("supportStatus");
+const supportBtn     = document.getElementById("supportSubmitBtn");
 
 // ─── Event listeners ─────────────────────────────────────────────────────────
-generateBtn.addEventListener("click", handleGenerate);
-regenerateBtn.addEventListener("click", handleGenerate);
+if (generateBtn) {
+  generateBtn.addEventListener("click", handleGenerate);
+}
 
-jobTitleInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") handleGenerate();
-});
+if (regenerateBtn) {
+  regenerateBtn.addEventListener("click", handleGenerate);
+}
 
-// Clear active chip when user types manually
-jobTitleInput.addEventListener("input", () => {
-  setActiveChip(null);
-});
+if (jobTitleInput) {
+  jobTitleInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") handleGenerate();
+  });
 
-copyBtn.addEventListener("click", handleCopy);
+  // Clear active chip when user types manually
+  jobTitleInput.addEventListener("input", () => {
+    setActiveChip(null);
+  });
+}
+
+if (copyBtn) {
+  copyBtn.addEventListener("click", handleCopy);
+}
+
+if (supportForm) {
+  supportForm.addEventListener("submit", handleSupportSubmit);
+}
 
 // ─── Quick-pick chips ─────────────────────────────────────────────────────────
-chipsContainer.addEventListener("click", (e) => {
-  const chip = e.target.closest(".chip");
-  if (!chip) return;
-  jobTitleInput.value = chip.textContent.trim();
-  setActiveChip(chip);
-  handleGenerate();
-});
+if (chipsContainer) {
+  chipsContainer.addEventListener("click", (e) => {
+    const chip = e.target.closest(".chip");
+    if (!chip || !jobTitleInput) return;
+    jobTitleInput.value = chip.textContent.trim();
+    setActiveChip(chip);
+    handleGenerate();
+  });
+}
 
 function setActiveChip(activeChip) {
+  if (!chipsContainer) return;
   chipsContainer.querySelectorAll(".chip").forEach((c) => {
     c.classList.toggle("active", c === activeChip);
   });
@@ -69,6 +88,8 @@ function setActiveChip(activeChip) {
 
 // ─── Core logic ──────────────────────────────────────────────────────────────
 async function handleGenerate() {
+  if (!jobTitleInput) return;
+
   const jobTitle = jobTitleInput.value.trim();
 
   if (!jobTitle) {
@@ -208,15 +229,17 @@ function copySingleBullet(btn, text) {
 }
 
 function setLoading(isLoading) {
-  generateBtn.disabled   = isLoading;
-  regenerateBtn.disabled = isLoading;
-  copyBtn.disabled       = isLoading;
+  if (generateBtn) generateBtn.disabled = isLoading;
+  if (regenerateBtn) regenerateBtn.disabled = isLoading;
+  if (copyBtn) copyBtn.disabled = isLoading;
 
   if (isLoading) {
-    resultsSection.classList.add("hidden");
-    statusEl.innerHTML =
-      '<span class="spinner"></span> Generating bullet points…';
-    statusEl.classList.remove("hidden", "error");
+    if (resultsSection) resultsSection.classList.add("hidden");
+    if (statusEl) {
+      statusEl.innerHTML =
+        '<span class="spinner"></span> Generating bullet points…';
+      statusEl.classList.remove("hidden", "error");
+    }
   } else {
     clearStatus();
   }
@@ -233,6 +256,63 @@ function clearStatus() {
   statusEl.textContent = "";
   statusEl.classList.add("hidden");
   statusEl.classList.remove("error");
+}
+
+async function handleSupportSubmit(event) {
+  event.preventDefault();
+
+  if (!supportForm || !supportStatus || !supportBtn) return;
+
+  const formData = new FormData(supportForm);
+  const name = String(formData.get("name") || "").trim();
+  const email = String(formData.get("email") || "").trim();
+  const message = String(formData.get("message") || "").trim();
+
+  if (!email) {
+    showSupportStatus("Please enter your email address.", true);
+    return;
+  }
+
+  if (message.length < 10) {
+    showSupportStatus("Please include a short message so we can help.", true);
+    return;
+  }
+
+  supportBtn.disabled = true;
+  showSupportStatus("Sending your message...", false);
+
+  try {
+    const response = await fetch("/api/support", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        email,
+        message,
+        pagePath: window.location.pathname,
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Unable to submit your message right now.");
+    }
+
+    supportForm.reset();
+    showSupportStatus("Message sent. Our team will follow up soon.", false);
+  } catch (err) {
+    showSupportStatus(err.message || "Unable to submit your message right now.", true);
+  } finally {
+    supportBtn.disabled = false;
+  }
+}
+
+function showSupportStatus(message, isError) {
+  if (!supportStatus) return;
+  supportStatus.textContent = message;
+  supportStatus.classList.remove("hidden", "error", "success");
+  supportStatus.classList.add(isError ? "error" : "success");
 }
 
 async function handleCopy() {
