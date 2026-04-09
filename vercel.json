@@ -6,6 +6,7 @@
     { "source": "/templates", "destination": "/api/index.js" },
     { "source": "/purchase-success", "destination": "/api/index.js" },
     { "source": "/purchase-cancel", "destination": "/api/index.js" },
+    { "source": "/admin", "destination": "/api/index.js" },
     { "source": "/resume-bullet-points-for-(.*)", "destination": "/api/index.js" },
     { "source": "/(.*)-resume-summary-examples", "destination": "/api/index.js" },
     { "source": "/(.*)-skills-for-resume", "destination": "/api/index.js" },

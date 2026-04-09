@@ -516,8 +516,219 @@ app.get("/purchase-cancel", (req, res) => {
   }));
 });
 
-function renderClusterRoute(req, res, jobSlug, pageType) {
-  const cluster = clusterByJobSlug[jobSlug];
+// ─── GET /admin ───────────────────────────────────────────────────────────────
+app.get("/admin", (req, res) => {
+  res.send(renderAdminPage());
+});
+
+// ─── renderAdminPage ──────────────────────────────────────────────────────────
+function renderAdminPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Usage Analytics</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #0b0f1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 48px 16px;
+    }
+    .card {
+      background: #131929;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 600px;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 8px;
+    }
+    .subtitle { color: #94a3b8; font-size: 0.875rem; margin-bottom: 32px; }
+    label { display: block; font-size: 0.875rem; color: #94a3b8; margin-bottom: 8px; }
+    .input-row { display: flex; gap: 10px; margin-bottom: 24px; }
+    input[type="password"] {
+      flex: 1;
+      background: #0b0f1a;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      color: #f1f5f9;
+      font-size: 0.95rem;
+      padding: 10px 14px;
+      font-family: inherit;
+      outline: none;
+    }
+    input[type="password"]:focus { border-color: #6366f1; }
+    button {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button:hover { opacity: 0.9; }
+    #error-msg {
+      color: #f87171;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    #results { display: none; }
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .stat {
+      flex: 1;
+      min-width: 100px;
+      background: rgba(99,102,241,0.1);
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: #a78bfa; }
+    .stat-label { font-size: 0.75rem; color: #64748b; margin-top: 4px; }
+    h2 { font-size: 1rem; font-weight: 600; color: #cbd5e1; margin-bottom: 14px; }
+    ol { list-style: none; padding: 0; }
+    ol li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 14px;
+      border-radius: 8px;
+      margin-bottom: 6px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    ol li:hover { background: rgba(99,102,241,0.08); }
+    .rank { color: #475569; font-size: 0.8rem; width: 22px; flex-shrink: 0; }
+    .job-name { flex: 1; padding: 0 10px; text-transform: capitalize; }
+    .badge {
+      background: rgba(99,102,241,0.2);
+      color: #818cf8;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .empty { color: #475569; font-size: 0.9rem; text-align: center; padding: 24px 0; }
+    #loading { color: #64748b; font-size: 0.875rem; display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Analytics Dashboard</h1>
+    <p class="subtitle">Generator usage — top searched job titles</p>
+
+    <label for="pw-input">Admin password</label>
+    <div class="input-row">
+      <input type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password" />
+      <button id="load-btn">Load</button>
+    </div>
+    <p id="error-msg"></p>
+    <p id="loading">Loading…</p>
+
+    <div id="results">
+      <div class="stats-bar">
+        <div class="stat">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">Total generations</div>
+        </div>
+      </div>
+      <h2>Top 20 searched job titles</h2>
+      <ol id="job-list"></ol>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById("load-btn");
+    const input = document.getElementById("pw-input");
+    const errorMsg = document.getElementById("error-msg");
+    const loading = document.getElementById("loading");
+    const results = document.getElementById("results");
+    const jobList = document.getElementById("job-list");
+    const statTotal = document.getElementById("stat-total");
+
+    async function load() {
+      const pw = input.value.trim();
+      if (!pw) { showError("Please enter the admin password."); return; }
+
+      errorMsg.style.display = "none";
+      loading.style.display = "block";
+      results.style.display = "none";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("/api/admin/usage?password=" + encodeURIComponent(pw));
+        const json = await res.json();
+
+        if (!res.ok) {
+          showError(json.error || "Request failed (" + res.status + ").");
+          return;
+        }
+
+        statTotal.textContent = json.totalRecords.toLocaleString();
+
+        jobList.innerHTML = "";
+        if (!json.topJobs || json.topJobs.length === 0) {
+          jobList.innerHTML = '<li class="empty">No data yet.</li>';
+        } else {
+          json.topJobs.forEach(({ job, count }, i) => {
+            const li = document.createElement("li");
+            li.innerHTML =
+              '<span class="rank">' + (i + 1) + '</span>' +
+              '<span class="job-name">' + escapeHtml(job) + '</span>' +
+              '<span class="badge">' + count.toLocaleString() + ' ' + (count === 1 ? 'search' : 'searches') + '</span>';
+            jobList.appendChild(li);
+          });
+        }
+
+        results.style.display = "block";
+      } catch (err) {
+        showError("Network error: " + err.message);
+      } finally {
+        loading.style.display = "none";
+        btn.disabled = false;
+      }
+    }
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = "block";
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    }
+
+    btn.addEventListener("click", load);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") load(); });
+  </script>
+</body>
+</html>`;
+}
+
+function renderClusterRoute(req, res, jobSlug, pageType) {  const cluster = clusterByJobSlug[jobSlug];
   const page = cluster?.pages?.[pageType];
 
   if (!cluster || !page) {
