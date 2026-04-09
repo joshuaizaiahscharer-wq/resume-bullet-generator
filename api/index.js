@@ -421,20 +421,30 @@ app.post("/api/support", async (req, res) => {
       const { error } = await supabase.from("support_requests").insert([payload]);
 
       if (!error) {
+        console.log("[/api/support] Support request inserted successfully:", email);
         return res.json({ ok: true });
       }
 
       const missingColumn = getMissingColumnName(error);
       if (missingColumn && Object.prototype.hasOwnProperty.call(payload, missingColumn)) {
+        console.warn("[/api/support] Missing column, retrying without:", missingColumn);
         delete payload[missingColumn];
         continue;
       }
 
-      console.error("[/api/support] Supabase insert error:", error.message);
+      console.error("[/api/support] Supabase insert error:", {
+        code: error?.code,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+      });
       return res.status(500).json({ error: "Unable to submit your message right now." });
     }
   } catch (err) {
-    console.error("[/api/support] Unexpected error:", err.message);
+    console.error("[/api/support] Unexpected error:", {
+      message: err.message,
+      stack: err.stack,
+    });
     return res.status(500).json({ error: "Unable to submit your message right now." });
   }
 });
