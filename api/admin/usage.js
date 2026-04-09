@@ -10,6 +10,11 @@
 require("dotenv").config();
 const supabase = require("../../lib/supabase");
 
+function isMissingUserIdColumn(error) {
+  const msg = String(error?.message || "").toLowerCase();
+  return msg.includes("user_id") && msg.includes("does not exist");
+}
+
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed." });
@@ -31,11 +36,24 @@ module.exports = async function handler(req, res) {
   try {
     // Supabase JS client does not support raw GROUP BY, so we fetch recent rows
     // and aggregate in JS. Capped at 5000 rows — plenty for a hobby project.
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("generator_usage")
-      .select("normalized_job_title, created_at")
+      .select("normalized_job_title, created_at, user_id")
       .order("created_at", { ascending: false })
       .limit(5000);
+
+    // Backward-compatible fallback for older databases where user_id was not
+    // added yet. This keeps the admin page working instead of failing hard.
+    if (error && isMissingUserIdColumn(error)) {
+      const fallback = await supabase
+        .from("generator_usage")
+        .select("normalized_job_title, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5000);
+
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (error) {
       console.error("[/api/admin/usage] Supabase error:", error.message);
@@ -59,6 +77,7 @@ module.exports = async function handler(req, res) {
 
     const recentJobs = rows.slice(0, 50).map((row) => ({
       job: (row.normalized_job_title || "").trim(),
+      userId: row.user_id || null,
       createdAt: row.created_at,
     }));
 
