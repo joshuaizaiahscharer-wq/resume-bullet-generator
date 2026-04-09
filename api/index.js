@@ -5,16 +5,10 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
-const sgMail = require("@sendgrid/mail");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 
 const app = express();
-
-// SendGrid setup (initialize only if API key is available)
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
 
 // Use SITE_URL for sitemap/robots. In production, set this in Vercel env vars.
 const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
@@ -29,6 +23,9 @@ async function sendSupportNotificationEmail(supportRequest) {
   }
 
   try {
+    // Require sendgrid lazily so a missing package never crashes the server
+    const sgMail = require("@sendgrid/mail");
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     await sgMail.send({
       to: SUPPORT_NOTIFY_EMAIL,
       from: "noreply@bulletai.com",
