@@ -4,7 +4,7 @@
 //
 // To add a new job, copy one object, update the fields, and add it to the array.
 
-module.exports = [
+const baseJobs = [
   {
     slug: "bartender",
     title: "Bartender",
@@ -866,3 +866,89 @@ module.exports = [
     ],
   },
 ];
+
+const VARIANT_CONFIGS = [
+  {
+    key: "entry-level",
+    titlePrefix: "Entry Level",
+    introTemplate:
+      "Breaking into %ROLE% can feel competitive, but a strong resume helps you stand out quickly. These 10 entry-level %ROLE% resume bullet examples are designed to highlight transferable skills, reliability, and growth potential.",
+    metaTemplate:
+      "10 entry level %ROLE% resume bullet points plus a free AI generator to create tailored %ROLE% bullets instantly.",
+    bullets: (role) => [
+      `Completed role-specific onboarding in ${role} procedures, tools, and safety standards within the first 30 days`,
+      `Supported day-to-day ${role} operations with a strong focus on consistency, punctuality, and attention to detail`,
+      `Applied company SOPs in ${role} workflows to maintain quality and reduce avoidable errors`,
+      `Collaborated with team members to handle high-volume periods and keep ${role} priorities on track`,
+      `Communicated professionally with customers, coworkers, and supervisors while learning core ${role} responsibilities`,
+      `Used feedback from managers to improve ${role} performance and meet weekly productivity expectations`,
+      `Maintained organized records and clean work areas aligned with ${role} compliance and safety requirements`,
+      `Demonstrated adaptability by learning new ${role} tasks quickly and supporting cross-functional needs`,
+      `Contributed to positive team culture by taking initiative and assisting with additional ${role} duties as needed`,
+      `Built a dependable foundation in ${role} best practices to prepare for increased responsibility and advancement`,
+    ],
+  },
+  {
+    key: "no-experience",
+    titlePrefix: "No Experience",
+    introTemplate:
+      "If you are applying to %ROLE% jobs without direct experience, your resume should emphasize transferable strengths and work ethic. These 10 no-experience %ROLE% bullets help frame your potential in a professional, employer-friendly way.",
+    metaTemplate:
+      "10 no experience %ROLE% resume bullet points plus a free AI generator to build personalized %ROLE% bullets fast.",
+    bullets: (role) => [
+      `Leveraged transferable skills from school, volunteer work, and personal projects to support core ${role} tasks`,
+      `Demonstrated strong reliability and attendance while learning foundational ${role} responsibilities from scratch`,
+      `Learned new ${role} systems and workflows quickly through observation, documentation, and hands-on practice`,
+      `Followed detailed instructions and checklists to deliver accurate results in entry ${role} assignments`,
+      `Maintained clear and respectful communication with teammates and customers in a fast-paced ${role} environment`,
+      `Stayed organized under pressure by prioritizing tasks and meeting deadlines related to ${role} operations`,
+      `Applied problem-solving and critical thinking to resolve routine ${role} challenges with minimal supervision`,
+      `Demonstrated professionalism by accepting coaching and implementing feedback to improve ${role} performance`,
+      `Supported team goals by volunteering for additional ${role} duties during peak demand periods`,
+      `Built confidence and practical capability in ${role} through continuous learning and consistent execution`,
+    ],
+  },
+  {
+    key: "experienced",
+    titlePrefix: "Experienced",
+    introTemplate:
+      "Experienced %ROLE% candidates need resume bullets that show measurable impact and leadership. These 10 examples are tailored to highlight results, process improvements, and high-level execution in %ROLE% roles.",
+    metaTemplate:
+      "10 experienced %ROLE% resume bullet points plus a free AI generator to create advanced %ROLE% bullets in seconds.",
+    bullets: (role) => [
+      `Led high-impact ${role} initiatives that improved operational efficiency and elevated service quality`,
+      `Optimized ${role} workflows by identifying bottlenecks and implementing scalable process improvements`,
+      `Exceeded performance benchmarks in ${role} execution through strong planning, prioritization, and follow-through`,
+      `Mentored junior team members in ${role} best practices, reducing ramp time and improving consistency`,
+      `Collaborated cross-functionally to align ${role} deliverables with broader business objectives and timelines`,
+      `Maintained advanced proficiency in ${role} tools and systems to drive faster, more accurate outcomes`,
+      `Resolved complex ${role} issues proactively, minimizing disruptions and preserving stakeholder satisfaction`,
+      `Improved KPI performance in ${role} responsibilities through data-informed decision making and accountability`,
+      `Established quality standards and documentation that strengthened long-term ${role} process reliability`,
+      `Delivered sustained results in ${role} leadership and execution across high-volume, high-pressure environments`,
+    ],
+  },
+];
+
+function sentenceCaseRole(role) {
+  return role;
+}
+
+function createVariantJob(baseJob, variant) {
+  const role = sentenceCaseRole(baseJob.title);
+  const prefixTitle = `${variant.titlePrefix} ${baseJob.title}`;
+
+  return {
+    slug: `${baseJob.slug}-${variant.key}`,
+    title: prefixTitle,
+    metaDescription: variant.metaTemplate.replaceAll("%ROLE%", role),
+    intro: variant.introTemplate.replaceAll("%ROLE%", role),
+    bullets: variant.bullets(role),
+  };
+}
+
+const variantJobs = baseJobs.flatMap((job) =>
+  VARIANT_CONFIGS.map((variant) => createVariantJob(job, variant))
+);
+
+module.exports = [...baseJobs, ...variantJobs];
