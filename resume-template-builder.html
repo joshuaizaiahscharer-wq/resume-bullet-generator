@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Build a premium, professionally formatted resume template with live preview and secure unlock flow."
+    />
+    <title>Resume Template Builder | BulletAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/resume-template-builder.css" />
+  </head>
+  <body class="resume-builder-body">
+    <nav class="nav nav--wide">
+      <a href="/" class="nav-logo">&#10022; BulletAI</a>
+      <div class="nav-actions">
+        <a href="/" class="nav-link">Bullet Generator</a>
+        <a href="/jobs" class="nav-link">All Jobs</a>
+        <a href="/resume-template-builder" class="nav-link nav-link--active">Resume Template Builder</a>
+        <a href="/#support" class="nav-link">Support</a>
+      </div>
+    </nav>
+
+    <header class="builder-hero">
+      <span class="badge">Premium Resume Builder</span>
+      <h1>Design a polished resume in minutes</h1>
+      <p class="builder-hero-sub">
+        Build your resume with professional structure, live preview, and a secure unlock flow ready for Stripe checkout.
+      </p>
+      <div class="builder-benefits" aria-label="Benefits">
+        <article class="benefit-card">
+          <h2>Professional formatting</h2>
+          <p>Clean spacing, strong hierarchy, and recruiter-friendly readability built into every section.</p>
+        </article>
+        <article class="benefit-card">
+          <h2>Easy to customize</h2>
+          <p>Edit every detail instantly with a guided form designed for fast resume writing.</p>
+        </article>
+        <article class="benefit-card">
+          <h2>Instant preview</h2>
+          <p>See your resume update in real time while you write so you can refine as you go.</p>
+        </article>
+        <article class="benefit-card">
+          <h2>Download after purchase</h2>
+          <p>Unlock the full template and export as PDF once payment is verified.</p>
+        </article>
+      </div>
+      <a href="#builderApp" class="builder-primary-cta">Start Building Your Resume</a>
+    </header>
+
+    <main id="builderApp" class="builder-main" aria-live="polite">
+      <section class="builder-layout" aria-label="Resume Builder Workspace">
+        <div class="builder-form-panel">
+          <div class="panel-header">
+            <p class="panel-eyebrow">ResumeBuilderForm</p>
+            <h2>Resume details</h2>
+            <p>Fill in your information. The preview on the right updates instantly.</p>
+          </div>
+          <div id="resumeBuilderFormRoot"></div>
+        </div>
+
+        <div class="builder-preview-panel">
+          <div class="panel-header panel-header--preview">
+            <p class="panel-eyebrow">ResumePreview</p>
+            <h2>Live template preview</h2>
+            <p>Your resume is generated in a premium template style with ATS-friendly structure.</p>
+          </div>
+
+          <div class="preview-toolbar">
+            <span id="paymentStatusBadge" class="payment-badge payment-badge--locked">Locked</span>
+            <button id="downloadResumeBtn" class="download-btn" type="button" disabled>
+              Download PDF
+            </button>
+          </div>
+
+          <div id="resumePreviewShell" class="resume-preview-shell is-locked">
+            <div id="resumePreviewRoot"></div>
+            <div id="paywallOverlayRoot"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-logo">&#10022; BulletAI</p>
+        <p class="footer-copy">
+          Resume Template Builder with secure unlock flow. Connect Stripe checkout to launch premium access.
+        </p>
+        <div class="footer-links">
+          <a href="/">Bullet Generator</a>
+          <a href="/jobs">All job pages</a>
+          <a href="/#support">Contact support</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="/resume-template-builder.js"></script>
+  </body>
+</html>

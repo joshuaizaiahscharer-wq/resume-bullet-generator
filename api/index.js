@@ -2,6 +2,7 @@
 require("dotenv").config();
 
 const path = require("path");
+const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
@@ -13,8 +14,109 @@ const app = express();
 // Use SITE_URL for sitemap/robots. In production, set this in Vercel env vars.
 const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
+const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || "";
+const PAYMENT_STATE_SECRET =
+  process.env.PAYMENT_STATE_SECRET ||
+  process.env.ADMIN_PASSWORD ||
+  "local-dev-payment-state-secret";
+const RESUME_UNLOCK_COOKIE = "resume_builder_unlock";
+const RESUME_UNLOCK_TTL_MS = 1000 * 60 * 60 * 24 * 30;
+
 // Support email address for notifications
 const SUPPORT_NOTIFY_EMAIL = process.env.SUPPORT_NOTIFY_EMAIL;
+
+function getStripeClient() {
+  if (!STRIPE_SECRET_KEY) {
+    throw new Error("STRIPE_SECRET_KEY is not configured.");
+  }
+
+  // Lazy-require to avoid crashing boot if dependency is missing in older deploys.
+  const Stripe = require("stripe");
+  return new Stripe(STRIPE_SECRET_KEY);
+}
+
+function parseCookies(req) {
+  const header = req.headers?.cookie;
+  if (!header) return {};
+
+  return header.split(";").reduce((acc, part) => {
+    const [rawKey, ...rawValue] = part.trim().split("=");
+    if (!rawKey) return acc;
+    acc[rawKey] = decodeURIComponent(rawValue.join("="));
+    return acc;
+  }, {});
+}
+
+function signValue(rawValue) {
+  return crypto
+    .createHmac("sha256", PAYMENT_STATE_SECRET)
+    .update(rawValue)
+    .digest("hex");
+}
+
+function createResumeUnlockToken({ sessionId, expiresAt }) {
+  const payloadJson = JSON.stringify({ sessionId, expiresAt });
+  const payload = Buffer.from(payloadJson).toString("base64url");
+  const signature = signValue(payload);
+  return `${payload}.${signature}`;
+}
+
+function readResumeUnlockToken(token) {
+  if (!token || !token.includes(".")) return null;
+
+  const [payload, signature] = token.split(".");
+  const expectedSignature = signValue(payload);
+
+  const signatureBuffer = Buffer.from(signature || "");
+  const expectedBuffer = Buffer.from(expectedSignature);
+  if (
+    signatureBuffer.length !== expectedBuffer.length ||
+    !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+  ) {
+    return null;
+  }
+
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (!decoded?.expiresAt || Number(decoded.expiresAt) < Date.now()) {
+      return null;
+    }
+    return decoded;
+  } catch (_err) {
+    return null;
+  }
+}
+
+function isResumeUnlocked(req) {
+  if (process.env.RESUME_TEMPLATE_BUILDER_UNLOCKED === "true") {
+    return true;
+  }
+
+  const cookies = parseCookies(req);
+  const token = cookies[RESUME_UNLOCK_COOKIE];
+  return Boolean(readResumeUnlockToken(token));
+}
+
+function setResumeUnlockCookie(res, sessionId) {
+  const expiresAt = Date.now() + RESUME_UNLOCK_TTL_MS;
+  const token = createResumeUnlockToken({ sessionId, expiresAt });
+  const isProduction = process.env.NODE_ENV === "production";
+
+  const cookieParts = [
+    `${RESUME_UNLOCK_COOKIE}=${encodeURIComponent(token)}`,
+    "Path=/",
+    "HttpOnly",
+    "SameSite=Lax",
+    `Max-Age=${Math.floor(RESUME_UNLOCK_TTL_MS / 1000)}`,
+  ];
+
+  if (isProduction) {
+    cookieParts.push("Secure");
+  }
+
+  res.setHeader("Set-Cookie", cookieParts.join("; "));
+}
 
 async function sendSupportNotificationEmail(supportRequest) {
   const gmailUser = process.env.GMAIL_USER;
@@ -583,6 +685,7 @@ app.get("/sitemap.xml", (req, res) => {
   const paths = [
     "/",
     "/jobs",
+    "/resume-template-builder",
     ...allClusterPages.map((page) => `/${page.slug}`),
   ];
 
@@ -622,6 +725,101 @@ app.get("/:jobSlug-resume-bullets-no-experience", (req, res) => {
 
 app.get("/jobs", (req, res) => {
   res.send(renderJobsPage());
+});
+
+app.get("/resume-template-builder", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "resume-template-builder.html"));
+});
+
+// ─── Resume Builder payment state + Stripe checkout ─────────────────────────
+app.get("/api/resume-builder/access", async (req, res) => {
+  return res.json({ isUnlocked: isResumeUnlocked(req) });
+});
+
+app.post("/api/resume-builder/create-checkout-session", async (req, res) => {
+  try {
+    if (!STRIPE_PRICE_ID) {
+      return res.status(500).json({
+        error: "STRIPE_PRICE_ID is not configured.",
+      });
+    }
+
+    const stripe = getStripeClient();
+
+    const fallbackReturnUrl = `${SITE_URL}/resume-template-builder`;
+    const requestedReturnUrl = String(req.body?.returnUrl || "").trim();
+    const baseReturnUrl = requestedReturnUrl || fallbackReturnUrl;
+
+    let normalizedReturnUrl;
+    try {
+      const url = new URL(baseReturnUrl);
+      if (!/^https?:$/.test(url.protocol)) {
+        throw new Error("Invalid return URL protocol.");
+      }
+      normalizedReturnUrl = `${url.origin}${url.pathname}`.replace(/\/$/, "");
+    } catch (_urlErr) {
+      normalizedReturnUrl = fallbackReturnUrl;
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+      billing_address_collection: "auto",
+      success_url: `${normalizedReturnUrl}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${normalizedReturnUrl}?payment=cancelled`,
+      metadata: {
+        product: "resume_template_builder",
+      },
+    });
+
+    if (!session?.url) {
+      return res.status(500).json({
+        error: "Stripe did not return a checkout URL.",
+      });
+    }
+
+    return res.json({ checkoutUrl: session.url });
+  } catch (err) {
+    console.error("[/api/resume-builder/create-checkout-session] Stripe error:", err.message);
+    return res.status(500).json({ error: "Unable to create checkout session." });
+  }
+});
+
+app.post("/api/resume-builder/verify-checkout-session", async (req, res) => {
+  try {
+    const sessionId = String(req.body?.sessionId || "").trim();
+    if (!sessionId) {
+      return res.status(400).json({
+        error: "Missing sessionId.",
+        isUnlocked: false,
+      });
+    }
+
+    const stripe = getStripeClient();
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    const isPaid = session?.payment_status === "paid";
+    const isCorrectProduct = session?.metadata?.product === "resume_template_builder";
+
+    if (!isPaid || !isCorrectProduct) {
+      return res.status(402).json({
+        error: "Checkout session is not paid.",
+        isUnlocked: false,
+      });
+    }
+
+    // Backend-controlled access gate via signed HttpOnly cookie.
+    // TODO(Stripe + Auth): persist purchase against authenticated user id in DB.
+    setResumeUnlockCookie(res, sessionId);
+
+    return res.json({ isUnlocked: true });
+  } catch (err) {
+    console.error("[/api/resume-builder/verify-checkout-session] Stripe verify error:", err.message);
+    return res.status(500).json({
+      error: "Unable to verify checkout session.",
+      isUnlocked: false,
+    });
+  }
 });
 
 // ─── GET /admin ───────────────────────────────────────────────────────────────
@@ -1203,7 +1401,10 @@ function renderClusterPage(cluster, pageType) {
   <body>
     <nav class="nav">
       <a href="/" class="nav-logo">&#10022; BulletAI</a>
-      <a href="/jobs" class="nav-link">Browse All Clusters</a>
+      <div class="nav-actions">
+        <a href="/resume-template-builder" class="nav-link">Resume Template Builder</a>
+        <a href="/jobs" class="nav-link">Browse All Clusters</a>
+      </div>
     </nav>
 
     <header class="hero">
@@ -1238,6 +1439,7 @@ ${relatedLinks}
 ${generatorSection}
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
+      <a href="/resume-template-builder">Resume Template Builder</a>
       <a href="/#support">Contact support</a>
     </footer>
   </body>
@@ -1271,7 +1473,10 @@ ${pageLinks}
   <body>
     <nav class="nav">
       <a href="/" class="nav-logo">&#10022; BulletAI</a>
-      <a href="/" class="nav-link">&#8592; Home</a>
+      <div class="nav-actions">
+        <a href="/resume-template-builder" class="nav-link">Resume Template Builder</a>
+        <a href="/" class="nav-link">&#8592; Home</a>
+      </div>
     </nav>
 
     <header class="hero">
@@ -1291,6 +1496,7 @@ ${groups}
 
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
+      <a href="/resume-template-builder">Resume Template Builder</a>
       <a href="/#support">Contact support</a>
     </footer>
   </body>

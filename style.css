@@ -54,6 +54,19 @@ body {
   color: #fff;
 }
 
+@media (max-width: 860px) {
+  .nav {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .nav-actions {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
 /* ── Hero ───────────────────────────────────────────────────── */
 .hero {
   text-align: center;
