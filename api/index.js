@@ -5,14 +5,118 @@ const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
+const { sendDigitalDownloadEmail } = require("../lib/email");
+const { verifyShopifyWebhook, isOrderPaid } = require("../lib/shopifyWebhook");
 
 const app = express();
 
 // Use SITE_URL for sitemap/robots. In production, set this in Vercel env vars.
 const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+const SHOPIFY_STORE_URL = (process.env.SHOPIFY_STORE_URL || "").replace(/\/$/, "");
+const PRODUCT_DOWNLOAD_URL = process.env.PRODUCT_DOWNLOAD_URL || "";
+
+// In-memory idempotency guard for duplicate webhook deliveries.
+// Note: For multi-instance/serverless environments, replace with Redis/DB for stronger guarantees.
+const processedWebhookIds = new Map();
+const inFlightWebhookIds = new Set();
+const WEBHOOK_ID_TTL_MS = 1000 * 60 * 60 * 24;
+
+function pruneProcessedWebhookIds() {
+  const now = Date.now();
+  for (const [id, ts] of processedWebhookIds.entries()) {
+    if (now - ts > WEBHOOK_ID_TTL_MS) {
+      processedWebhookIds.delete(id);
+    }
+  }
+}
+
+function getWebhookDeliveryId(req, payload) {
+  const headerId = req.get("X-Shopify-Webhook-Id");
+  if (headerId) {
+    return headerId;
+  }
+
+  // Fallback id when header is unavailable.
+  return `order-${payload?.id || "unknown"}-${payload?.updated_at || payload?.created_at || "unknown"}`;
+}
+
+function getOrderCustomerEmail(order) {
+  return (
+    order?.email ||
+    order?.contact_email ||
+    order?.customer?.email ||
+    ""
+  );
+}
+
+function getProductDownloadUrl(order) {
+  // v1: static URL from env.
+  // Future upgrade: generate signed/expiring per-order links here.
+  return PRODUCT_DOWNLOAD_URL;
+}
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors());
+
+// Shopify webhook MUST use raw body for HMAC verification.
+app.post("/api/webhooks/shopify/orders", express.raw({ type: "application/json" }), async (req, res) => {
+  const rawBody = req.body;
+  const signature = req.get("X-Shopify-Hmac-Sha256");
+
+  if (!verifyShopifyWebhook(rawBody, signature, process.env.SHOPIFY_WEBHOOK_SECRET)) {
+    return res.status(401).send("Invalid webhook signature.");
+  }
+
+  let order;
+  try {
+    order = JSON.parse(rawBody.toString("utf8"));
+  } catch (err) {
+    return res.status(400).send("Invalid JSON payload.");
+  }
+
+  const deliveryId = getWebhookDeliveryId(req, order);
+  pruneProcessedWebhookIds();
+
+  if (processedWebhookIds.has(deliveryId) || inFlightWebhookIds.has(deliveryId)) {
+    return res.status(200).json({ ok: true, duplicate: true });
+  }
+
+  // Only deliver for successful paid orders.
+  if (!isOrderPaid(order)) {
+    return res.status(200).json({ ok: true, skipped: "order-not-paid" });
+  }
+
+  const customerEmail = getOrderCustomerEmail(order);
+  if (!customerEmail) {
+    return res.status(200).json({ ok: true, skipped: "missing-customer-email" });
+  }
+
+  const downloadUrl = getProductDownloadUrl(order);
+  if (!downloadUrl) {
+    console.error("PRODUCT_DOWNLOAD_URL is missing. Cannot send digital download email.");
+    return res.status(500).json({ error: "Download URL not configured." });
+  }
+
+  try {
+    inFlightWebhookIds.add(deliveryId);
+
+    await sendDigitalDownloadEmail({
+      toEmail: customerEmail,
+      orderNumber: order?.name || order?.order_number || order?.id,
+      productName: "Resume Template Pack",
+      downloadUrl,
+    });
+
+    inFlightWebhookIds.delete(deliveryId);
+    processedWebhookIds.set(deliveryId, Date.now());
+    return res.status(200).json({ ok: true, sent: true });
+  } catch (err) {
+    inFlightWebhookIds.delete(deliveryId);
+    console.error("Shopify webhook email error:", err.message);
+    return res.status(500).json({ error: "Failed to send download email." });
+  }
+});
+
 app.use(express.json());
 
 // Serve static frontend files from project root.
@@ -235,7 +339,14 @@ app.get("/robots.txt", (req, res) => {
 });
 
 app.get("/sitemap.xml", (req, res) => {
-  const paths = ["/", "/jobs", ...allClusterPages.map((page) => `/${page.slug}`)];
+  const paths = [
+    "/",
+    "/jobs",
+    "/templates",
+    "/purchase-success",
+    "/purchase-cancel",
+    ...allClusterPages.map((page) => `/${page.slug}`),
+  ];
 
   const urlEntries = paths
     .map((urlPath) => `  <url><loc>${escapeXml(`${SITE_URL}${urlPath}`)}</loc></url>`)
@@ -277,6 +388,22 @@ app.get("/jobs", (req, res) => {
 
 app.get("/templates", (req, res) => {
   res.send(renderTemplatesPage());
+});
+
+app.get("/purchase-success", (req, res) => {
+  res.send(renderPurchaseResultPage({
+    title: "Purchase Successful | BulletAI",
+    heading: "Thanks for your purchase",
+    body: "Your download link has been sent to your email.",
+  }));
+});
+
+app.get("/purchase-cancel", (req, res) => {
+  res.send(renderPurchaseResultPage({
+    title: "Purchase Not Completed | BulletAI",
+    heading: "Checkout was not completed",
+    body: "No worries. You can return to the templates page and purchase any time.",
+  }));
 });
 
 function renderClusterRoute(req, res, jobSlug, pageType) {
@@ -432,10 +559,12 @@ ${renderCta()}
       Built with the OpenAI API &mdash; results may vary.
     </footer>
   </body>
-</html>\``;
+</html>`;
 }
 
 function renderTemplatesPage() {
+  const checkoutUrl = SHOPIFY_STORE_URL || "#";
+
   return `<!DOCTYPE html>
 <html lang="en">
   <head>${PAGE_HEAD(
@@ -494,91 +623,34 @@ function renderTemplatesPage() {
               <span class="price-note">one-time &bull; instant download</span>
             </div>
 
+            <div class="shopify-options">
+              <p class="input-label">Buy Option A: Direct Shopify Checkout Link</p>
+              <a href="${escapeHtml(checkoutUrl)}" class="cta-btn" ${SHOPIFY_STORE_URL ? "" : "aria-disabled=\"true\""}>Buy Now &rarr;</a>
+              ${
+                SHOPIFY_STORE_URL
+                  ? ""
+                  : '<p class="shopify-hint">Set SHOPIFY_STORE_URL in your environment variables to enable this button.</p>'
+              }
+            </div>
+
             <!--
             ═══════════════════════════════════════════════════════════════
-            SHOPIFY BUY BUTTON
+            SHOPIFY BUY BUTTON (Option B)
             ─────────────────────────────────────────────────────────────
             1. Go to Shopify Admin → Sales Channels → Buy Button
             2. Create a "Buy Button" for your product
             3. Copy the embed snippet Shopify gives you
-            4. Replace the placeholder <a> tag below with the Shopify snippet
+            4. Paste the snippet inside the wrapper below
             ═══════════════════════════════════════════════════════════════
             -->
             <div id="shopify-buy-btn" class="shopify-buy-btn-wrapper">
-              <div id='product-component-1775723616563'></div>
-              <script type="text/javascript">
-              /*<![CDATA[*/
-              (function () {
-                var scriptURL = 'https://sdks.shopifycdn.com/buy-button/latest/buy-button-storefront.min.js';
-                if (window.ShopifyBuy) {
-                  if (window.ShopifyBuy.UI) {
-                    ShopifyBuyInit();
-                  } else {
-                    loadScript();
-                  }
-                } else {
-                  loadScript();
-                }
-                function loadScript() {
-                  var script = document.createElement('script');
-                  script.async = true;
-                  script.src = scriptURL;
-                  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(script);
-                  script.onload = ShopifyBuyInit;
-                }
-                function ShopifyBuyInit() {
-                  var client = ShopifyBuy.buildClient({
-                    domain: 'dz5m3m-e8.myshopify.com',
-                    storefrontAccessToken: '3c766236ce0998319a1473b5ce12127e',
-                  });
-                  ShopifyBuy.UI.onReady(client).then(function (ui) {
-                    ui.createComponent('product', {
-                      id: '11008480051473',
-                      node: document.getElementById('product-component-1775723616563'),
-                      moneyFormat: '%24%7B%7Bamount%7D%7D',
-                      options: {
-                        "product": {
-                          "styles": {
-                            "product": {
-                              "@media (min-width: 601px)": {
-                                "max-width": "100%",
-                                "margin-left": "0px",
-                                "margin-bottom": "0px"
-                              }
-                            }
-                          },
-                          "text": { "button": "Add to cart" }
-                        },
-                        "productSet": {
-                          "styles": {
-                            "products": {
-                              "@media (min-width: 601px)": { "margin-left": "0px" }
-                            }
-                          }
-                        },
-                        "modalProduct": {
-                          "contents": { "img": false, "imgWithCarousel": true, "button": false, "buttonWithQuantity": true },
-                          "styles": {
-                            "product": {
-                              "@media (min-width: 601px)": {
-                                "max-width": "100%",
-                                "margin-left": "0px",
-                                "margin-bottom": "0px"
-                              }
-                            }
-                          },
-                          "text": { "button": "Add to cart" }
-                        },
-                        "option": {},
-                        "cart": { "text": { "total": "Subtotal", "button": "Checkout" } },
-                        "toggle": {}
-                      },
-                    });
-                  });
-                }
-              })();
-              /*]]>*/
-              </script>
+              <!--
+              Paste your Shopify Buy Button embed code below.
+              Keep this code server-rendered only on /templates.
+              -->
+              <div class="shopify-hint">Optional: paste Shopify Buy Button embed code here.</div>
+              <!-- Shopify Buy Button embed starts -->
+              <!-- Shopify Buy Button embed ends -->
             </div>
 
           </div>
@@ -610,7 +682,40 @@ function renderTemplatesPage() {
       Built with the OpenAI API &mdash; results may vary.
     </footer>
   </body>
-</html>\``;
+</html>`;
+}
+
+function renderPurchaseResultPage({ title, heading, body }) {
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>${PAGE_HEAD(title, body)}
+  </head>
+  <body>
+    <nav class="nav">
+      <a href="/" class="nav-logo">&#10022; BulletAI</a>
+      <a href="/templates" class="nav-link">Templates</a>
+    </nav>
+
+    <header class="hero">
+      <span class="badge">&#10022; Purchase Update</span>
+      <h1><span class="gradient-text">${escapeHtml(heading)}</span></h1>
+      <p class="hero-sub">${escapeHtml(body)}</p>
+    </header>
+
+    <main class="main">
+      <div class="card">
+        <div class="job-links-grid">
+          <a href="/templates">Back to Templates</a>
+          <a href="/">Back to Home</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      Built with the OpenAI API &mdash; results may vary.
+    </footer>
+  </body>
+</html>`;
 }
 
 function renderJobsPage() {
