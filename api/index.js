@@ -277,7 +277,7 @@ app.get("/api/test-supabase", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("generator_usage")
-      .select("id, job_title, normalized_job_title, created_at, page_path, page_type, user_id")
+      .select("id, job_title, normalized_job_title, created_at, page_path, page_type")
       .limit(5);
 
     if (error) {
@@ -298,7 +298,7 @@ app.get("/api/usage-summary", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("generator_usage")
-      .select("normalized_job_title, created_at, user_id")
+      .select("normalized_job_title, created_at")
       .order("created_at", { ascending: false })
       .limit(5000);
 

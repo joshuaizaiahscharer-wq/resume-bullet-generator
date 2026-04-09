@@ -33,7 +33,7 @@ module.exports = async function handler(req, res) {
     // and aggregate in JS. Capped at 5000 rows — plenty for a hobby project.
     const { data, error } = await supabase
       .from("generator_usage")
-      .select("normalized_job_title, created_at, user_id")
+      .select("normalized_job_title, created_at")
       .order("created_at", { ascending: false })
       .limit(5000);
 
@@ -59,7 +59,6 @@ module.exports = async function handler(req, res) {
 
     const recentJobs = rows.slice(0, 50).map((row) => ({
       job: (row.normalized_job_title || "").trim(),
-      userId: row.user_id || null,
       createdAt: row.created_at,
     }));
 
