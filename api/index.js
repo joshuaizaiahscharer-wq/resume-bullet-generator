@@ -275,6 +275,10 @@ app.get("/jobs", (req, res) => {
   res.send(renderJobsPage());
 });
 
+app.get("/templates", (req, res) => {
+  res.send(renderTemplatesPage());
+});
+
 function renderClusterRoute(req, res, jobSlug, pageType) {
   const cluster = clusterByJobSlug[jobSlug];
   const page = cluster?.pages?.[pageType];
@@ -284,6 +288,19 @@ function renderClusterRoute(req, res, jobSlug, pageType) {
   }
 
   return res.send(renderClusterPage(cluster, pageType));
+}
+
+// ─── CTA helper ───────────────────────────────────────────────────────────────
+function renderCta() {
+  return `
+    <section class="main cta-section" aria-labelledby="cta-heading">
+      <div class="card cta-card">
+        <div class="cta-badge">&#10022; Resume Template Pack</div>
+        <h2 class="cta-title" id="cta-heading">Land more interviews with a<br/><span class="gradient-text">professionally designed template</span></h2>
+        <p class="cta-desc">Clean, ATS-friendly resume templates that pair perfectly with your new bullet points. One-time purchase, instant download.</p>
+        <a href="/templates" class="cta-btn">View Templates &rarr;</a>
+      </div>
+    </section>`;
 }
 
 // ─── HTML helpers ─────────────────────────────────────────────────────────────
@@ -410,15 +427,123 @@ ${relatedLinks}
       </div>
     </section>
 ${generatorSection}
+${renderCta()}
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
     </footer>
   </body>
-</html>`;
+</html>\``;
+}
+
+function renderTemplatesPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>${PAGE_HEAD(
+    "Resume Template Pack | BulletAI",
+    "Professionally designed, ATS-friendly resume templates. One-time purchase, instant download. Built for job seekers who mean business."
+  )}
+  </head>
+  <body>
+    <nav class="nav">
+      <a href="/" class="nav-logo">&#10022; BulletAI</a>
+      <a href="/" class="nav-link">&#8592; Home</a>
+    </nav>
+
+    <header class="hero">
+      <span class="badge">&#10022; Instant Download</span>
+      <h1>Resume <span class="gradient-text">Template Pack</span></h1>
+      <p class="hero-sub">
+        ATS-friendly, professionally designed resume templates built for
+        modern job seekers. Pair with your AI-generated bullet points and
+        stand out from the stack.
+      </p>
+    </header>
+
+    <main class="main">
+      <div class="card templates-product-card">
+        <div class="templates-layout">
+
+          <!-- Product preview placeholder -->
+          <div class="templates-preview" aria-hidden="true">
+            <div class="templates-preview-inner">
+              <div class="preview-line preview-line--title"></div>
+              <div class="preview-line preview-line--sub"></div>
+              <div class="preview-line"></div>
+              <div class="preview-line preview-line--short"></div>
+              <div class="preview-divider"></div>
+              <div class="preview-line preview-line--section"></div>
+              <div class="preview-line"></div>
+              <div class="preview-line preview-line--short"></div>
+              <div class="preview-line"></div>
+            </div>
+          </div>
+
+          <!-- Product info -->
+          <div class="templates-info">
+            <p class="input-label">What&#39;s Included</p>
+            <ul class="templates-features">
+              <li>&#10003;&nbsp; 3 clean, modern resume templates</li>
+              <li>&#10003;&nbsp; ATS-optimized formatting</li>
+              <li>&#10003;&nbsp; .docx and Google Docs versions</li>
+              <li>&#10003;&nbsp; Pairs perfectly with BulletAI</li>
+              <li>&#10003;&nbsp; One-time purchase &mdash; instant download</li>
+            </ul>
+
+            <div class="templates-price">
+              <span class="price-amount">$9</span>
+              <span class="price-note">one-time &bull; instant download</span>
+            </div>
+
+            <!--
+            ═══════════════════════════════════════════════════════════════
+            SHOPIFY BUY BUTTON
+            ─────────────────────────────────────────────────────────────
+            1. Go to Shopify Admin → Sales Channels → Buy Button
+            2. Create a "Buy Button" for your product
+            3. Copy the embed snippet Shopify gives you
+            4. Replace the placeholder <a> tag below with the Shopify snippet
+            ═══════════════════════════════════════════════════════════════
+            -->
+            <div id="shopify-buy-btn" class="shopify-buy-btn-wrapper">
+              <!-- ↓ REPLACE THIS with your Shopify Buy Button embed code ↓ -->
+              <a href="#" class="cta-btn shopify-placeholder-btn">Buy Now &rarr;</a>
+              <!-- ↑ REPLACE THIS with your Shopify Buy Button embed code ↑ -->
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <section class="main" aria-labelledby="templates-faq-heading">
+      <div class="card">
+        <p class="input-label" id="templates-faq-heading">FAQ</p>
+        <dl class="faq-list">
+          <div class="faq-item">
+            <dt>What format are the templates?</dt>
+            <dd>You receive both a .docx file (Microsoft Word / LibreOffice) and a shareable Google Docs link.</dd>
+          </div>
+          <div class="faq-item">
+            <dt>Are these ATS-friendly?</dt>
+            <dd>Yes. Templates use clean single-column layouts with standard headings that pass most ATS parsers.</dd>
+          </div>
+          <div class="faq-item">
+            <dt>How do I download after purchase?</dt>
+            <dd>You&#39;ll receive an instant download link via email right after checkout.</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <footer class="footer">
+      Built with the OpenAI API &mdash; results may vary.
+    </footer>
+  </body>
+</html>\``;
 }
 
 function renderJobsPage() {
-  const groups = jobClusters
+  const groups = allClusters
     .map((cluster) => {
       const pageLinks = PAGE_TYPE_ORDER.map((type) => {
         const page = cluster.pages[type];
@@ -462,6 +587,7 @@ ${groups}
       </div>
     </main>
 
+${renderCta()}
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
     </footer>
