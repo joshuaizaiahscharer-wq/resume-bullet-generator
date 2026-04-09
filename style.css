@@ -54,14 +54,6 @@ body {
   color: #fff;
 }
 
-.nav-link--cta {
-  color: #a78bfa;
-}
-
-.nav-link--cta:hover {
-  color: #c4b5fd;
-}
-
 /* ── Hero ───────────────────────────────────────────────────── */
 .hero {
   text-align: center;
