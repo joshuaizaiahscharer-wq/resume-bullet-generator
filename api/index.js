@@ -29,6 +29,7 @@ async function sendSupportNotificationEmail(supportRequest) {
     await sgMail.send({
       to: SUPPORT_NOTIFY_EMAIL,
       from: "noreply@bulletai.com",
+      replyTo: supportRequest.email,
       subject: `New support message from ${supportRequest.name || supportRequest.email}`,
       html: `
         <h2>New Support Message</h2>
