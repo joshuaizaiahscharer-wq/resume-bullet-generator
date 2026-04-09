@@ -7,6 +7,8 @@ const cors = require("cors");
 const OpenAI = require("openai");
 const { sendDigitalDownloadEmail } = require("../lib/email");
 const { verifyShopifyWebhook, isOrderPaid } = require("../lib/shopifyWebhook");
+const { savePurchase } = require("../lib/purchaseTracking");
+const { createTemplateAccessToken, validateTemplateAccessToken } = require("../lib/templateAccess");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 
@@ -15,7 +17,7 @@ const app = express();
 // Use SITE_URL for sitemap/robots. In production, set this in Vercel env vars.
 const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
 const SHOPIFY_STORE_URL = (process.env.SHOPIFY_STORE_URL || "").replace(/\/$/, "");
-const PRODUCT_DOWNLOAD_URL = process.env.PRODUCT_DOWNLOAD_URL || "";
+const TEMPLATE_ACCESS_TOKEN_HOURS = Number(process.env.TEMPLATE_ACCESS_TOKEN_HOURS || 24);
 
 // In-memory idempotency guard for duplicate webhook deliveries.
 // Note: For multi-instance/serverless environments, replace with Redis/DB for stronger guarantees.
@@ -51,10 +53,13 @@ function getOrderCustomerEmail(order) {
   );
 }
 
-function getProductDownloadUrl(order) {
-  // v1: static URL from env.
-  // Future upgrade: generate signed/expiring per-order links here.
-  return PRODUCT_DOWNLOAD_URL;
+function getOrderProductName(order) {
+  const lineItemName = order?.line_items?.[0]?.name;
+  return lineItemName || "Resume Template Pack";
+}
+
+function createBuilderLink(token) {
+  return `${SITE_URL}/template-builder?token=${encodeURIComponent(token)}`;
 }
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
@@ -93,29 +98,38 @@ app.post("/api/webhooks/shopify/orders", express.raw({ type: "application/json" 
     return res.status(200).json({ ok: true, skipped: "missing-customer-email" });
   }
 
-  const downloadUrl = getProductDownloadUrl(order);
-  if (!downloadUrl) {
-    console.error("PRODUCT_DOWNLOAD_URL is missing. Cannot send digital download email.");
-    return res.status(500).json({ error: "Download URL not configured." });
-  }
-
   try {
     inFlightWebhookIds.add(deliveryId);
+
+    const purchase = await savePurchase({
+      shopifyOrderId: order?.id,
+      email: customerEmail,
+      product: getOrderProductName(order),
+      financialStatus: order?.financial_status || order?.display_financial_status || "paid",
+    });
+
+    const accessToken = await createTemplateAccessToken({
+      purchaseId: purchase.id,
+      email: customerEmail,
+      expiresInHours: TEMPLATE_ACCESS_TOKEN_HOURS,
+    });
+
+    const builderUrl = createBuilderLink(accessToken.token);
 
     await sendDigitalDownloadEmail({
       toEmail: customerEmail,
       orderNumber: order?.name || order?.order_number || order?.id,
-      productName: "Resume Template Pack",
-      downloadUrl,
+      productName: purchase.product,
+      downloadUrl: builderUrl,
     });
 
     inFlightWebhookIds.delete(deliveryId);
     processedWebhookIds.set(deliveryId, Date.now());
-    return res.status(200).json({ ok: true, sent: true });
+    return res.status(200).json({ ok: true, sent: true, purchaseId: purchase.id });
   } catch (err) {
     inFlightWebhookIds.delete(deliveryId);
-    console.error("Shopify webhook email error:", err.message);
-    return res.status(500).json({ error: "Failed to send download email." });
+    console.error("Shopify webhook processing error:", err.message);
+    return res.status(500).json({ error: "Failed to process paid order." });
   }
 });
 
@@ -498,6 +512,24 @@ app.get("/jobs", (req, res) => {
 
 app.get("/templates", (req, res) => {
   res.send(renderTemplatesPage());
+});
+
+app.get("/template-builder", async (req, res) => {
+  const token = String(req.query.token || "").trim();
+  const access = await validateTemplateAccessToken(token);
+
+  if (!access.ok) {
+    return res.status(403).send(renderTemplateAccessDeniedPage());
+  }
+
+  return res.send(
+    renderTemplateBuilderPage({
+      token,
+      email: access.token.email || access.purchase.email || "",
+      productName: access.purchase.product || "Resume Template Pack",
+      expiresAt: access.token.expires_at,
+    })
+  );
 });
 
 app.get("/purchase-success", (req, res) => {
@@ -1223,6 +1255,297 @@ function renderTemplatesPage() {
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
     </footer>
+  </body>
+</html>`;
+}
+
+function renderTemplateAccessDeniedPage() {
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>${PAGE_HEAD(
+    "Access Denied | BulletAI",
+    "Your secure template builder link is invalid or expired."
+  )}
+  </head>
+  <body>
+    <nav class="nav">
+      <a href="/" class="nav-logo">&#10022; BulletAI</a>
+      <a href="/templates" class="nav-link">Templates</a>
+    </nav>
+
+    <header class="hero">
+      <span class="badge">&#9888; Secure Access</span>
+      <h1><span class="gradient-text">Access Denied</span></h1>
+      <p class="hero-sub">
+        This template builder link is invalid or expired. Please use the latest link from your purchase email.
+      </p>
+    </header>
+
+    <main class="main">
+      <div class="card">
+        <div class="job-links-grid">
+          <a href="/templates">Buy Template Pack</a>
+          <a href="/">Back to Home</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">Built with the OpenAI API &mdash; results may vary.</footer>
+  </body>
+</html>`;
+}
+
+function renderTemplateBuilderPage({ token, email, productName, expiresAt }) {
+  return `<!DOCTYPE html>
+<html lang="en">
+  <head>${PAGE_HEAD(
+    "Template Builder | BulletAI",
+    "Build and download your resume template with secure access."
+  )}
+    <style>
+      .builder-shell {
+        width: min(1200px, 100%);
+        margin: 0 auto;
+        padding: 0 16px 40px;
+      }
+      .builder-grid {
+        display: grid;
+        gap: 18px;
+        grid-template-columns: 1.1fr 1fr;
+      }
+      .builder-card {
+        background: #131929;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 18px;
+      }
+      .builder-title { font-size: 1.1rem; margin-bottom: 8px; color: #f8fafc; }
+      .builder-note { color: #94a3b8; font-size: 0.85rem; margin-bottom: 14px; }
+      .template-choices { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 10px; margin-bottom: 18px; }
+      .template-card {
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 10px;
+        padding: 12px;
+        background: #0b0f1a;
+        color: #cbd5e1;
+        cursor: pointer;
+      }
+      .template-card.active { border-color: #818cf8; box-shadow: 0 0 0 1px rgba(129,140,248,0.4) inset; }
+      .builder-fields { display: grid; gap: 12px; }
+      .builder-fields label { display: grid; gap: 6px; font-size: 0.85rem; color: #a8b3c7; }
+      .builder-fields input,
+      .builder-fields textarea {
+        width: 100%;
+        background: #0b0f1a;
+        border: 1px solid rgba(255,255,255,0.14);
+        border-radius: 8px;
+        color: #f1f5f9;
+        font: inherit;
+        padding: 10px 12px;
+      }
+      .builder-fields textarea { min-height: 90px; resize: vertical; }
+      .builder-actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+      .builder-btn {
+        border: none;
+        border-radius: 10px;
+        padding: 11px 16px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .builder-btn.primary { background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; }
+      .builder-btn.secondary { background: #1e293b; color: #e2e8f0; }
+      .preview-wrap { background: #fff; color: #0f172a; border-radius: 10px; padding: 22px; min-height: 720px; }
+      .preview-wrap.t2 { font-family: Georgia, "Times New Roman", serif; }
+      .preview-wrap.t3 { border-top: 6px solid #334155; }
+      .resume-head h2 { font-size: 1.6rem; margin-bottom: 4px; }
+      .resume-meta { font-size: 0.88rem; color: #334155; }
+      .resume-section { margin-top: 18px; }
+      .resume-section h3 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 7px; }
+      .resume-section p { white-space: pre-wrap; line-height: 1.5; }
+      .resume-list { margin: 0; padding-left: 18px; line-height: 1.5; }
+      .secure-meta { margin-top: 8px; color: #64748b; font-size: 0.78rem; }
+
+      @media (max-width: 980px) {
+        .builder-grid { grid-template-columns: 1fr; }
+        .template-choices { grid-template-columns: 1fr; }
+      }
+
+      @media print {
+        body { background: #fff !important; }
+        .nav, .hero, .footer, .builder-card:first-child { display: none !important; }
+        .builder-grid { display: block; }
+        .builder-card { border: none; padding: 0; background: #fff; }
+        .preview-wrap { box-shadow: none; border-radius: 0; min-height: auto; padding: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="nav">
+      <a href="/" class="nav-logo">&#10022; BulletAI</a>
+      <a href="/templates" class="nav-link">Templates</a>
+    </nav>
+
+    <header class="hero">
+      <span class="badge">&#10003; Secure Builder Access</span>
+      <h1>Build Your <span class="gradient-text">Resume Template</span></h1>
+      <p class="hero-sub">Fill your details, preview instantly, then download as PDF.</p>
+    </header>
+
+    <main class="builder-shell">
+      <div class="builder-grid">
+        <section class="builder-card">
+          <h2 class="builder-title">Template Builder</h2>
+          <p class="builder-note">Product: ${escapeHtml(productName)}</p>
+
+          <div class="template-choices" id="templateChoices">
+            <button class="template-card active" data-template="t1" type="button">Template 1<br/><small>Modern</small></button>
+            <button class="template-card" data-template="t2" type="button">Template 2<br/><small>Classic</small></button>
+            <button class="template-card" data-template="t3" type="button">Template 3<br/><small>Bold Header</small></button>
+          </div>
+
+          <form class="builder-fields" id="resumeForm">
+            <label>Full Name
+              <input id="fullName" value="Your Name" />
+            </label>
+            <label>Email
+              <input id="email" value="${escapeHtml(email)}" />
+            </label>
+            <label>Phone
+              <input id="phone" value="(555) 123-4567" />
+            </label>
+            <label>Location
+              <input id="location" value="City, State" />
+            </label>
+            <label>Summary
+              <textarea id="summary">Results-driven professional with proven ability to deliver high-quality work, collaborate across teams, and exceed performance goals.</textarea>
+            </label>
+            <label>Skills (comma separated)
+              <textarea id="skills">Customer Service, Teamwork, Problem Solving, Communication</textarea>
+            </label>
+            <label>Experience Bullet Points (one per line)
+              <textarea id="experience">Improved team efficiency by optimizing daily workflows.
+Delivered excellent customer service in fast-paced environments.
+Trained and onboarded new team members successfully.</textarea>
+            </label>
+            <label>Education
+              <textarea id="education">B.S. in Business Administration — Example University (2022)</textarea>
+            </label>
+          </form>
+
+          <div class="builder-actions">
+            <button class="builder-btn primary" id="downloadBtn" type="button">Download PDF</button>
+            <button class="builder-btn secondary" id="resetBtn" type="button">Reset Sample Data</button>
+          </div>
+          <p class="secure-meta">Token expires at: ${escapeHtml(new Date(expiresAt).toLocaleString())}</p>
+        </section>
+
+        <section class="builder-card">
+          <h2 class="builder-title">Live Preview</h2>
+          <div class="preview-wrap" id="preview">
+            <div class="resume-head">
+              <h2 id="pName">Your Name</h2>
+              <p class="resume-meta" id="pMeta">you@email.com • (555) 123-4567 • City, State</p>
+            </div>
+
+            <div class="resume-section">
+              <h3>Professional Summary</h3>
+              <p id="pSummary"></p>
+            </div>
+
+            <div class="resume-section">
+              <h3>Skills</h3>
+              <ul class="resume-list" id="pSkills"></ul>
+            </div>
+
+            <div class="resume-section">
+              <h3>Experience</h3>
+              <ul class="resume-list" id="pExperience"></ul>
+            </div>
+
+            <div class="resume-section">
+              <h3>Education</h3>
+              <p id="pEducation"></p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">Built with the OpenAI API &mdash; results may vary.</footer>
+
+    <script>
+      const els = {
+        fullName: document.getElementById("fullName"),
+        email: document.getElementById("email"),
+        phone: document.getElementById("phone"),
+        location: document.getElementById("location"),
+        summary: document.getElementById("summary"),
+        skills: document.getElementById("skills"),
+        experience: document.getElementById("experience"),
+        education: document.getElementById("education"),
+      };
+
+      const pName = document.getElementById("pName");
+      const pMeta = document.getElementById("pMeta");
+      const pSummary = document.getElementById("pSummary");
+      const pSkills = document.getElementById("pSkills");
+      const pExperience = document.getElementById("pExperience");
+      const pEducation = document.getElementById("pEducation");
+      const preview = document.getElementById("preview");
+
+      function splitByLineOrComma(value) {
+        return String(value || "")
+          .split(/\n|,/) 
+          .map((x) => x.trim())
+          .filter(Boolean);
+      }
+
+      function renderPreview() {
+        pName.textContent = els.fullName.value || "Your Name";
+        pMeta.textContent = [els.email.value, els.phone.value, els.location.value].filter(Boolean).join(" • ");
+        pSummary.textContent = els.summary.value || "";
+        pEducation.textContent = els.education.value || "";
+
+        pSkills.innerHTML = "";
+        splitByLineOrComma(els.skills.value).forEach((skill) => {
+          const li = document.createElement("li");
+          li.textContent = skill;
+          pSkills.appendChild(li);
+        });
+
+        pExperience.innerHTML = "";
+        splitByLineOrComma(els.experience.value).forEach((item) => {
+          const li = document.createElement("li");
+          li.textContent = item;
+          pExperience.appendChild(li);
+        });
+      }
+
+      Object.values(els).forEach((input) => {
+        input.addEventListener("input", renderPreview);
+      });
+
+      document.getElementById("templateChoices").addEventListener("click", (e) => {
+        const btn = e.target.closest(".template-card");
+        if (!btn) return;
+        document.querySelectorAll(".template-card").forEach((el) => el.classList.remove("active"));
+        btn.classList.add("active");
+        preview.classList.remove("t1", "t2", "t3");
+        preview.classList.add(btn.dataset.template);
+      });
+
+      document.getElementById("resetBtn").addEventListener("click", () => {
+        document.getElementById("resumeForm").reset();
+        renderPreview();
+      });
+
+      document.getElementById("downloadBtn").addEventListener("click", () => {
+        window.print();
+      });
+
+      renderPreview();
+    </script>
   </body>
 </html>`;
 }
