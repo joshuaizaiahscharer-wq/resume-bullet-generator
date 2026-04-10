@@ -837,9 +837,9 @@ body.resume-builder-body {
 }
 
 .preview-paywall-row.is-paywalled #resumePreviewShell {
-  width: calc((8.5in * 0.5) + 12px);
+  width: calc((8.5in * 0.5) + 24px);
   max-width: 100%;
-  min-height: calc((11in * 0.5) + 12px);
+  min-height: calc((11in * 0.5) + 24px);
   justify-self: start;
 }
 
@@ -848,7 +848,7 @@ body.resume-builder-body {
   justify-content: center;
   align-items: flex-start;
   overflow: hidden;
-  padding: 6px;
+  padding: 12px;
 }
 
 .preview-paywall-row.is-paywalled .resume-preview-document {
