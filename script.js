@@ -29,6 +29,9 @@ const API_URL = "/api/generate";
 // ─── DOM references ──────────────────────────────────────────────────────────
 const generateBtn    = document.getElementById("generateBtn");
 const jobTitleInput  = document.getElementById("jobTitle");
+const jobDetailsInput = document.getElementById("jobDetails");
+const detailsToggle  = document.getElementById("detailsToggle");
+const detailsPanel   = document.getElementById("detailsPanel");
 const statusEl       = document.getElementById("status");
 const resultsSection = document.getElementById("resultsSection");
 const resultsHeading = document.getElementById("resultsHeading");
@@ -68,6 +71,23 @@ if (supportForm) {
   supportForm.addEventListener("submit", handleSupportSubmit);
 }
 
+// ─── Details panel toggle ─────────────────────────────────────────────────────
+if (detailsToggle && detailsPanel) {
+  detailsToggle.addEventListener("click", () => {
+    const isOpen = !detailsPanel.classList.contains("hidden");
+    if (isOpen) {
+      detailsPanel.classList.add("hidden");
+      detailsToggle.setAttribute("aria-expanded", "false");
+      detailsToggle.querySelector(".details-toggle-icon").textContent = "+";
+    } else {
+      detailsPanel.classList.remove("hidden");
+      detailsToggle.setAttribute("aria-expanded", "true");
+      detailsToggle.querySelector(".details-toggle-icon").textContent = "−";
+      if (jobDetailsInput) jobDetailsInput.focus();
+    }
+  });
+}
+
 // ─── Quick-pick chips ─────────────────────────────────────────────────────────
 if (chipsContainer) {
   chipsContainer.addEventListener("click", (e) => {
@@ -98,10 +118,12 @@ async function handleGenerate() {
     return;
   }
 
+  const jobDetails = jobDetailsInput ? jobDetailsInput.value.trim() : "";
+
   setLoading(true);
 
   try {
-    const bullets = await fetchBullets(jobTitle);
+    const bullets = await fetchBullets(jobTitle, jobDetails);
     displayBullets(bullets, jobTitle);
   } catch (err) {
     showError(err.message || "Something went wrong. Please try again.");
@@ -110,7 +132,7 @@ async function handleGenerate() {
   }
 }
 
-async function fetchBullets(jobTitle) {
+async function fetchBullets(jobTitle, jobDetails) {
   const pagePath = window.location.pathname;
   const userId = getCurrentUserId();
 
@@ -119,6 +141,7 @@ async function fetchBullets(jobTitle) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       jobTitle,
+      jobDetails: jobDetails || undefined,
       // Send page metadata for backend usage tracking.
       pagePath,
       pageType: inferPageType(pagePath),

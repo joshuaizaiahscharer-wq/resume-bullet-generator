@@ -496,7 +496,76 @@ body {
   background: rgba(99, 102, 241, 0.12);
 }
 
-/* ── Copy button ────────────────────────────────────────────── */
+/* ── Details toggle ─────────────────────────────────────────── */
+.details-toggle-wrap {
+  margin-top: 14px;
+}
+
+.details-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 600;
+  color: #6366f1;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.details-toggle:hover {
+  color: #a5b4fc;
+}
+
+.details-toggle-icon {
+  font-size: 1rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.details-toggle-hint {
+  font-weight: 400;
+  color: #475569;
+}
+
+.details-panel {
+  margin-top: 14px;
+}
+
+.details-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  line-height: 1.55;
+  color: #f1f5f9;
+  background: #0b0f1a;
+  border: 1.5px solid #1e293b;
+  border-radius: 12px;
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.details-textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.details-textarea::placeholder {
+  color: #334155;
+}
+
+.details-hint {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+/* ── Copy button ─────────────────────────────────────────────── */
 .copy-btn {
   padding: 7px 16px;
   font-size: 0.8rem;

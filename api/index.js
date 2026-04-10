@@ -666,15 +666,26 @@ const allClusterPages = allClusters.flatMap((cluster) =>
 
 // ─── POST /api/generate ───────────────────────────────────────────────────────
 app.post("/api/generate", async (req, res) => {
-  const { jobTitle, pagePath, pageType, userId: bodyUserId } = req.body;
+  const { jobTitle, jobDetails, pagePath, pageType, userId: bodyUserId } = req.body;
 
   if (!jobTitle || typeof jobTitle !== "string" || !jobTitle.trim()) {
     return res.status(400).json({ error: "A valid jobTitle is required." });
   }
 
   const sanitizedTitle = jobTitle.trim().slice(0, 100);
+  const sanitizedDetails =
+    jobDetails && typeof jobDetails === "string"
+      ? jobDetails.trim().slice(0, 1000)
+      : "";
 
   try {
+    const userPrompt = sanitizedDetails
+      ? `Create 10 professional resume bullet points for a ${sanitizedTitle}. ` +
+        `Use the following details about this person's experience to make the bullets specific and tailored: ${sanitizedDetails}. ` +
+        "Each bullet should begin with an action verb."
+      : `Create 10 professional resume bullet points for a ${sanitizedTitle}. ` +
+        "Each bullet should begin with an action verb.";
+
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -689,9 +700,7 @@ app.post("/api/generate", async (req, res) => {
         },
         {
           role: "user",
-          content:
-            `Create 10 professional resume bullet points for a ${sanitizedTitle}. ` +
-            "Each bullet should begin with an action verb.",
+          content: userPrompt,
         },
       ],
       temperature: 0.7,

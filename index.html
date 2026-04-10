@@ -95,6 +95,25 @@
           <button class="chip" type="button">Teacher</button>
         </div>
 
+        <!-- Optional job details -->
+        <div class="details-toggle-wrap">
+          <button type="button" id="detailsToggle" class="details-toggle" aria-expanded="false" aria-controls="detailsPanel">
+            <span class="details-toggle-icon">+</span> Add details <span class="details-toggle-hint">(optional)</span>
+          </button>
+        </div>
+        <div id="detailsPanel" class="details-panel hidden">
+          <label class="input-label" for="jobDetails">Tell us more about your role</label>
+          <textarea
+            id="jobDetails"
+            class="details-textarea"
+            rows="4"
+            maxlength="1000"
+            placeholder="e.g. I managed a team of 5, worked with Python and AWS, reduced costs by 30%, focused on customer-facing features…"
+            aria-label="Additional job details"
+          ></textarea>
+          <p class="details-hint">The more context you provide, the more tailored your bullet points will be.</p>
+        </div>
+
         <div id="status" class="status hidden" aria-live="polite"></div>
 
         <section id="resultsSection" class="results hidden" aria-live="polite">
