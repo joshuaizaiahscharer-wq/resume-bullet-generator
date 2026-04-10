@@ -16,6 +16,8 @@ const OpenAI = require("openai");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 const {
+  blogPosts: staticBlogPosts,
+  blogPostBySlug: staticBlogPostBySlug,
   renderBlogListPage,
   renderBlogPostPage,
   buildExcerpt,
@@ -868,55 +870,78 @@ app.get("/jobs", (req, res) => {
 });
 
 app.get("/blog", async (req, res) => {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("slug, title, content, created_at")
-    .eq("is_published", true)
-    .order("created_at", { ascending: false });
+  let dbPosts = [];
+  try {
+    const { data, error } = await supabase
+      .from("blog_posts")
+      .select("slug, title, content, created_at")
+      .eq("is_published", true)
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("[/blog] fetch error:", error.message);
-    // Fallback: render the blog list with static posts so users never see a raw error
-    return res.send(renderBlogListPage(SITE_URL, []));
+    if (!error && data) {
+      dbPosts = data.map((row) => ({
+        slug: row.slug,
+        title: row.title,
+        date: row.created_at,
+        excerpt: buildExcerpt(row.content, 150),
+        description: buildExcerpt(row.content, 170),
+        author: null,
+        image: null,
+      }));
+    }
+  } catch (_err) {
+    // Supabase unavailable — proceed with static posts only
   }
 
-  const posts = (data || []).map((row) => ({
-    slug: row.slug,
-    title: row.title,
-    date: row.created_at,
-    excerpt: buildExcerpt(row.content, 150),
-    description: buildExcerpt(row.content, 170),
-  }));
+  // Merge: DB posts override static posts with the same slug
+  const dbSlugs = new Set(dbPosts.map((p) => p.slug));
+  const merged = [
+    ...dbPosts,
+    ...staticBlogPosts.filter((p) => !dbSlugs.has(p.slug)),
+  ];
 
-  res.send(renderBlogListPage(SITE_URL, posts));
+  res.send(renderBlogListPage(SITE_URL, merged));
 });
 
 app.get("/blog/:slug", async (req, res) => {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .select("slug, title, content, created_at")
-    .eq("slug", req.params.slug)
-    .eq("is_published", true)
-    .maybeSingle();
+  const slug = req.params.slug;
 
-  if (error) {
-    console.error("[/blog/:slug] fetch error:", error.message);
-    return res.status(500).send("Unable to load this blog post.");
+  // 1. Try Supabase first
+  let dbPost = null;
+  try {
+    const { data, error } = await supabase
+      .from("blog_posts")
+      .select("slug, title, content, created_at")
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle();
+
+    if (!error && data) {
+      dbPost = {
+        slug: data.slug,
+        title: data.title,
+        date: data.created_at,
+        description: buildExcerpt(data.content, 180),
+        content: data.content,
+        author: null,
+        image: null,
+      };
+    }
+  } catch (_err) {
+    // Supabase unavailable — fall through to static posts
   }
 
-  if (!data) {
-    return res.status(404).send("Blog post not found.");
+  if (dbPost) {
+    return res.send(renderBlogPostPage(dbPost, SITE_URL));
   }
 
-  const post = {
-    slug: data.slug,
-    title: data.title,
-    date: data.created_at,
-    description: buildExcerpt(data.content, 180),
-    content: data.content,
-  };
+  // 2. Fall back to static posts
+  const staticPost = staticBlogPostBySlug[slug];
+  if (staticPost) {
+    return res.send(renderBlogPostPage(staticPost, SITE_URL));
+  }
 
-  return res.send(renderBlogPostPage(post, SITE_URL));
+  return res.status(404).send("Blog post not found.");
 });
 
 app.get("/resume-template-builder", (req, res) => {
