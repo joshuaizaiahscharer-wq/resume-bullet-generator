@@ -369,7 +369,7 @@ body.resume-builder-body {
   transition: filter 0.3s ease;
 }
 
-.resume-preview-shell.is-locked .resume-preview-document {
+.resume-preview-shell.is-locked .resume-locked-body {
   filter: blur(8px);
   pointer-events: none;
   user-select: none;

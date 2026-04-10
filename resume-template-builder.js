@@ -378,30 +378,32 @@ function ResumePreview() {
           <p class="resume-summary-text">${escapeHtml(previewData.professionalSummary)}</p>
         </section>
 
-        <section class="resume-block">
-          <h4>Work Experience</h4>
-          ${workMarkup}
-        </section>
+        <div class="resume-locked-body">
+          <section class="resume-block">
+            <h4>Work Experience</h4>
+            ${workMarkup}
+          </section>
 
-        <section class="resume-block">
-          <h4>Education</h4>
-          ${educationMarkup}
-        </section>
+          <section class="resume-block">
+            <h4>Education</h4>
+            ${educationMarkup}
+          </section>
 
-        <section class="resume-block">
-          <h4>Skills</h4>
-          <p class="resume-skills-text">${escapeHtml(previewData.skills)}</p>
-        </section>
+          <section class="resume-block">
+            <h4>Skills</h4>
+            <p class="resume-skills-text">${escapeHtml(previewData.skills)}</p>
+          </section>
 
-        <section class="resume-block">
-          <h4>Certifications</h4>
-          <p class="resume-certs-text">${escapeHtml(previewData.certifications)}</p>
-        </section>
+          <section class="resume-block">
+            <h4>Certifications</h4>
+            <p class="resume-certs-text">${escapeHtml(previewData.certifications)}</p>
+          </section>
 
-        <section class="resume-block">
-          <h4>Projects</h4>
-          ${projectMarkup}
-        </section>
+          <section class="resume-block">
+            <h4>Projects</h4>
+            ${projectMarkup}
+          </section>
+        </div>
       </article>
     `;
   }
