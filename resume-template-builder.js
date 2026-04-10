@@ -50,6 +50,7 @@ const resumeBuilderState = {
   hasSubmitted: false,
   isFormCollapsed: false,
   isUnlocked: false,
+  hasPaid: false,
   generatedData: null,
   checkoutInProgress: false,
   checkoutError: "",
@@ -103,8 +104,56 @@ const elementRefs = {
 
 let resumeAuthClient = null;
 let cloudAuthAvailable = false;
+let paymentStatusChannel = null;
 const PENDING_AUTH_RESUME_KEY = "resume_builder_pending_auth_resume_v1";
 let pendingAuthScrollRestoreY = null;
+
+async function getCurrentUserData(userId) {
+  if (!resumeAuthClient || !userId) return null;
+
+  const { data, error } = await resumeAuthClient
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    console.error("Error fetching user:", error);
+    return null;
+  }
+
+  return data;
+}
+
+function clearPaymentStatusSubscription() {
+  if (!resumeAuthClient || !paymentStatusChannel) return;
+  resumeAuthClient.removeChannel(paymentStatusChannel);
+  paymentStatusChannel = null;
+}
+
+function subscribeToPaymentStatus(userId) {
+  if (!resumeAuthClient || !userId) return;
+  clearPaymentStatusSubscription();
+
+  paymentStatusChannel = resumeAuthClient
+    .channel(`resume-payment-status-${userId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "users",
+        filter: `id=eq.${userId}`,
+      },
+      (payload) => {
+        console.log("Payment update received:", payload);
+        resumeBuilderState.hasPaid = Boolean(payload?.new?.has_paid);
+        resumeBuilderState.isUnlocked = resumeBuilderState.hasPaid;
+        refreshUi();
+      }
+    )
+    .subscribe();
+}
 
 function cloneFormData() {
   return JSON.parse(JSON.stringify(resumeBuilderState.formData));
@@ -345,6 +394,8 @@ async function initCloudAuth() {
     const { data } = await resumeAuthClient.auth.getSession();
     const user = data?.session?.user || null;
     resumeBuilderState.signedInEmail = normalizeEmail(user?.email || "");
+    resumeBuilderState.hasPaid = false;
+    resumeBuilderState.isUnlocked = false;
 
     if (resumeBuilderState.signedInEmail) {
       const restoredLocalDraft = restoreResumeAfterAuthRedirect();
@@ -353,10 +404,21 @@ async function initCloudAuth() {
       } else {
         await loadSavedResumeForSignedInUser();
       }
+
+      await fetchAccessState(user?.id || "");
+      subscribeToPaymentStatus(user?.id || "");
     }
 
     resumeAuthClient.auth.onAuthStateChange(async (_event, session) => {
+      const authUser = session?.user || null;
       resumeBuilderState.signedInEmail = normalizeEmail(session?.user?.email || "");
+
+      if (!authUser) {
+        resumeBuilderState.hasPaid = false;
+        resumeBuilderState.isUnlocked = false;
+        clearPaymentStatusSubscription();
+      }
+
       if (resumeBuilderState.signedInEmail) {
         const restoredLocalDraft = restoreResumeAfterAuthRedirect();
         if (restoredLocalDraft) {
@@ -364,8 +426,11 @@ async function initCloudAuth() {
         } else {
           await loadSavedResumeForSignedInUser();
         }
+
+        await fetchAccessState(authUser?.id || "");
+        subscribeToPaymentStatus(authUser?.id || "");
       }
-      await fetchAccessState();
+
       refreshUi();
       restoreScrollAfterAuthRedirect();
     });
@@ -1801,17 +1866,23 @@ function removeDynamicEntry(groupName, index) {
   resumeBuilderState.formData[groupName].splice(index, 1);
 }
 
-async function fetchAccessState() {
-  try {
-    const response = await fetch("/api/resume-builder/access");
-    const data = await response.json();
-
-    if (response.ok && data && typeof data.isUnlocked === "boolean") {
-      resumeBuilderState.isUnlocked = data.isUnlocked;
-    }
-  } catch (_error) {
+async function fetchAccessState(userIdParam) {
+  const userId = String(userIdParam || "").trim();
+  if (!resumeBuilderState.signedInEmail || !userId) {
+    resumeBuilderState.hasPaid = false;
     resumeBuilderState.isUnlocked = false;
+    return;
   }
+
+  const userData = await getCurrentUserData(userId);
+  if (!userData) {
+    resumeBuilderState.hasPaid = false;
+    resumeBuilderState.isUnlocked = false;
+    return;
+  }
+
+  resumeBuilderState.hasPaid = Boolean(userData.has_paid);
+  resumeBuilderState.isUnlocked = resumeBuilderState.hasPaid;
 }
 
 async function maybeVerifyCheckoutFromUrl() {
@@ -1832,6 +1903,7 @@ async function maybeVerifyCheckoutFromUrl() {
 
     const data = await response.json().catch(() => ({}));
     if (response.ok && data && data.isUnlocked === true) {
+      resumeBuilderState.hasPaid = true;
       resumeBuilderState.isUnlocked = true;
       resumeBuilderState.hasSubmitted = true;
       if (!resumeBuilderState.generatedData) {
@@ -2274,7 +2346,6 @@ function refreshUi(options = {}) {
 async function init() {
   bindGlobalEvents();
   await initCloudAuth();
-  await fetchAccessState();
   await maybeVerifyCheckoutFromUrl();
   refreshUi();
   restoreScrollAfterAuthRedirect();
