@@ -1,44 +1,48 @@
 const resumeBuilderState = {
-  hasPaid: false,
+  hasSubmitted: false,
+  isUnlocked: false,
+  generatedData: null,
   checkoutInProgress: false,
   checkoutError: "",
-  fullName: "Jordan Lee",
-  email: "jordan.lee@email.com",
-  phone: "(555) 010-2784",
-  location: "Austin, TX",
-  professionalSummary:
-    "Results-driven product marketer with 6+ years of experience launching B2B SaaS products and improving conversion across full-funnel campaigns.",
-  workExperience: [
-    {
-      company: "Northstar Software",
-      role: "Senior Product Marketing Manager",
-      location: "Austin, TX",
-      startDate: "2022",
-      endDate: "Present",
-      details:
-        "Led GTM strategy for two flagship releases, increasing qualified pipeline by 34% and improving landing page conversion by 21%.",
-    },
-  ],
-  education: [
-    {
-      school: "University of Texas at Austin",
-      degree: "BBA, Marketing",
-      location: "Austin, TX",
-      startDate: "2013",
-      endDate: "2017",
-      details: "Graduated with honors. Led student marketing association workshops.",
-    },
-  ],
-  skills: "Product Marketing, GTM Strategy, Messaging, Lifecycle Email, SEO, Paid Acquisition, HubSpot, Tableau",
-  certifications: "Google Analytics Certification, HubSpot Inbound Marketing",
-  projects: [
-    {
-      name: "Pricing Page Conversion Redesign",
-      link: "https://example.com/case-study",
-      description:
-        "Redesigned pricing page narrative and CTAs, driving a 19% increase in trial starts in 90 days.",
-    },
-  ],
+  formData: {
+    fullName: "Jordan Lee",
+    email: "jordan.lee@email.com",
+    phone: "(555) 010-2784",
+    location: "Austin, TX",
+    professionalSummary:
+      "Results-driven product marketer with 6+ years of experience launching B2B SaaS products and improving conversion across full-funnel campaigns.",
+    workExperience: [
+      {
+        company: "Northstar Software",
+        role: "Senior Product Marketing Manager",
+        location: "Austin, TX",
+        startDate: "2022",
+        endDate: "Present",
+        details:
+          "Led GTM strategy for two flagship releases, increasing qualified pipeline by 34% and improving landing page conversion by 21%.",
+      },
+    ],
+    education: [
+      {
+        school: "University of Texas at Austin",
+        degree: "BBA, Marketing",
+        location: "Austin, TX",
+        startDate: "2013",
+        endDate: "2017",
+        details: "Graduated with honors. Led student marketing association workshops.",
+      },
+    ],
+    skills: "Product Marketing, GTM Strategy, Messaging, Lifecycle Email, SEO, Paid Acquisition, HubSpot, Tableau",
+    certifications: "Google Analytics Certification, HubSpot Inbound Marketing",
+    projects: [
+      {
+        name: "Pricing Page Conversion Redesign",
+        link: "https://example.com/case-study",
+        description:
+          "Redesigned pricing page narrative and CTAs, driving a 19% increase in trial starts in 90 days.",
+      },
+    ],
+  },
 };
 
 const elementRefs = {
@@ -46,9 +50,14 @@ const elementRefs = {
   previewRoot: document.getElementById("resumePreviewRoot"),
   overlayRoot: document.getElementById("paywallOverlayRoot"),
   previewShell: document.getElementById("resumePreviewShell"),
+  previewSection: document.getElementById("generatedResumeSection"),
   paymentStatusBadge: document.getElementById("paymentStatusBadge"),
   downloadBtn: document.getElementById("downloadResumeBtn"),
 };
+
+function cloneFormData() {
+  return JSON.parse(JSON.stringify(resumeBuilderState.formData));
+}
 
 function escapeHtml(value) {
   return String(value || "")
@@ -103,7 +112,9 @@ function ResumeBuilderForm() {
   function render() {
     if (!elementRefs.formRoot) return;
 
-    const experienceEntries = resumeBuilderState.workExperience
+    const data = resumeBuilderState.formData;
+
+    const experienceEntries = data.workExperience
       .map((item, index) =>
         createDynamicEntryCard("workExperience", index, [
           { label: "Company", key: "company", value: item.company, placeholder: "Company name" },
@@ -122,7 +133,7 @@ function ResumeBuilderForm() {
       )
       .join("");
 
-    const educationEntries = resumeBuilderState.education
+    const educationEntries = data.education
       .map((item, index) =>
         createDynamicEntryCard("education", index, [
           { label: "School", key: "school", value: item.school, placeholder: "University or institution" },
@@ -141,7 +152,7 @@ function ResumeBuilderForm() {
       )
       .join("");
 
-    const projectEntries = resumeBuilderState.projects
+    const projectEntries = data.projects
       .map((item, index) =>
         createDynamicEntryCard("projects", index, [
           { label: "Project Name", key: "name", value: item.name, placeholder: "Project title" },
@@ -160,19 +171,19 @@ function ResumeBuilderForm() {
     elementRefs.formRoot.innerHTML = `
       <form class="resume-form" id="resumeBuilderForm" novalidate>
         <div class="form-grid-two">
-          ${createField({ label: "Full name", key: "fullName", value: resumeBuilderState.fullName, placeholder: "Your full name" })}
-          ${createField({ label: "Email", key: "email", value: resumeBuilderState.email, type: "email", placeholder: "you@example.com" })}
+          ${createField({ label: "Full name", key: "fullName", value: data.fullName, placeholder: "Your full name" })}
+          ${createField({ label: "Email", key: "email", value: data.email, type: "email", placeholder: "you@example.com" })}
         </div>
 
         <div class="form-grid-two">
-          ${createField({ label: "Phone number", key: "phone", value: resumeBuilderState.phone, placeholder: "(555) 123-4567" })}
-          ${createField({ label: "Location", key: "location", value: resumeBuilderState.location, placeholder: "City, State" })}
+          ${createField({ label: "Phone number", key: "phone", value: data.phone, placeholder: "(555) 123-4567" })}
+          ${createField({ label: "Location", key: "location", value: data.location, placeholder: "City, State" })}
         </div>
 
         ${createField({
           label: "Professional summary",
           key: "professionalSummary",
-          value: resumeBuilderState.professionalSummary,
+          value: data.professionalSummary,
           multiline: true,
           placeholder: "2-4 sentence summary of your professional strengths",
         })}
@@ -196,7 +207,7 @@ function ResumeBuilderForm() {
         ${createField({
           label: "Skills",
           key: "skills",
-          value: resumeBuilderState.skills,
+          value: data.skills,
           multiline: true,
           placeholder: "List your strongest skills separated by commas",
         })}
@@ -204,7 +215,7 @@ function ResumeBuilderForm() {
         ${createField({
           label: "Certifications",
           key: "certifications",
-          value: resumeBuilderState.certifications,
+          value: data.certifications,
           multiline: true,
           placeholder: "List certifications separated by commas",
         })}
@@ -216,6 +227,8 @@ function ResumeBuilderForm() {
           </div>
           ${projectEntries}
         </section>
+
+        <button class="generate-resume-btn" type="submit">Generate Resume</button>
       </form>
     `;
 
@@ -232,8 +245,15 @@ function ResumeBuilderForm() {
       const key = target.getAttribute("data-key");
       if (!key) return;
       const value = target.value || "";
-      updateStateByKey(key, value);
-      ResumePreview().render();
+      updateFormDataByKey(key, value);
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      resumeBuilderState.generatedData = cloneFormData();
+      resumeBuilderState.hasSubmitted = true;
+      resumeBuilderState.checkoutError = "";
+      refreshUi({ animatePreview: true });
     });
 
     form.addEventListener("click", (event) => {
@@ -245,7 +265,6 @@ function ResumeBuilderForm() {
         event.preventDefault();
         addDynamicEntry(addGroup);
         render();
-        ResumePreview().render();
         return;
       }
 
@@ -255,7 +274,6 @@ function ResumeBuilderForm() {
         event.preventDefault();
         removeDynamicEntry(removeGroup, Number(removeIndex));
         render();
-        ResumePreview().render();
       }
     });
   }
@@ -265,9 +283,11 @@ function ResumeBuilderForm() {
 
 function ResumePreview() {
   function render() {
-    if (!elementRefs.previewRoot) return;
+    if (!elementRefs.previewRoot || !resumeBuilderState.hasSubmitted) return;
 
-    const workMarkup = resumeBuilderState.workExperience
+    const previewData = resumeBuilderState.generatedData || cloneFormData();
+
+    const workMarkup = previewData.workExperience
       .map(
         (item) => `
           <article class="resume-item">
@@ -282,7 +302,7 @@ function ResumePreview() {
       )
       .join("");
 
-    const educationMarkup = resumeBuilderState.education
+    const educationMarkup = previewData.education
       .map(
         (item) => `
           <article class="resume-item">
@@ -297,7 +317,7 @@ function ResumePreview() {
       )
       .join("");
 
-    const projectMarkup = resumeBuilderState.projects
+    const projectMarkup = previewData.projects
       .map(
         (item) => `
           <article class="resume-item">
@@ -314,17 +334,17 @@ function ResumePreview() {
     elementRefs.previewRoot.innerHTML = `
       <article class="resume-preview-document" aria-label="Generated Resume Preview">
         <header class="resume-header">
-          <h3>${escapeHtml(resumeBuilderState.fullName || "Your Name")}</h3>
+          <h3>${escapeHtml(previewData.fullName || "Your Name")}</h3>
           <p class="resume-contact">
-            ${escapeHtml(resumeBuilderState.email)}
-            ${resumeBuilderState.phone ? ` | ${escapeHtml(resumeBuilderState.phone)}` : ""}
-            ${resumeBuilderState.location ? ` | ${escapeHtml(resumeBuilderState.location)}` : ""}
+            ${escapeHtml(previewData.email)}
+            ${previewData.phone ? ` | ${escapeHtml(previewData.phone)}` : ""}
+            ${previewData.location ? ` | ${escapeHtml(previewData.location)}` : ""}
           </p>
         </header>
 
         <section class="resume-block">
           <h4>Professional Summary</h4>
-          <p class="resume-summary-text">${escapeHtml(resumeBuilderState.professionalSummary)}</p>
+          <p class="resume-summary-text">${escapeHtml(previewData.professionalSummary)}</p>
         </section>
 
         <section class="resume-block">
@@ -339,12 +359,12 @@ function ResumePreview() {
 
         <section class="resume-block">
           <h4>Skills</h4>
-          <p class="resume-skills-text">${escapeHtml(resumeBuilderState.skills)}</p>
+          <p class="resume-skills-text">${escapeHtml(previewData.skills)}</p>
         </section>
 
         <section class="resume-block">
           <h4>Certifications</h4>
-          <p class="resume-certs-text">${escapeHtml(resumeBuilderState.certifications)}</p>
+          <p class="resume-certs-text">${escapeHtml(previewData.certifications)}</p>
         </section>
 
         <section class="resume-block">
@@ -362,7 +382,7 @@ function PaywallOverlay() {
   function render() {
     if (!elementRefs.overlayRoot) return;
 
-    if (resumeBuilderState.hasPaid) {
+    if (!resumeBuilderState.hasSubmitted || resumeBuilderState.isUnlocked) {
       elementRefs.overlayRoot.innerHTML = "";
       return;
     }
@@ -370,13 +390,14 @@ function PaywallOverlay() {
     elementRefs.overlayRoot.innerHTML = `
       <div class="paywall-overlay" aria-label="Locked Resume Preview">
         <div class="paywall-card">
-          <h4>Your resume is ready</h4>
-          <p>Unlock your full resume template to view and download.</p>
+          <h4>Your Resume Is Ready</h4>
+          <p>Unlock your professional resume to view and download.</p>
           <button id="payToUnlockBtn" class="paywall-cta" type="button" ${
             resumeBuilderState.checkoutInProgress ? "disabled" : ""
           }>
-            ${resumeBuilderState.checkoutInProgress ? "Opening Checkout..." : "Pay to Unlock"}
+            ${resumeBuilderState.checkoutInProgress ? "Opening Checkout..." : "Unlock Resume"}
           </button>
+          <button id="editInfoBtn" class="paywall-secondary" type="button">Edit Information</button>
           <p class="paywall-subtext">Secure unlock flow. Payment access is controlled by the backend.</p>
           ${
             resumeBuilderState.checkoutError
@@ -388,8 +409,16 @@ function PaywallOverlay() {
     `;
 
     const payToUnlockBtn = document.getElementById("payToUnlockBtn");
+    const editInfoBtn = document.getElementById("editInfoBtn");
     if (payToUnlockBtn) {
       payToUnlockBtn.addEventListener("click", handlePayToUnlock);
+    }
+    if (editInfoBtn) {
+      editInfoBtn.addEventListener("click", () => {
+        const form = document.getElementById("resumeBuilderForm");
+        if (!form) return;
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
   }
 
@@ -405,10 +434,10 @@ function formatDateRange(startDate, endDate) {
   return `${start} - ${end}`;
 }
 
-function updateStateByKey(key, value) {
+function updateFormDataByKey(key, value) {
   const parts = key.split(".");
   if (parts.length === 1) {
-    resumeBuilderState[parts[0]] = value;
+    resumeBuilderState.formData[parts[0]] = value;
     return;
   }
 
@@ -417,10 +446,10 @@ function updateStateByKey(key, value) {
     const index = Number(parts[1]);
     const fieldName = parts[2];
 
-    if (!Array.isArray(resumeBuilderState[groupName]) || Number.isNaN(index)) return;
-    if (!resumeBuilderState[groupName][index]) return;
+    if (!Array.isArray(resumeBuilderState.formData[groupName]) || Number.isNaN(index)) return;
+    if (!resumeBuilderState.formData[groupName][index]) return;
 
-    resumeBuilderState[groupName][index][fieldName] = value;
+    resumeBuilderState.formData[groupName][index][fieldName] = value;
   }
 }
 
@@ -450,14 +479,14 @@ function addDynamicEntry(groupName) {
   };
 
   const template = templates[groupName];
-  if (!template || !Array.isArray(resumeBuilderState[groupName])) return;
-  resumeBuilderState[groupName].push({ ...template });
+  if (!template || !Array.isArray(resumeBuilderState.formData[groupName])) return;
+  resumeBuilderState.formData[groupName].push({ ...template });
 }
 
 function removeDynamicEntry(groupName, index) {
-  if (!Array.isArray(resumeBuilderState[groupName])) return;
-  if (resumeBuilderState[groupName].length <= 1) return;
-  resumeBuilderState[groupName].splice(index, 1);
+  if (!Array.isArray(resumeBuilderState.formData[groupName])) return;
+  if (resumeBuilderState.formData[groupName].length <= 1) return;
+  resumeBuilderState.formData[groupName].splice(index, 1);
 }
 
 async function fetchAccessState() {
@@ -466,10 +495,10 @@ async function fetchAccessState() {
     const data = await response.json();
 
     if (response.ok && data && typeof data.isUnlocked === "boolean") {
-      resumeBuilderState.hasPaid = data.isUnlocked;
+      resumeBuilderState.isUnlocked = data.isUnlocked;
     }
   } catch (_error) {
-    resumeBuilderState.hasPaid = false;
+    resumeBuilderState.isUnlocked = false;
   }
 }
 
@@ -491,7 +520,11 @@ async function maybeVerifyCheckoutFromUrl() {
 
     const data = await response.json().catch(() => ({}));
     if (response.ok && data && data.isUnlocked === true) {
-      resumeBuilderState.hasPaid = true;
+      resumeBuilderState.isUnlocked = true;
+      resumeBuilderState.hasSubmitted = true;
+      if (!resumeBuilderState.generatedData) {
+        resumeBuilderState.generatedData = cloneFormData();
+      }
     }
   } catch (_error) {
     // Keep locked if verification fails.
@@ -537,35 +570,57 @@ async function handlePayToUnlock() {
   }
 }
 
+function updatePreviewVisibility(animatePreview = false) {
+  if (!elementRefs.previewSection) return;
+
+  if (!resumeBuilderState.hasSubmitted) {
+    elementRefs.previewSection.classList.add("hidden");
+    elementRefs.previewSection.classList.remove("preview-enter-active");
+    return;
+  }
+
+  elementRefs.previewSection.classList.remove("hidden");
+  if (animatePreview) {
+    elementRefs.previewSection.classList.remove("preview-enter-active");
+    requestAnimationFrame(() => {
+      elementRefs.previewSection.classList.add("preview-enter-active");
+    });
+  } else {
+    elementRefs.previewSection.classList.add("preview-enter-active");
+  }
+}
+
 function updateLockStateUi() {
-  const hasPaid = resumeBuilderState.hasPaid;
+  const isUnlocked = resumeBuilderState.isUnlocked;
 
   if (elementRefs.previewShell) {
-    elementRefs.previewShell.classList.toggle("is-locked", !hasPaid);
+    elementRefs.previewShell.classList.toggle("is-locked", !isUnlocked);
   }
 
   if (elementRefs.paymentStatusBadge) {
-    elementRefs.paymentStatusBadge.textContent = hasPaid ? "Unlocked" : "Locked";
-    elementRefs.paymentStatusBadge.classList.toggle("payment-badge--locked", !hasPaid);
-    elementRefs.paymentStatusBadge.classList.toggle("payment-badge--unlocked", hasPaid);
+    elementRefs.paymentStatusBadge.textContent = isUnlocked ? "Unlocked" : "Locked";
+    elementRefs.paymentStatusBadge.classList.toggle("payment-badge--locked", !isUnlocked);
+    elementRefs.paymentStatusBadge.classList.toggle("payment-badge--unlocked", isUnlocked);
   }
 
   if (elementRefs.downloadBtn) {
-    elementRefs.downloadBtn.disabled = !hasPaid;
+    elementRefs.downloadBtn.disabled = !resumeBuilderState.hasSubmitted || !isUnlocked;
   }
 }
 
 function bindGlobalEvents() {
   if (elementRefs.downloadBtn) {
     elementRefs.downloadBtn.addEventListener("click", () => {
-      if (!resumeBuilderState.hasPaid) return;
+      if (!resumeBuilderState.hasSubmitted || !resumeBuilderState.isUnlocked) return;
       window.print();
     });
   }
 }
 
-function refreshUi() {
+function refreshUi(options = {}) {
+  const animatePreview = Boolean(options.animatePreview);
   ResumeBuilderForm().render();
+  updatePreviewVisibility(animatePreview);
   ResumePreview().render();
   PaywallOverlay().render();
   updateLockStateUi();
