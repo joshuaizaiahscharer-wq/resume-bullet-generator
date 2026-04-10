@@ -234,28 +234,89 @@ async function signInOrOut() {
     return;
   }
 
-  const choice = (window.prompt("Sign in with: email, google, or apple", "email") || "")
-    .trim()
-    .toLowerCase();
+  openAuthModal();
+}
 
-  if (choice === "google" || choice === "apple") {
-    await resumeAuthClient.auth.signInWithOAuth({
-      provider: choice,
-      options: { redirectTo: `${window.location.origin}/resume-template-builder` },
-    });
-    return;
-  }
+function openAuthModal() {
+  const modal = document.getElementById("authModal");
+  if (!modal) return;
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+  const statusEl = document.getElementById("authModalStatus");
+  if (statusEl) { statusEl.textContent = ""; statusEl.className = "auth-modal-status"; }
+  const emailBtn = document.getElementById("authModalEmailBtn");
+  if (emailBtn) { emailBtn.disabled = false; emailBtn.textContent = "Send magic link"; }
+  const emailInput = document.getElementById("authModalEmailInput");
+  if (emailInput) { emailInput.value = ""; setTimeout(() => emailInput.focus(), 50); }
+}
 
-  const email = normalizeEmail(window.prompt("Enter your email for a sign-in link:"));
-  if (!email || !email.includes("@")) return;
+function closeAuthModal() {
+  const modal = document.getElementById("authModal");
+  if (!modal) return;
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
+}
 
-  await resumeAuthClient.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: `${window.location.origin}/resume-template-builder` },
+function initAuthModal() {
+  const modal = document.getElementById("authModal");
+  if (!modal) return;
+
+  document.getElementById("authModalClose")?.addEventListener("click", closeAuthModal);
+
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeAuthModal(); });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.hidden) closeAuthModal();
   });
-  if (elementRefs.authStatus) {
-    elementRefs.authStatus.textContent = "Check your email for the sign-in link";
-  }
+
+  const emailInput = document.getElementById("authModalEmailInput");
+  const emailBtn = document.getElementById("authModalEmailBtn");
+  const statusEl = document.getElementById("authModalStatus");
+
+  emailInput?.addEventListener("keydown", (e) => { if (e.key === "Enter") emailBtn?.click(); });
+
+  emailBtn?.addEventListener("click", async () => {
+    if (!resumeAuthClient) return;
+    const email = normalizeEmail(emailInput?.value || "");
+    if (!email || !email.includes("@")) {
+      if (statusEl) statusEl.textContent = "Please enter a valid email address.";
+      return;
+    }
+    emailBtn.disabled = true;
+    if (statusEl) { statusEl.textContent = "Sending\u2026"; statusEl.className = "auth-modal-status"; }
+    try {
+      await resumeAuthClient.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/resume-template-builder` },
+      });
+      emailBtn.textContent = "Link sent \u2713";
+      if (statusEl) {
+        statusEl.textContent = "Check your email for the sign-in link!";
+        statusEl.className = "auth-modal-status auth-modal-status--success";
+      }
+    } catch (_err) {
+      if (statusEl) statusEl.textContent = "Something went wrong. Please try again.";
+      emailBtn.disabled = false;
+    }
+  });
+
+  document.getElementById("authModalGoogleBtn")?.addEventListener("click", async () => {
+    if (!resumeAuthClient) return;
+    try {
+      await resumeAuthClient.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/resume-template-builder` },
+      });
+    } catch (err) {
+      const message = String(err?.message || "").toLowerCase();
+      if (statusEl) {
+        statusEl.className = "auth-modal-status";
+        statusEl.textContent = message.includes("provider is not enabled")
+          ? "Google sign-in is not enabled yet. Use email for now."
+          : "Google sign-in failed. Please try again.";
+      }
+    }
+  });
 }
 
 async function downloadResumeAsPdf() {
@@ -1032,6 +1093,8 @@ function updateLockStateUi() {
 }
 
 function bindGlobalEvents() {
+  initAuthModal();
+
   if (elementRefs.downloadBtn) {
     elementRefs.downloadBtn.addEventListener("click", async () => {
       await downloadResumeAsPdf();
