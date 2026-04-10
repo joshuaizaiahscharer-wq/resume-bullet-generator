@@ -1599,7 +1599,7 @@ function addDynamicEntry(groupName) {
 
 function removeDynamicEntry(groupName, index) {
   if (!Array.isArray(resumeBuilderState.formData[groupName])) return;
-  if (resumeBuilderState.formData[groupName].length <= 1) return;
+  if (Number.isNaN(index) || index < 0 || index >= resumeBuilderState.formData[groupName].length) return;
   resumeBuilderState.formData[groupName].splice(index, 1);
 }
 
