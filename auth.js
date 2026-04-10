@@ -48,6 +48,94 @@
     return Boolean(document.getElementById('resumeBuilderFormRoot'));
   }
 
+  var previousSyncedUserId = null;
+
+  async function setLoggedOutInUsersTable(userId) {
+    if (!userId || !BulletAuth._supabase) return;
+    try {
+      await BulletAuth._supabase
+        .from('users')
+        .update({
+          is_logged_in: false,
+          last_active: new Date().toISOString(),
+        })
+        .eq('id', userId);
+    } catch (_err) {
+      // Keep auth UX resilient even if profile sync fails.
+    }
+  }
+
+  async function syncUserWithDatabase() {
+    if (!BulletAuth._supabase) return;
+
+    try {
+      const authResult = await BulletAuth._supabase.auth.getUser();
+      const user = authResult?.data?.user || null;
+      if (!user) return;
+
+      const nowIso = new Date().toISOString();
+      const lookup = await BulletAuth._supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      const existingUser = lookup?.data || null;
+      const lookupError = lookup?.error || null;
+      const noRowFound = lookupError && lookupError.code === 'PGRST116';
+
+      if (lookupError && !noRowFound) {
+        throw lookupError;
+      }
+
+      if (!existingUser) {
+        const insertResult = await BulletAuth._supabase.from('users').insert([
+          {
+            id: user.id,
+            email: user.email || '',
+            is_logged_in: true,
+            has_paid: false,
+            plan: 'free',
+            payment_date: null,
+            last_active: nowIso,
+          },
+        ]);
+
+        const insertError = insertResult?.error || null;
+        if (insertError) {
+          const duplicateInsert = insertError.code === '23505'
+            || String(insertError.message || '').toLowerCase().includes('duplicate');
+
+          if (!duplicateInsert) {
+            throw insertError;
+          }
+
+          await BulletAuth._supabase
+            .from('users')
+            .update({
+              email: user.email || '',
+              is_logged_in: true,
+              last_active: nowIso,
+            })
+            .eq('id', user.id);
+        }
+      } else {
+        await BulletAuth._supabase
+          .from('users')
+          .update({
+            email: user.email || '',
+            is_logged_in: true,
+            last_active: nowIso,
+          })
+          .eq('id', user.id);
+      }
+
+      previousSyncedUserId = user.id;
+    } catch (_err) {
+      // Keep auth UX resilient even if profile sync fails.
+    }
+  }
+
   /* ── Core auth object ── */
   var BulletAuth = {
     _supabase: null,
@@ -259,12 +347,24 @@
       BulletAuth._user = (sessionResult.data && sessionResult.data.session && sessionResult.data.session.user) || null;
       BulletAuth._updateNavBtn();
 
+      if (BulletAuth._user) {
+        await syncUserWithDatabase();
+      }
+
       if (ownsModal) {
         bindModalForm(BulletAuth._supabase);
       }
 
-      BulletAuth._supabase.auth.onAuthStateChange(function (_event, session) {
+      BulletAuth._supabase.auth.onAuthStateChange(async function (_event, session) {
         BulletAuth._user = (session && session.user) || null;
+
+        if (!BulletAuth._user && previousSyncedUserId) {
+          await setLoggedOutInUsersTable(previousSyncedUserId);
+          previousSyncedUserId = null;
+        } else if (BulletAuth._user) {
+          await syncUserWithDatabase();
+        }
+
         BulletAuth._updateNavBtn();
         BulletAuth._notify();
         if (!BulletAuth._user) BulletAuth.closeAuthModal();
