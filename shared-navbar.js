@@ -5,12 +5,14 @@
     { href: "/", label: "Home", key: "home" },
     { href: "/blog", label: "Blog", key: "blog" },
     { href: "/resume-template-builder", label: "Resume Builder", key: "resume-builder" },
+    { href: "/about", label: "About", key: "about" },
   ];
 
   function inferActivePage(pathname) {
     if (!pathname || pathname === "/") return "home";
     if (pathname.startsWith("/blog")) return "blog";
     if (pathname.startsWith("/resume-template-builder")) return "resume-builder";
+    if (pathname.startsWith("/about")) return "about";
     return "";
   }
 

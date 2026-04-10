@@ -985,6 +985,7 @@ app.get("/sitemap.xml", async (req, res) => {
 
   const paths = [
     "/",
+    "/about",
     "/blog",
     "/jobs",
     "/resume-template-builder",
@@ -1024,6 +1025,10 @@ app.get("/:jobSlug-cover-letter-examples", (req, res) => {
 
 app.get("/:jobSlug-resume-bullets-no-experience", (req, res) => {
   renderClusterRoute(req, res, req.params.jobSlug, "noExperienceBulletPoints");
+});
+
+app.get("/about", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "about.html"));
 });
 
 app.get("/jobs", (req, res) => {
