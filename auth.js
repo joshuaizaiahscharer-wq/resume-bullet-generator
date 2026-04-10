@@ -13,6 +13,11 @@
 (function () {
   'use strict';
 
+  if (window.__bulletAuthBootstrapped) {
+    return;
+  }
+  window.__bulletAuthBootstrapped = true;
+
   /* ── Modal HTML injected on non-builder pages ── */
   var MODAL_HTML = [
     '<div id="authModal" class="auth-modal-overlay" hidden aria-hidden="true">',
@@ -326,9 +331,14 @@
       var supabaseKey = (config && config.supabasePublishableKey) || '';
       if (!supabaseUrl || !supabaseKey) return;
 
-      BulletAuth._supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
-        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-      });
+      if (window.__bulletSupabaseClient) {
+        BulletAuth._supabase = window.__bulletSupabaseClient;
+      } else {
+        BulletAuth._supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+        });
+        window.__bulletSupabaseClient = BulletAuth._supabase;
+      }
 
       var sessionResult = await BulletAuth._supabase.auth.getSession();
       BulletAuth._user = (sessionResult.data && sessionResult.data.session && sessionResult.data.session.user) || null;
