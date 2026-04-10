@@ -392,6 +392,10 @@ function PaywallOverlay() {
         <div class="paywall-card">
           <h4>Your Resume Is Ready</h4>
           <p>Unlock your professional resume to view and download.</p>
+          <div class="wallet-badge" aria-label="Apple Pay available">
+            <span class="wallet-badge-icon" aria-hidden="true">&#63743;</span>
+            <span>Apple Pay available</span>
+          </div>
           <button id="payToUnlockBtn" class="paywall-cta" type="button" ${
             resumeBuilderState.checkoutInProgress ? "disabled" : ""
           }>

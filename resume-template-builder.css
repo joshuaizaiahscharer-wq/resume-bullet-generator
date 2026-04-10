@@ -447,6 +447,25 @@ body.resume-builder-body {
   line-height: 1.5;
 }
 
+.wallet-badge {
+  margin-top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 999px;
+  padding: 5px 12px;
+  color: #dbe4f3;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(15, 23, 42, 0.55);
+}
+
+.wallet-badge-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
 .paywall-cta {
   margin-top: 15px;
   width: 100%;
