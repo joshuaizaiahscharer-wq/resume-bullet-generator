@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=Source+Serif+4:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/style.css" />
@@ -75,11 +75,26 @@
           </div>
 
           <div class="preview-toolbar">
-            <div class="style-picker" id="stylePickerRoot" aria-label="Resume style">
-              <button class="style-pill style-pill--active" data-style="classic" type="button">Classic</button>
-              <button class="style-pill" data-style="modern" type="button">Modern</button>
-              <button class="style-pill" data-style="executive" type="button">Executive</button>
-              <button class="style-pill" data-style="minimal" type="button">Minimal</button>
+            <div class="toolbar-pickers">
+              <div class="picker-row">
+                <span class="picker-label">Style</span>
+                <div class="style-picker" id="stylePickerRoot" aria-label="Resume style">
+                  <button class="style-pill style-pill--active" data-style="classic" type="button">Classic</button>
+                  <button class="style-pill" data-style="modern" type="button">Modern</button>
+                  <button class="style-pill" data-style="executive" type="button">Executive</button>
+                  <button class="style-pill" data-style="minimal" type="button">Minimal</button>
+                </div>
+              </div>
+              <div class="picker-row">
+                <span class="picker-label">Font</span>
+                <div class="style-picker" id="fontPickerRoot" aria-label="Resume font">
+                  <button class="style-pill style-pill--active" data-font="inter" type="button">Inter</button>
+                  <button class="style-pill" data-font="lato" type="button">Lato</button>
+                  <button class="style-pill" data-font="merriweather" type="button">Merriweather</button>
+                  <button class="style-pill" data-font="playfair" type="button">Playfair</button>
+                  <button class="style-pill" data-font="source-serif" type="button">Source Serif</button>
+                </div>
+              </div>
             </div>
             <div class="toolbar-right">
               <span id="paymentStatusBadge" class="payment-badge payment-badge--locked">Locked</span>

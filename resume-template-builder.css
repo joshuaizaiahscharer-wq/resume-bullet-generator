@@ -317,6 +317,28 @@ body.resume-builder-body {
 }
 
 /* ── Style picker ─────────────────────────────────────────── */
+.toolbar-pickers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.picker-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  width: 36px;
+  flex-shrink: 0;
+}
+
 .style-picker {
   display: flex;
   gap: 6px;
@@ -694,6 +716,68 @@ body.resume-builder-body {
 
 .resume-preview-document[data-theme="minimal"] .resume-item-meta {
   color: #9ca3af;
+}
+
+/* ── Resume Fonts ───────────────────────────────────────────
+   Applied as data-font="inter|lato|merriweather|playfair|source-serif"
+   on .resume-preview-document
+─────────────────────────────────────────────────────────── */
+
+/* Inter — base, already default */
+.resume-preview-document[data-font="inter"],
+.resume-preview-document[data-font="inter"] * {
+  font-family: "Inter", sans-serif;
+}
+
+/* Lato */
+.resume-preview-document[data-font="lato"],
+.resume-preview-document[data-font="lato"] * {
+  font-family: "Lato", sans-serif;
+}
+
+/* Merriweather */
+.resume-preview-document[data-font="merriweather"],
+.resume-preview-document[data-font="merriweather"] * {
+  font-family: "Merriweather", serif;
+  font-size-adjust: 0.48;
+}
+
+.resume-preview-document[data-font="merriweather"] .resume-header h3 {
+  font-size: 1.55rem;
+}
+
+.resume-preview-document[data-font="merriweather"] .resume-block h4 {
+  font-size: 0.76rem;
+}
+
+/* Playfair Display */
+.resume-preview-document[data-font="playfair"],
+.resume-preview-document[data-font="playfair"] * {
+  font-family: "Playfair Display", serif;
+}
+
+.resume-preview-document[data-font="playfair"] .resume-header h3 {
+  font-size: 1.6rem;
+  letter-spacing: -0.01em;
+}
+
+.resume-preview-document[data-font="playfair"] .resume-contact,
+.resume-preview-document[data-font="playfair"] .resume-item p,
+.resume-preview-document[data-font="playfair"] .resume-summary-text,
+.resume-preview-document[data-font="playfair"] .resume-skills-text,
+.resume-preview-document[data-font="playfair"] .resume-certs-text,
+.resume-preview-document[data-font="playfair"] .resume-item-meta {
+  font-family: "Lato", sans-serif;
+}
+
+/* Source Serif 4 */
+.resume-preview-document[data-font="source-serif"],
+.resume-preview-document[data-font="source-serif"] * {
+  font-family: "Source Serif 4", serif;
+}
+
+.resume-preview-document[data-font="source-serif"] .resume-header h3 {
+  font-size: 1.62rem;
 }
 
 @media (max-width: 1080px) {

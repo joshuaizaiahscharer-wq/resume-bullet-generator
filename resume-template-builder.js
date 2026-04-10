@@ -45,6 +45,7 @@ const resumeBuilderState = {
   checkoutInProgress: false,
   checkoutError: "",
   resumeStyle: "classic",
+  resumeFont: "inter",
   formData: {
     fullName: "",
     email: "",
@@ -68,6 +69,7 @@ const elementRefs = {
   paymentStatusBadge: document.getElementById("paymentStatusBadge"),
   downloadBtn: document.getElementById("downloadResumeBtn"),
   stylePicker: document.getElementById("stylePickerRoot"),
+  fontPicker: document.getElementById("fontPickerRoot"),
 };
 
 function cloneFormData() {
@@ -366,7 +368,7 @@ function ResumePreview() {
 
 
     elementRefs.previewRoot.innerHTML = `
-      <article class="resume-preview-document" aria-label="Generated Resume Preview" data-theme="${resumeBuilderState.resumeStyle}">
+      <article class="resume-preview-document" aria-label="Generated Resume Preview" data-theme="${resumeBuilderState.resumeStyle}" data-font="${resumeBuilderState.resumeFont}">
         <header class="resume-header">
           <h3>${escapeHtml(previewData.fullName || "Your Name")}</h3>
           <p class="resume-contact">
@@ -674,6 +676,20 @@ function bindGlobalEvents() {
       resumeBuilderState.resumeStyle = style;
       elementRefs.stylePicker.querySelectorAll(".style-pill").forEach((btn) => {
         btn.classList.toggle("style-pill--active", btn.getAttribute("data-style") === style);
+      });
+      ResumePreview().render();
+    });
+  }
+
+  if (elementRefs.fontPicker) {
+    elementRefs.fontPicker.addEventListener("click", (event) => {
+      const pill = event.target.closest(".style-pill");
+      if (!pill) return;
+      const font = pill.getAttribute("data-font");
+      if (!font || font === resumeBuilderState.resumeFont) return;
+      resumeBuilderState.resumeFont = font;
+      elementRefs.fontPicker.querySelectorAll(".style-pill").forEach((btn) => {
+        btn.classList.toggle("style-pill--active", btn.getAttribute("data-font") === font);
       });
       ResumePreview().render();
     });
