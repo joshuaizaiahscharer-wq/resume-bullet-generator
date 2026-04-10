@@ -1282,12 +1282,12 @@ const PAGE_HEAD = (title, description) => `
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google-site-verification" content="VEIGdEbFNNwkV64kj97Igmt_5KO8trlNUXJtaIqVAw0" />
   <meta name="description" content="${escapeHtml(description)}" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=1" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=1" />
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=1" />
-  <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=1" />
-  <link rel="shortcut icon" href="/favicon-32x32.png?v=1" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=1" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=2" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=2" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=2" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=2" />
+  <link rel="shortcut icon" href="/favicon-32x32.png?v=2" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=2" />
   <meta name="theme-color" content="#0f172a" />
   <title>${escapeHtml(title)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
