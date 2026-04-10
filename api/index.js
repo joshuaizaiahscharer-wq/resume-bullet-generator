@@ -8,12 +8,6 @@ const cors = require("cors");
 const OpenAI = require("openai");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
-const {
-  blogPosts,
-  blogPostBySlug,
-  renderBlogListPage,
-  renderBlogPostPage,
-} = require("../lib/blogPages");
 
 const app = express();
 
@@ -715,10 +709,8 @@ app.get("/robots.txt", (req, res) => {
 app.get("/sitemap.xml", (req, res) => {
   const paths = [
     "/",
-    "/blog",
     "/jobs",
     "/resume-template-builder",
-    ...blogPosts.map((post) => `/blog/${post.slug}`),
     ...allClusterPages.map((page) => `/${page.slug}`),
   ];
 
@@ -758,19 +750,6 @@ app.get("/:jobSlug-resume-bullets-no-experience", (req, res) => {
 
 app.get("/jobs", (req, res) => {
   res.send(renderJobsPage());
-});
-
-app.get("/blog", (req, res) => {
-  res.send(renderBlogListPage(SITE_URL));
-});
-
-app.get("/blog/:slug", (req, res) => {
-  const post = blogPostBySlug[req.params.slug];
-  if (!post) {
-    return res.status(404).send("Blog post not found.");
-  }
-
-  return res.send(renderBlogPostPage(post, SITE_URL));
 });
 
 app.get("/resume-template-builder", (req, res) => {
@@ -1096,7 +1075,6 @@ function renderClusterPage(cluster, pageType) {
       <a href="/" class="nav-logo">&#10022; BulletAI</a>
       <div class="nav-actions">
         <a href="/resume-template-builder" class="nav-link">Resume Template Builder</a>
-        <a href="/blog" class="nav-link">Blog</a>
         <a href="/jobs" class="nav-link">Browse All Clusters</a>
       </div>
     </nav>
@@ -1134,7 +1112,6 @@ ${generatorSection}
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
       <a href="/resume-template-builder">Resume Template Builder</a>
-      <a href="/blog">Blog</a>
       <a href="/#support">Contact support</a>
     </footer>
   </body>
@@ -1170,7 +1147,6 @@ ${pageLinks}
       <a href="/" class="nav-logo">&#10022; BulletAI</a>
       <div class="nav-actions">
         <a href="/resume-template-builder" class="nav-link">Resume Template Builder</a>
-        <a href="/blog" class="nav-link">Blog</a>
         <a href="/" class="nav-link">&#8592; Home</a>
       </div>
     </nav>
@@ -1193,7 +1169,6 @@ ${groups}
     <footer class="footer">
       Built with the OpenAI API &mdash; results may vary.
       <a href="/resume-template-builder">Resume Template Builder</a>
-      <a href="/blog">Blog</a>
       <a href="/#support">Contact support</a>
     </footer>
   </body>
