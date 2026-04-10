@@ -104,6 +104,49 @@
                   <button class="style-pill" data-font="source-serif" type="button">Source Serif</button>
                 </div>
               </div>
+
+              <div class="advanced-customize" id="advancedCustomizeRoot" aria-label="Advanced formatting options">
+                <div class="advanced-customize-header">
+                  <span class="picker-label">Advanced Formatting</span>
+                </div>
+
+                <div class="advanced-control-grid">
+                  <div class="advanced-control-field">
+                    <label for="accentColorPicker">Accent Color</label>
+                    <div class="accent-row">
+                      <input id="accentColorPicker" class="accent-color-input" type="color" value="#6366f1" />
+                      <div class="accent-swatches" id="accentSwatches">
+                        <button class="accent-swatch is-active" type="button" data-accent="#6366f1" style="--swatch:#6366f1" aria-label="Indigo"></button>
+                        <button class="accent-swatch" type="button" data-accent="#0ea5e9" style="--swatch:#0ea5e9" aria-label="Sky"></button>
+                        <button class="accent-swatch" type="button" data-accent="#14b8a6" style="--swatch:#14b8a6" aria-label="Teal"></button>
+                        <button class="accent-swatch" type="button" data-accent="#16a34a" style="--swatch:#16a34a" aria-label="Green"></button>
+                        <button class="accent-swatch" type="button" data-accent="#f59e0b" style="--swatch:#f59e0b" aria-label="Amber"></button>
+                        <button class="accent-swatch" type="button" data-accent="#dc2626" style="--swatch:#dc2626" aria-label="Red"></button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="advanced-control-field">
+                    <label for="bodySizeSlider">Body Text Size <span id="bodySizeValue">100%</span></label>
+                    <input id="bodySizeSlider" type="range" min="90" max="120" step="1" value="100" />
+                  </div>
+
+                  <div class="advanced-control-field">
+                    <label for="headingSizeSlider">Heading Scale <span id="headingSizeValue">100%</span></label>
+                    <input id="headingSizeSlider" type="range" min="90" max="130" step="1" value="100" />
+                  </div>
+
+                  <div class="advanced-control-field">
+                    <label for="lineHeightSlider">Line Height <span id="lineHeightValue">150%</span></label>
+                    <input id="lineHeightSlider" type="range" min="130" max="190" step="1" value="150" />
+                  </div>
+
+                  <div class="advanced-control-field">
+                    <label for="sectionGapSlider">Section Spacing <span id="sectionGapValue">100%</span></label>
+                    <input id="sectionGapSlider" type="range" min="85" max="130" step="1" value="100" />
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="toolbar-right">
               <span id="paymentStatusBadge" class="payment-badge payment-badge--locked">Locked</span>

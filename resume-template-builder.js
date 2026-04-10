@@ -38,6 +38,14 @@ const SAMPLE_FORM_DATA = {
   ],
 };
 
+const DEFAULT_RESUME_CUSTOMIZATION = {
+  accentColor: "#6366f1",
+  bodyScale: 100,
+  headingScale: 100,
+  lineHeightPercent: 150,
+  sectionGapScale: 100,
+};
+
 const resumeBuilderState = {
   hasSubmitted: false,
   isFormCollapsed: false,
@@ -47,6 +55,7 @@ const resumeBuilderState = {
   checkoutError: "",
   resumeStyle: "classic",
   resumeFont: "inter",
+  resumeCustomization: { ...DEFAULT_RESUME_CUSTOMIZATION },
   signedInEmail: "",
   formData: {
     fullName: "",
@@ -79,6 +88,16 @@ const elementRefs = {
   downloadBtn: document.getElementById("downloadResumeBtn"),
   stylePicker: document.getElementById("stylePickerRoot"),
   fontPicker: document.getElementById("fontPickerRoot"),
+  accentColorPicker: document.getElementById("accentColorPicker"),
+  accentSwatches: document.getElementById("accentSwatches"),
+  bodySizeSlider: document.getElementById("bodySizeSlider"),
+  bodySizeValue: document.getElementById("bodySizeValue"),
+  headingSizeSlider: document.getElementById("headingSizeSlider"),
+  headingSizeValue: document.getElementById("headingSizeValue"),
+  lineHeightSlider: document.getElementById("lineHeightSlider"),
+  lineHeightValue: document.getElementById("lineHeightValue"),
+  sectionGapSlider: document.getElementById("sectionGapSlider"),
+  sectionGapValue: document.getElementById("sectionGapValue"),
 };
 
 let resumeAuthClient = null;
@@ -108,6 +127,26 @@ function escapeHtml(value) {
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function clampNumber(value, min, max, fallback) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.min(max, Math.max(min, num));
+}
+
+function normalizeResumeCustomization(input) {
+  const data = input || {};
+  const accent = String(data.accentColor || DEFAULT_RESUME_CUSTOMIZATION.accentColor).trim();
+  const validAccent = /^#[0-9a-fA-F]{6}$/.test(accent) ? accent : DEFAULT_RESUME_CUSTOMIZATION.accentColor;
+
+  return {
+    accentColor: validAccent,
+    bodyScale: clampNumber(data.bodyScale, 90, 120, DEFAULT_RESUME_CUSTOMIZATION.bodyScale),
+    headingScale: clampNumber(data.headingScale, 90, 130, DEFAULT_RESUME_CUSTOMIZATION.headingScale),
+    lineHeightPercent: clampNumber(data.lineHeightPercent, 130, 190, DEFAULT_RESUME_CUSTOMIZATION.lineHeightPercent),
+    sectionGapScale: clampNumber(data.sectionGapScale, 85, 130, DEFAULT_RESUME_CUSTOMIZATION.sectionGapScale),
+  };
 }
 
 function getAuthReturnUrl() {
@@ -164,6 +203,7 @@ function stashResumeBeforeAuthRedirect() {
       generatedData: resumeBuilderState.generatedData || null,
       resumeStyle: resumeBuilderState.resumeStyle,
       resumeFont: resumeBuilderState.resumeFont,
+      resumeCustomization: resumeBuilderState.resumeCustomization,
     };
     localStorage.setItem(PENDING_AUTH_RESUME_KEY, JSON.stringify(payload));
   } catch (_err) {
@@ -183,6 +223,9 @@ function restoreResumeAfterAuthRedirect() {
     if (saved?.generatedData) resumeBuilderState.generatedData = saved.generatedData;
     if (saved?.resumeStyle) resumeBuilderState.resumeStyle = saved.resumeStyle;
     if (saved?.resumeFont) resumeBuilderState.resumeFont = saved.resumeFont;
+    if (saved?.resumeCustomization) {
+      resumeBuilderState.resumeCustomization = normalizeResumeCustomization(saved.resumeCustomization);
+    }
     if (saved?.hasSubmitted) {
       resumeBuilderState.hasSubmitted = true;
       resumeBuilderState.isFormCollapsed = true;
@@ -221,6 +264,7 @@ function buildCloudResumePayload() {
     generatedData: resumeBuilderState.generatedData || null,
     resumeStyle: resumeBuilderState.resumeStyle,
     resumeFont: resumeBuilderState.resumeFont,
+    resumeCustomization: resumeBuilderState.resumeCustomization,
   };
 }
 
@@ -248,6 +292,9 @@ async function loadSavedResumeForSignedInUser() {
     if (saved.generatedData) resumeBuilderState.generatedData = saved.generatedData;
     if (saved.resumeStyle) resumeBuilderState.resumeStyle = saved.resumeStyle;
     if (saved.resumeFont) resumeBuilderState.resumeFont = saved.resumeFont;
+    if (saved.resumeCustomization) {
+      resumeBuilderState.resumeCustomization = normalizeResumeCustomization(saved.resumeCustomization);
+    }
     if (saved.hasSubmitted) {
       resumeBuilderState.hasSubmitted = true;
       resumeBuilderState.isFormCollapsed = true;
@@ -407,15 +454,20 @@ function closeAuthModal() {
   modal.setAttribute("aria-hidden", "true");
 }
 
-function getResumePdfTheme(style) {
+function getResumePdfTheme(style, customization) {
+  const c = normalizeResumeCustomization(customization);
   switch (style) {
     case "modern":
       return {
-        heading: [79, 70, 229],
+        heading: [
+          parseInt(c.accentColor.slice(1, 3), 16),
+          parseInt(c.accentColor.slice(3, 5), 16),
+          parseInt(c.accentColor.slice(5, 7), 16),
+        ],
         name: [30, 27, 75],
         body: [51, 65, 85],
         muted: [71, 85, 105],
-        divider: [199, 210, 254],
+        divider: [186, 200, 240],
         font: "helvetica",
       };
     case "executive":
@@ -478,7 +530,13 @@ function drawResumePdf(doc, previewData, filenameBase) {
   const topMargin = 52;
   const bottomMargin = 44;
   const contentWidth = pageWidth - marginX * 2;
-  const theme = getResumePdfTheme(resumeBuilderState.resumeStyle);
+  const customization = normalizeResumeCustomization(resumeBuilderState.resumeCustomization);
+  const theme = getResumePdfTheme(resumeBuilderState.resumeStyle, customization);
+  const bodyFontSize = (10.5 * customization.bodyScale) / 100;
+  const headingFontSize = (11 * customization.headingScale) / 100;
+  const nameFontSize = (24 * customization.headingScale) / 100;
+  const baseLineHeight = 14 * (customization.lineHeightPercent / 150);
+  const sectionGap = 20 * (customization.sectionGapScale / 100);
 
   let y = topMargin;
 
@@ -494,9 +552,9 @@ function drawResumePdf(doc, previewData, filenameBase) {
       maxWidth = contentWidth,
       font = theme.font,
       fontStyle = "normal",
-      fontSize = 10.5,
+      fontSize = bodyFontSize,
       color = theme.body,
-      lineHeight = 14,
+      lineHeight = baseLineHeight,
       gapAfter = 0,
     } = options;
 
@@ -530,21 +588,21 @@ function drawResumePdf(doc, previewData, filenameBase) {
   };
 
   const drawSectionHeading = (label) => {
-    ensureSpace(28);
+    ensureSpace(30);
     doc.setDrawColor(theme.divider[0], theme.divider[1], theme.divider[2]);
     doc.setLineWidth(1);
     doc.line(marginX, y + 4, pageWidth - marginX, y + 4);
     doc.setFont(theme.font, "bold");
-    doc.setFontSize(11);
+    doc.setFontSize(headingFontSize);
     doc.setTextColor(theme.heading[0], theme.heading[1], theme.heading[2]);
     doc.text(String(label || "").toUpperCase(), marginX, y);
-    y += 20;
+    y += sectionGap;
   };
 
   const drawItemHeader = (leftText, rightText) => {
     ensureSpace(18);
     doc.setFont(theme.font, "bold");
-    doc.setFontSize(11);
+    doc.setFontSize(Math.max(10.5, headingFontSize));
     doc.setTextColor(theme.name[0], theme.name[1], theme.name[2]);
     const safeLeft = String(leftText || "").trim() || " ";
     doc.text(safeLeft, marginX, y);
@@ -552,7 +610,7 @@ function drawResumePdf(doc, previewData, filenameBase) {
     const safeRight = String(rightText || "").trim();
     if (safeRight) {
       doc.setFont(theme.font, "normal");
-      doc.setFontSize(10);
+      doc.setFontSize(Math.max(9.5, bodyFontSize - 0.5));
       doc.setTextColor(theme.muted[0], theme.muted[1], theme.muted[2]);
       const textWidth = doc.getTextWidth(safeRight);
       doc.text(safeRight, pageWidth - marginX - textWidth, y);
@@ -569,10 +627,10 @@ function drawResumePdf(doc, previewData, filenameBase) {
   });
 
   doc.setFont(theme.font, "bold");
-  doc.setFontSize(24);
+  doc.setFontSize(nameFontSize);
   doc.setTextColor(theme.name[0], theme.name[1], theme.name[2]);
   doc.text(String(previewData.fullName || "Your Name"), marginX, y);
-  y += 22;
+  y += 22 * (customization.headingScale / 100);
 
   const contactParts = [previewData.email, previewData.phone, previewData.location].filter(Boolean);
   if (contactParts.length) {
@@ -581,9 +639,9 @@ function drawResumePdf(doc, previewData, filenameBase) {
     doc.setTextColor(theme.muted[0], theme.muted[1], theme.muted[2]);
     drawWrappedText(contactParts.join(" | "), {
       font: theme.font,
-      fontSize: 10.5,
+      fontSize: bodyFontSize,
       color: theme.muted,
-      lineHeight: 13,
+      lineHeight: baseLineHeight - 1,
       gapAfter: 6,
     });
   }
@@ -687,6 +745,10 @@ async function downloadResumeAsDocx() {
   } = docxClient;
 
   const previewData = buildResumePdfData();
+  const customization = normalizeResumeCustomization(resumeBuilderState.resumeCustomization);
+  const bodySize = Math.round(10 * customization.bodyScale * 2 / 100);
+  const headingSize = Math.round(11 * customization.headingScale * 2 / 100);
+  const nameSize = Math.round(30 * customization.headingScale * 2 / 100);
   const children = [];
 
   const addTextParagraph = (text, options = {}) => {
@@ -718,7 +780,7 @@ async function downloadResumeAsDocx() {
 
   children.push(
     new Paragraph({
-      children: [new TextRun({ text: previewData.fullName || "Your Name", bold: true, size: 30 * 2 })],
+      children: [new TextRun({ text: previewData.fullName || "Your Name", bold: true, size: nameSize })],
       spacing: { after: 80 },
     })
   );
@@ -727,7 +789,7 @@ async function downloadResumeAsDocx() {
   if (contactLine) {
     children.push(
       new Paragraph({
-        children: [new TextRun({ text: contactLine, color: "475569", size: 10 * 2 })],
+        children: [new TextRun({ text: contactLine, color: "475569", size: bodySize })],
         spacing: { after: 180 },
       })
     );
@@ -745,8 +807,8 @@ async function downloadResumeAsDocx() {
     children.push(
       new Paragraph({
         children: [
-          new TextRun({ text: item.role || "Role", bold: true, size: 11 * 2 }),
-          new TextRun({ text: formatDateRange(item.startDate, item.endDate) ? `    ${formatDateRange(item.startDate, item.endDate)}` : "", color: "64748b", size: 10 * 2 }),
+          new TextRun({ text: item.role || "Role", bold: true, size: headingSize }),
+          new TextRun({ text: formatDateRange(item.startDate, item.endDate) ? `    ${formatDateRange(item.startDate, item.endDate)}` : "", color: "64748b", size: bodySize }),
         ],
         spacing: { after: 40 },
       })
@@ -756,7 +818,7 @@ async function downloadResumeAsDocx() {
     if (companyLine) {
       children.push(
         new Paragraph({
-          children: [new TextRun({ text: companyLine, italics: true, color: "64748b", size: 10 * 2 })],
+          children: [new TextRun({ text: companyLine, italics: true, color: "64748b", size: bodySize })],
           spacing: { after: 40 },
         })
       );
@@ -776,8 +838,8 @@ async function downloadResumeAsDocx() {
     children.push(
       new Paragraph({
         children: [
-          new TextRun({ text: item.degree || "Degree", bold: true, size: 11 * 2 }),
-          new TextRun({ text: formatDateRange(item.startDate, item.endDate) ? `    ${formatDateRange(item.startDate, item.endDate)}` : "", color: "64748b", size: 10 * 2 }),
+          new TextRun({ text: item.degree || "Degree", bold: true, size: headingSize }),
+          new TextRun({ text: formatDateRange(item.startDate, item.endDate) ? `    ${formatDateRange(item.startDate, item.endDate)}` : "", color: "64748b", size: bodySize }),
         ],
         spacing: { after: 40 },
       })
@@ -787,7 +849,7 @@ async function downloadResumeAsDocx() {
     if (schoolLine) {
       children.push(
         new Paragraph({
-          children: [new TextRun({ text: schoolLine, italics: true, color: "64748b", size: 10 * 2 })],
+          children: [new TextRun({ text: schoolLine, italics: true, color: "64748b", size: bodySize })],
           spacing: { after: 40 },
         })
       );
@@ -816,7 +878,7 @@ async function downloadResumeAsDocx() {
     projects.forEach((item) => {
       children.push(
         new Paragraph({
-          children: [new TextRun({ text: item.name || "Project", bold: true, size: 11 * 2 })],
+          children: [new TextRun({ text: item.name || "Project", bold: true, size: headingSize })],
           spacing: { after: 40 },
         })
       );
@@ -1445,7 +1507,7 @@ function ResumePreview() {
 
 
     elementRefs.previewRoot.innerHTML = `
-      <article class="resume-preview-document" aria-label="Generated Resume Preview" data-theme="${resumeBuilderState.resumeStyle}" data-font="${resumeBuilderState.resumeFont}">
+      <article class="resume-preview-document" aria-label="Generated Resume Preview" data-theme="${resumeBuilderState.resumeStyle}" data-font="${resumeBuilderState.resumeFont}" style="${getResumeStyleVariablesInline()}">
         <header class="resume-header">
           <h3>${escapeHtml(previewData.fullName || "Your Name")}</h3>
           <p class="resume-contact">
@@ -1586,6 +1648,65 @@ function syncFormDataFromDom(formElement) {
 function hasEntryContent(entry, fields) {
   if (!entry || !Array.isArray(fields)) return false;
   return fields.some((field) => String(entry[field] || "").trim().length > 0);
+}
+
+function getResumeStyleVariablesInline() {
+  const c = normalizeResumeCustomization(resumeBuilderState.resumeCustomization);
+  resumeBuilderState.resumeCustomization = c;
+
+  const bodySize = (0.84 * c.bodyScale) / 100;
+  const headingSize = (0.82 * c.headingScale) / 100;
+  const nameSize = (1.72 * c.headingScale) / 100;
+  const lineHeight = c.lineHeightPercent / 100;
+  const sectionGap = Math.round((18 * c.sectionGapScale) / 100);
+
+  return [
+    `--resume-accent:${c.accentColor}`,
+    `--resume-body-size:${bodySize.toFixed(3)}rem`,
+    `--resume-heading-size:${headingSize.toFixed(3)}rem`,
+    `--resume-name-size:${nameSize.toFixed(3)}rem`,
+    `--resume-line-height:${lineHeight.toFixed(2)}`,
+    `--resume-section-gap:${sectionGap}px`,
+  ].join(";");
+}
+
+function updateAdvancedControlsUi() {
+  const c = normalizeResumeCustomization(resumeBuilderState.resumeCustomization);
+  resumeBuilderState.resumeCustomization = c;
+
+  if (elementRefs.stylePicker) {
+    elementRefs.stylePicker.querySelectorAll(".style-pill[data-style]").forEach((btn) => {
+      btn.classList.toggle("style-pill--active", btn.getAttribute("data-style") === resumeBuilderState.resumeStyle);
+    });
+  }
+
+  if (elementRefs.fontPicker) {
+    elementRefs.fontPicker.querySelectorAll(".style-pill[data-font]").forEach((btn) => {
+      btn.classList.toggle("style-pill--active", btn.getAttribute("data-font") === resumeBuilderState.resumeFont);
+    });
+  }
+
+  if (elementRefs.accentColorPicker) {
+    elementRefs.accentColorPicker.value = c.accentColor;
+  }
+
+  if (elementRefs.bodySizeSlider) elementRefs.bodySizeSlider.value = String(c.bodyScale);
+  if (elementRefs.bodySizeValue) elementRefs.bodySizeValue.textContent = `${c.bodyScale}%`;
+
+  if (elementRefs.headingSizeSlider) elementRefs.headingSizeSlider.value = String(c.headingScale);
+  if (elementRefs.headingSizeValue) elementRefs.headingSizeValue.textContent = `${c.headingScale}%`;
+
+  if (elementRefs.lineHeightSlider) elementRefs.lineHeightSlider.value = String(c.lineHeightPercent);
+  if (elementRefs.lineHeightValue) elementRefs.lineHeightValue.textContent = `${c.lineHeightPercent}%`;
+
+  if (elementRefs.sectionGapSlider) elementRefs.sectionGapSlider.value = String(c.sectionGapScale);
+  if (elementRefs.sectionGapValue) elementRefs.sectionGapValue.textContent = `${c.sectionGapScale}%`;
+
+  if (elementRefs.accentSwatches) {
+    elementRefs.accentSwatches.querySelectorAll(".accent-swatch").forEach((swatch) => {
+      swatch.classList.toggle("is-active", swatch.getAttribute("data-accent") === c.accentColor);
+    });
+  }
 }
 
 function addDynamicEntry(groupName) {
@@ -1855,6 +1976,60 @@ function bindGlobalEvents() {
       ResumePreview().render();
     });
   }
+
+  const rerenderWithCustomization = () => {
+    resumeBuilderState.resumeCustomization = normalizeResumeCustomization(resumeBuilderState.resumeCustomization);
+    updateAdvancedControlsUi();
+    ResumePreview().render();
+  };
+
+  if (elementRefs.accentColorPicker) {
+    elementRefs.accentColorPicker.addEventListener("input", (event) => {
+      const nextColor = String(event.target?.value || "").trim();
+      if (!/^#[0-9a-fA-F]{6}$/.test(nextColor)) return;
+      resumeBuilderState.resumeCustomization.accentColor = nextColor;
+      rerenderWithCustomization();
+    });
+  }
+
+  if (elementRefs.accentSwatches) {
+    elementRefs.accentSwatches.addEventListener("click", (event) => {
+      const swatch = event.target.closest(".accent-swatch");
+      if (!swatch) return;
+      const accent = swatch.getAttribute("data-accent");
+      if (!accent) return;
+      resumeBuilderState.resumeCustomization.accentColor = accent;
+      rerenderWithCustomization();
+    });
+  }
+
+  if (elementRefs.bodySizeSlider) {
+    elementRefs.bodySizeSlider.addEventListener("input", (event) => {
+      resumeBuilderState.resumeCustomization.bodyScale = Number(event.target?.value || 100);
+      rerenderWithCustomization();
+    });
+  }
+
+  if (elementRefs.headingSizeSlider) {
+    elementRefs.headingSizeSlider.addEventListener("input", (event) => {
+      resumeBuilderState.resumeCustomization.headingScale = Number(event.target?.value || 100);
+      rerenderWithCustomization();
+    });
+  }
+
+  if (elementRefs.lineHeightSlider) {
+    elementRefs.lineHeightSlider.addEventListener("input", (event) => {
+      resumeBuilderState.resumeCustomization.lineHeightPercent = Number(event.target?.value || 150);
+      rerenderWithCustomization();
+    });
+  }
+
+  if (elementRefs.sectionGapSlider) {
+    elementRefs.sectionGapSlider.addEventListener("input", (event) => {
+      resumeBuilderState.resumeCustomization.sectionGapScale = Number(event.target?.value || 100);
+      rerenderWithCustomization();
+    });
+  }
 }
 
 // ── AI Revise ────────────────────────────────────────────────────────────────
@@ -2027,6 +2202,7 @@ function appendBulletToExperience(bulletText, entryIndex, form) {
 function refreshUi(options = {}) {
   const animatePreview = Boolean(options.animatePreview);
   ResumeBuilderForm().render();
+  updateAdvancedControlsUi();
   updateFormVisibility();
   updatePreviewVisibility(animatePreview);
   ResumePreview().render();
