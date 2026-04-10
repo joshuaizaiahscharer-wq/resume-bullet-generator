@@ -1617,20 +1617,20 @@ function PaywallOverlay() {
     elementRefs.overlayRoot.innerHTML = `
       <div class="paywall-overlay" aria-label="Locked Resume Preview">
         <div class="paywall-card">
-          <h4>Your Resume Is Ready</h4>
-          <p>${resumeBuilderState.signedInEmail ? "Unlock your professional resume to view and download." : "Sign in to view and download your professional resume."}</p>
+          <h4>Your Resume is Ready</h4>
+          <p>Unlock to download or view your full document</p>
           ${resumeBuilderState.signedInEmail ? `
           <div class="wallet-badge" aria-label="Apple Pay available">
             <span class="wallet-badge-icon" aria-hidden="true">&#63743;</span>
             <span>Apple Pay available</span>
           </div>
-          <button id="payToUnlockBtn" class="paywall-cta" type="button" ${
+          <button id="paywallPrimaryBtn" class="paywall-cta" type="button" ${
             resumeBuilderState.checkoutInProgress ? "disabled" : ""
           }>
-            ${resumeBuilderState.checkoutInProgress ? "Opening Checkout..." : "Unlock Resume"}
+            ${resumeBuilderState.checkoutInProgress ? "Opening Checkout..." : "Unlock Now"}
           </button>` : `
-          <button id="signInToViewBtn" class="paywall-cta" type="button">Sign In to View Resume</button>`}
-          <button id="editInfoBtn" class="paywall-secondary" type="button">Edit Information</button>
+          <button id="paywallPrimaryBtn" class="paywall-cta" type="button">Unlock Now</button>`}
+          <button id="paywallSecondaryBtn" class="paywall-secondary" type="button">Preview Locked</button>
           ${resumeBuilderState.signedInEmail ? `<p class="paywall-subtext">Secure unlock flow. Supports card checkout with Apple Pay on supported devices.</p>` : ""}
           ${
             resumeBuilderState.checkoutError
@@ -1641,17 +1641,19 @@ function PaywallOverlay() {
       </div>
     `;
 
-    const payToUnlockBtn = document.getElementById("payToUnlockBtn");
-    const signInToViewBtn = document.getElementById("signInToViewBtn");
-    const editInfoBtn = document.getElementById("editInfoBtn");
-    if (payToUnlockBtn) {
-      payToUnlockBtn.addEventListener("click", handlePayToUnlock);
+    const paywallPrimaryBtn = document.getElementById("paywallPrimaryBtn");
+    const paywallSecondaryBtn = document.getElementById("paywallSecondaryBtn");
+    if (paywallPrimaryBtn) {
+      paywallPrimaryBtn.addEventListener("click", () => {
+        if (resumeBuilderState.signedInEmail) {
+          handlePayToUnlock();
+          return;
+        }
+        openAuthModal();
+      });
     }
-    if (signInToViewBtn) {
-      signInToViewBtn.addEventListener("click", openAuthModal);
-    }
-    if (editInfoBtn) {
-      editInfoBtn.addEventListener("click", () => {
+    if (paywallSecondaryBtn) {
+      paywallSecondaryBtn.addEventListener("click", () => {
         const form = document.getElementById("resumeBuilderForm");
         if (!form) return;
         form.scrollIntoView({ behavior: "smooth", block: "start" });

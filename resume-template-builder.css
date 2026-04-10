@@ -826,18 +826,11 @@ body.resume-builder-body {
 
 .preview-paywall-row {
   margin: 40px auto;
-  padding: 14px;
-  border-radius: 10px;
-  background: #f5f5f5;
+  padding: 0;
 }
 
 .preview-paywall-row.is-paywalled {
-  display: grid;
-  grid-template-columns: minmax(0, 600px) minmax(260px, 300px);
-  grid-template-areas: "preview paywall";
-  gap: 18px;
-  justify-content: center;
-  align-items: start;
+  display: block;
 }
 
 #resumePreviewShell {
@@ -845,11 +838,10 @@ body.resume-builder-body {
 }
 
 #paywallOverlayRoot {
-  grid-area: paywall;
-}
-
-#paywallOverlayRoot:empty {
-  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .resume-preview-shell {
@@ -863,6 +855,7 @@ body.resume-builder-body {
   background: #ffffff;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   transition: box-shadow 0.2s ease;
+  position: relative;
 }
 
 .resume-preview-shell:hover {
@@ -879,6 +872,10 @@ body.resume-builder-body {
   overflow: auto;
   padding: 14px;
   box-sizing: border-box;
+}
+
+.resume-preview-shell.is-locked #resumePreviewRoot {
+  overflow: hidden;
 }
 
 .resume-preview-document {
@@ -898,9 +895,24 @@ body.resume-builder-body {
 }
 
 .resume-preview-shell.is-locked .resume-locked-body {
-  filter: none;
+  filter: blur(8px);
   pointer-events: none;
   user-select: none;
+}
+
+.resume-preview-shell.is-locked .resume-preview-document {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.resume-preview-shell.is-locked::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
+  z-index: 15;
+  pointer-events: none;
 }
 
 .resume-header h3 {
@@ -1026,45 +1038,47 @@ body.resume-builder-body {
 }
 
 .paywall-overlay {
-  position: relative;
+  position: absolute;
+  top: 22%;
+  left: 0;
+  right: 0;
+  height: 56%;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 0 20px;
+  background: rgba(0, 0, 0, 0.16);
+  pointer-events: auto;
+  animation: paywallFadeIn 0.2s ease;
 }
 
 .paywall-card {
-  width: 100%;
-  background: rgba(15, 23, 42, 0.96);
-  border: 1px solid rgba(129, 140, 248, 0.45);
-  border-radius: 16px;
-  box-shadow: 0 20px 55px rgba(2, 6, 23, 0.58);
-  padding: 20px;
+  width: min(420px, 100%);
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.18);
+  padding: 28px;
   text-align: center;
 }
 
-@media (max-width: 1260px) {
-  .preview-paywall-row.is-paywalled {
-    grid-template-columns: 1fr;
+@keyframes paywallFadeIn {
+  from {
+    opacity: 0;
   }
-
-  .preview-paywall-row.is-paywalled #resumePreviewShell {
-    width: min(100%, 600px);
-  }
-
-  .paywall-overlay {
-    margin-top: 10px;
+  to {
+    opacity: 1;
   }
 }
 
 .paywall-card h4 {
-  color: #f8fafc;
+  color: #111827;
   font-size: 1.2rem;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .paywall-card p {
-  color: #9bb0cc;
+  color: #475569;
   font-size: 0.92rem;
   line-height: 1.5;
 }
@@ -1091,19 +1105,32 @@ body.resume-builder-body {
 .paywall-cta {
   margin-top: 15px;
   width: 100%;
-  border: none;
+  border: 1px solid #0f172a;
   border-radius: 10px;
   padding: 11px 15px;
   font-size: 0.92rem;
   font-weight: 700;
-  color: #fff;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #ffffff;
+  background: #111827;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
 .paywall-cta:hover:not(:disabled) {
-  opacity: 0.92;
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 760px) {
+  .paywall-overlay {
+    top: 20%;
+    height: 60%;
+    padding: 0 14px;
+  }
+
+  .paywall-card {
+    padding: 24px;
+  }
 }
 
 .paywall-cta:disabled {
