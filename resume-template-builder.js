@@ -1685,7 +1685,9 @@ async function handlePayToUnlock() {
 function updatePreviewVisibility(animatePreview = false) {
   if (!elementRefs.previewSection) return;
 
-  if (!resumeBuilderState.hasSubmitted) {
+  const shouldShowPreview = resumeBuilderState.hasSubmitted && resumeBuilderState.isFormCollapsed;
+
+  if (!shouldShowPreview) {
     elementRefs.previewSection.classList.add("hidden");
     elementRefs.previewSection.classList.remove("preview-enter-active");
     return;
@@ -1765,6 +1767,11 @@ function bindGlobalEvents() {
       if (!resumeBuilderState.signedInEmail) {
         await signInOrOut();
         return;
+      }
+
+      if (resumeBuilderState.hasSubmitted && !resumeBuilderState.isFormCollapsed) {
+        resumeBuilderState.isFormCollapsed = true;
+        refreshUi();
       }
 
       scrollToResumePreview();
