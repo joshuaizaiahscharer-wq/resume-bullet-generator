@@ -10,6 +10,8 @@ import {
   updateUserPlan,
 } from "/admin/users-data.js";
 
+console.log("ADMIN PAGE LOADED");
+
 const dashboardState = {
   users: [],
   query: "",
@@ -197,6 +199,10 @@ function bindControls() {
 
 async function refreshUsers() {
   dashboardState.users = await fetchUsers();
+  console.log("Admin users loaded:", dashboardState.users.length);
+  if (!dashboardState.users.length) {
+    console.warn("Admin users table is empty.");
+  }
   renderDashboard();
 }
 

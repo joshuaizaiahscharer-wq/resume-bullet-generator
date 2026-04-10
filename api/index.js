@@ -778,7 +778,7 @@ app.get("/resume-template-builder", (req, res) => {
 });
 
 app.get("/admin-dashboard", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "admin-dashboard.html"));
+  return res.redirect(302, "/admin");
 });
 
 // ─── Resume Builder payment state + Stripe checkout ─────────────────────────
@@ -989,7 +989,7 @@ app.post("/api/resume-builder/revise", async (req, res) => {
 
 // ─── GET /admin ───────────────────────────────────────────────────────────────
 app.get("/admin", (req, res) => {
-  res.send(renderAdminPage());
+  return res.sendFile(path.join(process.cwd(), "admin-dashboard.html"));
 });
 
 // ─── renderAdminPage ──────────────────────────────────────────────────────────
