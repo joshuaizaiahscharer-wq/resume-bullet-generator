@@ -108,7 +108,9 @@ function normalizeEmail(value) {
 }
 
 function getAuthReturnUrl() {
-  return `${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash || ""}`;
+  const currentPath = window.location.pathname || "/resume-template-builder";
+  const safePath = currentPath === "/" ? "/resume-template-builder" : currentPath;
+  return `${window.location.origin}${safePath}`;
 }
 
 function hasMeaningfulLocalResume() {
