@@ -75,6 +75,7 @@ const elementRefs = {
   formRoot: document.getElementById("resumeBuilderFormRoot"),
   previewRoot: document.getElementById("resumePreviewRoot"),
   overlayRoot: document.getElementById("paywallOverlayRoot"),
+  previewPaywallRow: document.getElementById("previewPaywallRow"),
   previewShell: document.getElementById("resumePreviewShell"),
   previewSection: document.getElementById("generatedResumeSection"),
   heroResumeAccessBtn: document.getElementById("heroResumeAccessBtn"),
@@ -1916,13 +1917,14 @@ function updateFormVisibility() {
 
 function updateLockStateUi() {
   const isUnlocked = resumeBuilderState.isUnlocked;
+  const shouldShowSidePaywall = resumeBuilderState.hasSubmitted && !isUnlocked;
 
   if (elementRefs.previewShell) {
     elementRefs.previewShell.classList.toggle("is-locked", !isUnlocked);
-    elementRefs.previewShell.classList.toggle(
-      "is-mini-preview",
-      resumeBuilderState.hasSubmitted && !isUnlocked
-    );
+  }
+
+  if (elementRefs.previewPaywallRow) {
+    elementRefs.previewPaywallRow.classList.toggle("is-paywalled", shouldShowSidePaywall);
   }
 
   if (elementRefs.paymentStatusBadge) {
