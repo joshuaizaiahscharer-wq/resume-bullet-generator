@@ -10,6 +10,7 @@ import {
 } from "/admin/users-data.js";
 
 console.log("Admin dashboard loaded");
+console.log("ADMIN PAGE CONFIRMED");
 
 const dashboardState = {
   users: [],
