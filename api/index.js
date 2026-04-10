@@ -948,6 +948,10 @@ app.get("/resume-template-builder", (req, res) => {
   res.sendFile(path.join(process.cwd(), "resume-template-builder.html"));
 });
 
+app.get("/settings", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "settings.html"));
+});
+
 app.get("/admin-dashboard", (req, res) => {
   return res.redirect(302, "/admin");
 });

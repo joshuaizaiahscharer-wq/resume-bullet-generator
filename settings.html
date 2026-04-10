@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Manage your BulletAI account settings." />
+    <title>Account Settings | BulletAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=1" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=1" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=1" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=1" />
+    <link rel="shortcut icon" href="/favicon-32x32.png?v=1" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="stylesheet" href="/blog.css" />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/auth.css" />
+    <style>
+      .settings-page {
+        min-height: calc(100vh - 80px);
+        padding: 60px 16px 80px;
+      }
+
+      .settings-container {
+        max-width: 640px;
+        margin: 0 auto;
+      }
+
+      .settings-heading {
+        font-size: 1.75rem;
+        font-weight: 800;
+        color: #f8fafc;
+        margin: 0 0 6px;
+        letter-spacing: -0.02em;
+      }
+
+      .settings-sub {
+        font-size: 0.9375rem;
+        color: #64748b;
+        margin: 0 0 36px;
+      }
+
+      .settings-section {
+        background: linear-gradient(160deg, rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.4));
+        border: 1px solid rgba(148, 163, 184, 0.14);
+        border-radius: 16px;
+        overflow: hidden;
+        margin-bottom: 24px;
+      }
+
+      .settings-section-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6366f1;
+        padding: 16px 20px 12px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+        margin: 0;
+      }
+
+      .settings-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.07);
+      }
+
+      .settings-row:last-child {
+        border-bottom: none;
+      }
+
+      .settings-row-label {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #cbd5e1;
+        margin: 0 0 2px;
+      }
+
+      .settings-row-value {
+        font-size: 0.8125rem;
+        color: #64748b;
+        margin: 0;
+        word-break: break-all;
+      }
+
+      .settings-avatar-large {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #fff;
+        font-size: 1.125rem;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+
+      .settings-row-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .settings-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-family: inherit;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+        border: 1px solid;
+        white-space: nowrap;
+      }
+
+      .settings-btn--secondary {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: rgba(99, 102, 241, 0.35);
+        color: #a5b4fc;
+      }
+
+      .settings-btn--secondary:hover {
+        background: rgba(99, 102, 241, 0.2);
+        border-color: rgba(99, 102, 241, 0.6);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+      }
+
+      .settings-btn--danger {
+        background: rgba(239, 68, 68, 0.08);
+        border-color: rgba(239, 68, 68, 0.35);
+        color: #fca5a5;
+      }
+
+      .settings-btn--danger:hover {
+        background: rgba(239, 68, 68, 0.16);
+        border-color: rgba(239, 68, 68, 0.6);
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08);
+      }
+
+      .settings-unauthenticated {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: 60px 20px;
+        gap: 16px;
+      }
+
+      .settings-unauthenticated p {
+        color: #64748b;
+        font-size: 0.9375rem;
+        margin: 0;
+      }
+
+      .settings-unauthenticated button {
+        padding: 10px 24px;
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        border: none;
+        border-radius: 999px;
+        color: #fff;
+        font-family: inherit;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: opacity 0.18s, transform 0.16s;
+      }
+
+      .settings-unauthenticated button:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      #settingsSignedIn {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <site-navbar></site-navbar>
+
+    <main class="settings-page" aria-labelledby="settings-heading">
+      <div class="settings-container">
+        <h1 class="settings-heading" id="settings-heading">Account Settings</h1>
+        <p class="settings-sub">Manage your BulletAI account.</p>
+
+        <div id="settingsSignedIn">
+          <!-- Profile section -->
+          <section class="settings-section" aria-labelledby="profile-section-title">
+            <h2 class="settings-section-title" id="profile-section-title">Profile</h2>
+            <div class="settings-row">
+              <span id="settingsAvatar" class="settings-avatar-large" aria-hidden="true"></span>
+              <div class="settings-row-info">
+                <p class="settings-row-label">Email address</p>
+                <p class="settings-row-value" id="settingsEmail"></p>
+              </div>
+            </div>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <p class="settings-row-label">Account status</p>
+                <p class="settings-row-value">Active</p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Account actions -->
+          <section class="settings-section" aria-labelledby="account-section-title">
+            <h2 class="settings-section-title" id="account-section-title">Account</h2>
+            <div class="settings-row">
+              <div class="settings-row-info">
+                <p class="settings-row-label">Sign out</p>
+                <p class="settings-row-value">Sign out of your BulletAI account on this device.</p>
+              </div>
+              <button id="settingsSignOutBtn" class="settings-btn settings-btn--secondary" type="button">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign Out
+              </button>
+            </div>
+          </section>
+        </div>
+
+        <div class="settings-unauthenticated" id="settingsUnauthenticated">
+          <p>Sign in to view and manage your account settings.</p>
+          <button id="settingsSignInBtn" type="button">Sign In</button>
+        </div>
+      </div>
+    </main>
+
+    <script src="/shared-navbar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="/auth.js"></script>
+    <script>
+      (function () {
+        var signedInEl = document.getElementById('settingsSignedIn');
+        var unauthEl = document.getElementById('settingsUnauthenticated');
+        var emailEl = document.getElementById('settingsEmail');
+        var avatarEl = document.getElementById('settingsAvatar');
+        var signOutBtn = document.getElementById('settingsSignOutBtn');
+        var signInBtn = document.getElementById('settingsSignInBtn');
+
+        function updateUI() {
+          var user = window.BulletAuth && window.BulletAuth.getUser();
+          if (user) {
+            var email = (window.BulletAuth && window.BulletAuth.getEmail()) || '';
+            if (emailEl) emailEl.textContent = email;
+            if (avatarEl) avatarEl.textContent = email ? email[0].toUpperCase() : '?';
+            if (signedInEl) signedInEl.style.display = 'block';
+            if (unauthEl) unauthEl.style.display = 'none';
+          } else {
+            if (signedInEl) signedInEl.style.display = 'none';
+            if (unauthEl) unauthEl.style.display = 'flex';
+          }
+        }
+
+        document.addEventListener('bulletauth:change', updateUI);
+
+        if (signOutBtn) {
+          signOutBtn.addEventListener('click', async function () {
+            if (window.BulletAuth) await window.BulletAuth.signOut();
+            window.location.href = '/';
+          });
+        }
+
+        if (signInBtn) {
+          signInBtn.addEventListener('click', function () {
+            if (window.BulletAuth) window.BulletAuth.openAuthModal();
+          });
+        }
+
+        // Initial render after BulletAuth is ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function () {
+            setTimeout(updateUI, 100);
+          });
+        } else {
+          setTimeout(updateUI, 100);
+        }
+      })();
+    </script>
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+  </body>
+</html>

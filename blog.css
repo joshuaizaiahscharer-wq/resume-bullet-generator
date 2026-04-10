@@ -742,6 +742,18 @@ site-navbar {
     width: 100%;
     text-align: center;
   }
+  .nav-user-menu {
+    width: 100%;
+  }
+  .nav-user-avatar-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .nav-user-dropdown {
+    position: static;
+    margin-top: 6px;
+    animation: none;
+  }
   .blog-hero { padding: 2.5rem 1rem 1.5rem; }
   .blog-hero h1 { font-size: 1.6rem; }
   .blog-featured, .blog-toolbar, .blog-layout, .blog-post-topbar, .blog-post-layout { padding-left: 1rem; padding-right: 1rem; }

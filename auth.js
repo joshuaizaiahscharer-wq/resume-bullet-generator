@@ -197,18 +197,25 @@
 
     _updateNavBtn: function () {
       var btn = document.getElementById('navAuthBtn');
-      if (!btn) return;
+      var userMenu = document.getElementById('navUserMenu');
+      var userAvatar = document.getElementById('navUserAvatar');
+      var userEmailEl = document.getElementById('navUserEmail');
+      var menuBtn = document.getElementById('navUserMenuBtn');
+
       if (this._user) {
         var email = this.getEmail();
-        btn.textContent = email;
-        btn.dataset.state = 'signed-in';
-        btn.setAttribute('aria-label', 'Signed in as ' + email + '. Click to sign out.');
-        btn.title = 'Sign out';
+        var initial = email ? email[0].toUpperCase() : '?';
+        if (btn) btn.hidden = true;
+        if (userMenu) userMenu.hidden = false;
+        if (userAvatar) userAvatar.textContent = initial;
+        if (userEmailEl) userEmailEl.textContent = email;
+        if (menuBtn) menuBtn.setAttribute('aria-label', 'User menu for ' + email);
       } else {
-        btn.textContent = 'Sign In';
-        btn.dataset.state = 'signed-out';
-        btn.setAttribute('aria-label', 'Sign in to BulletAI');
-        btn.title = '';
+        if (btn) btn.hidden = false;
+        if (userMenu) userMenu.hidden = true;
+        var dropdown = document.getElementById('navUserDropdown');
+        if (dropdown) dropdown.hidden = true;
+        if (menuBtn) menuBtn.setAttribute('aria-expanded', 'false');
       }
     },
   };
@@ -308,14 +315,47 @@
   /* ── Nav auth button click handler ── */
   function setupNavBtn() {
     var btn = document.getElementById('navAuthBtn');
-    if (!btn) return;
-    btn.addEventListener('click', async function () {
-      if (BulletAuth.isSignedIn()) {
-        await BulletAuth.signOut();
-      } else {
+    if (btn) {
+      btn.addEventListener('click', function () {
         BulletAuth.openAuthModal();
-      }
-    });
+      });
+    }
+
+    var userMenuBtn = document.getElementById('navUserMenuBtn');
+    var userDropdown = document.getElementById('navUserDropdown');
+    var signOutBtn = document.getElementById('navSignOutBtn');
+
+    if (userMenuBtn && userDropdown) {
+      userMenuBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var isExpanded = userMenuBtn.getAttribute('aria-expanded') === 'true';
+        userMenuBtn.setAttribute('aria-expanded', String(!isExpanded));
+        userDropdown.hidden = isExpanded;
+      });
+
+      document.addEventListener('click', function (e) {
+        if (!userDropdown.hidden && !userMenuBtn.contains(e.target) && !userDropdown.contains(e.target)) {
+          userDropdown.hidden = true;
+          userMenuBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !userDropdown.hidden) {
+          userDropdown.hidden = true;
+          userMenuBtn.setAttribute('aria-expanded', 'false');
+          userMenuBtn.focus();
+        }
+      });
+    }
+
+    if (signOutBtn) {
+      signOutBtn.addEventListener('click', async function () {
+        if (userDropdown) userDropdown.hidden = true;
+        if (userMenuBtn) userMenuBtn.setAttribute('aria-expanded', 'false');
+        await BulletAuth.signOut();
+      });
+    }
   }
 
   /* ── Supabase initialisation ── */
