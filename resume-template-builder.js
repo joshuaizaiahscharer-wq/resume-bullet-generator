@@ -78,6 +78,7 @@ const elementRefs = {
 
 let resumeAuthClient = null;
 let cloudAuthAvailable = false;
+const PENDING_AUTH_RESUME_KEY = "resume_builder_pending_auth_resume_v1";
 
 function cloneFormData() {
   return JSON.parse(JSON.stringify(resumeBuilderState.formData));
@@ -101,6 +102,79 @@ function escapeHtml(value) {
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function hasMeaningfulLocalResume() {
+  if (resumeBuilderState.hasSubmitted || resumeBuilderState.generatedData) return true;
+
+  const formData = resumeBuilderState.formData;
+  const simpleFields = [
+    formData.fullName,
+    formData.email,
+    formData.phone,
+    formData.location,
+    formData.professionalSummary,
+    formData.skills,
+    formData.certifications,
+  ];
+
+  const hasSimpleValue = simpleFields.some((v) => String(v || "").trim().length > 0);
+  if (hasSimpleValue) return true;
+
+  const hasWorkValue = (formData.workExperience || []).some((entry) =>
+    [entry.company, entry.role, entry.location, entry.startDate, entry.endDate, entry.details]
+      .some((v) => String(v || "").trim().length > 0)
+  );
+  if (hasWorkValue) return true;
+
+  const hasEducationValue = (formData.education || []).some((entry) =>
+    [entry.school, entry.degree, entry.location, entry.startDate, entry.endDate, entry.details]
+      .some((v) => String(v || "").trim().length > 0)
+  );
+  if (hasEducationValue) return true;
+
+  const hasProjectValue = (formData.projects || []).some((entry) =>
+    [entry.name, entry.link, entry.description].some((v) => String(v || "").trim().length > 0)
+  );
+
+  return hasProjectValue;
+}
+
+function stashResumeBeforeAuthRedirect() {
+  if (!hasMeaningfulLocalResume()) return;
+
+  try {
+    const payload = {
+      savedAt: Date.now(),
+      hasSubmitted: resumeBuilderState.hasSubmitted,
+      formData: cloneFormData(),
+      generatedData: resumeBuilderState.generatedData || null,
+      resumeStyle: resumeBuilderState.resumeStyle,
+      resumeFont: resumeBuilderState.resumeFont,
+    };
+    localStorage.setItem(PENDING_AUTH_RESUME_KEY, JSON.stringify(payload));
+  } catch (_err) {
+    // Ignore localStorage errors to avoid blocking auth.
+  }
+}
+
+function restoreResumeAfterAuthRedirect() {
+  try {
+    const raw = localStorage.getItem(PENDING_AUTH_RESUME_KEY);
+    if (!raw) return false;
+
+    const saved = JSON.parse(raw);
+    if (saved?.formData) resumeBuilderState.formData = saved.formData;
+    if (saved?.generatedData) resumeBuilderState.generatedData = saved.generatedData;
+    if (saved?.resumeStyle) resumeBuilderState.resumeStyle = saved.resumeStyle;
+    if (saved?.resumeFont) resumeBuilderState.resumeFont = saved.resumeFont;
+    if (saved?.hasSubmitted) resumeBuilderState.hasSubmitted = true;
+
+    localStorage.removeItem(PENDING_AUTH_RESUME_KEY);
+    return true;
+  } catch (_err) {
+    return false;
+  }
 }
 
 function buildCloudResumePayload() {
@@ -186,13 +260,23 @@ async function initCloudAuth() {
     resumeBuilderState.signedInEmail = normalizeEmail(user?.email || "");
 
     if (resumeBuilderState.signedInEmail) {
-      await loadSavedResumeForSignedInUser();
+      const restoredLocalDraft = restoreResumeAfterAuthRedirect();
+      if (restoredLocalDraft) {
+        await saveCurrentResumeForSignedInUser();
+      } else {
+        await loadSavedResumeForSignedInUser();
+      }
     }
 
     resumeAuthClient.auth.onAuthStateChange(async (_event, session) => {
       resumeBuilderState.signedInEmail = normalizeEmail(session?.user?.email || "");
       if (resumeBuilderState.signedInEmail) {
-        await loadSavedResumeForSignedInUser();
+        const restoredLocalDraft = restoreResumeAfterAuthRedirect();
+        if (restoredLocalDraft) {
+          await saveCurrentResumeForSignedInUser();
+        } else {
+          await loadSavedResumeForSignedInUser();
+        }
       }
       refreshUi();
     });
@@ -285,6 +369,7 @@ function initAuthModal() {
     emailBtn.disabled = true;
     if (statusEl) { statusEl.textContent = "Sending\u2026"; statusEl.className = "auth-modal-status"; }
     try {
+      stashResumeBeforeAuthRedirect();
       await resumeAuthClient.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: `${window.location.origin}/resume-template-builder` },
@@ -303,6 +388,7 @@ function initAuthModal() {
   document.getElementById("authModalGoogleBtn")?.addEventListener("click", async () => {
     if (!resumeAuthClient) return;
     try {
+      stashResumeBeforeAuthRedirect();
       await resumeAuthClient.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: `${window.location.origin}/resume-template-builder` },
