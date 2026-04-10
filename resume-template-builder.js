@@ -831,8 +831,6 @@ function bindGlobalEvents() {
   }
 }
 
-}
-
 // ── AI Revise ────────────────────────────────────────────────────────────────
 
 async function handleRevise(key, fieldType, btn, form) {
