@@ -831,8 +831,17 @@ body.resume-builder-body {
 .preview-paywall-row.is-paywalled {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-areas: "preview paywall";
   gap: 14px;
   align-items: start;
+}
+
+#resumePreviewShell {
+  grid-area: preview;
+}
+
+#paywallOverlayRoot {
+  grid-area: paywall;
 }
 
 #paywallOverlayRoot:empty {
