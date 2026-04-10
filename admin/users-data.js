@@ -50,12 +50,12 @@ export async function getUserData(userId) {
     .single();
 
   if (error) {
-    console.error("Error fetching user:", error);
+    console.error("SUPABASE ERROR:", error.message);
     return null;
   }
 
   console.log("User data:", data);
-  return data || null;
+  return data;
 }
 
 export async function getOrCreateUserData(authUser) {
