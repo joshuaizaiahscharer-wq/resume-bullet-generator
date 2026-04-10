@@ -2,8 +2,7 @@ import { UsersTable } from "/admin/ui-components.js";
 import {
   fetchUsers,
   getCurrentAuthUser,
-  getUserData,
-  isAdminUser,
+  getOrCreateUserData,
   maybeTrackPaymentFromUrl,
   subscribeToUsers,
   syncCurrentUserPresence,
@@ -244,7 +243,7 @@ async function initDashboard() {
       return;
     }
 
-    const userData = await getUserData(currentUser.id);
+    const userData = await getOrCreateUserData(currentUser);
     if (!userData) {
       dashboardState.isAdmin = false;
       console.log("Admin state:", dashboardState.isAdmin);
@@ -254,7 +253,7 @@ async function initDashboard() {
     }
 
     console.log("is_admin value:", userData.is_admin);
-    dashboardState.isAdmin = await isAdminUser(currentUser.id);
+    dashboardState.isAdmin = Boolean(userData.is_admin);
     console.log("Admin state:", dashboardState.isAdmin);
 
     if (!dashboardState.isAdmin) {

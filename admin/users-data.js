@@ -58,6 +58,40 @@ export async function getUserData(userId) {
   return data || null;
 }
 
+export async function getOrCreateUserData(authUser) {
+  if (!authUser?.id) return null;
+
+  const existing = await getUserData(authUser.id);
+  if (existing) return existing;
+
+  const supabase = await getSupabaseClient();
+  const nowIso = new Date().toISOString();
+  const seedRow = {
+    id: authUser.id,
+    email: authUser.email || authUser.user_metadata?.email || "",
+    is_logged_in: true,
+    has_paid: false,
+    plan: "free",
+    payment_date: null,
+    last_active: nowIso,
+    is_admin: false,
+  };
+
+  const { data, error } = await supabase
+    .from("users")
+    .insert(seedRow)
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("Error creating missing user row:", error);
+    return null;
+  }
+
+  console.log("User row created:", data);
+  return data || null;
+}
+
 export async function isAdminUser(userId) {
   const userData = await getUserData(userId);
   return Boolean(userData?.is_admin);
