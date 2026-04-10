@@ -59,6 +59,13 @@ function cloneFormData() {
   return JSON.parse(JSON.stringify(resumeBuilderState.formData));
 }
 
+function getElementValue(element) {
+  if (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) {
+    return element.value || "";
+  }
+  return "";
+}
+
 function escapeHtml(value) {
   return String(value || "")
     .replace(/&/g, "&amp;")
@@ -244,12 +251,13 @@ function ResumeBuilderForm() {
       if (!(target instanceof HTMLElement)) return;
       const key = target.getAttribute("data-key");
       if (!key) return;
-      const value = target.value || "";
+      const value = getElementValue(target);
       updateFormDataByKey(key, value);
     });
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
+      syncFormDataFromDom(form);
       resumeBuilderState.generatedData = cloneFormData();
       resumeBuilderState.hasSubmitted = true;
       resumeBuilderState.checkoutError = "";
@@ -455,6 +463,15 @@ function updateFormDataByKey(key, value) {
 
     resumeBuilderState.formData[groupName][index][fieldName] = value;
   }
+}
+
+function syncFormDataFromDom(formElement) {
+  const fields = formElement.querySelectorAll("[data-key]");
+  fields.forEach((field) => {
+    const key = field.getAttribute("data-key");
+    if (!key) return;
+    updateFormDataByKey(key, getElementValue(field));
+  });
 }
 
 function addDynamicEntry(groupName) {
