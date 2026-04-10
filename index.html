@@ -12,6 +12,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="/auth.css" />
   </head>
   <body>
     <!-- Nav -->
@@ -23,6 +24,7 @@
         <a href="#how-it-works" class="nav-link nav-link--hiw">How it works</a>
         <a href="#faq" class="nav-link nav-link--faq">FAQ</a>
         <a href="#support" class="nav-link nav-link--support">Support</a>
+        <button id="navAuthBtn" class="nav-auth-btn" type="button" aria-label="Sign in to BulletAI">Sign In</button>
       </div>
     </nav>
 
@@ -298,6 +300,8 @@
       </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="/auth.js"></script>
     <script src="script.js"></script>
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

@@ -356,6 +356,7 @@ async function initCloudAuth() {
 
     resumeAuthClient.auth.onAuthStateChange(async (_event, session) => {
       resumeBuilderState.signedInEmail = normalizeEmail(session?.user?.email || "");
+      resumeBuilderState.isUnlocked = Boolean(resumeBuilderState.signedInEmail);
       if (resumeBuilderState.signedInEmail) {
         const restoredLocalDraft = restoreResumeAfterAuthRedirect();
         if (restoredLocalDraft) {
@@ -1616,7 +1617,8 @@ function PaywallOverlay() {
       <div class="paywall-overlay" aria-label="Locked Resume Preview">
         <div class="paywall-card">
           <h4>Your Resume Is Ready</h4>
-          <p>Unlock your professional resume to view and download.</p>
+          <p>${resumeBuilderState.signedInEmail ? "Unlock your professional resume to view and download." : "Sign in to view and download your professional resume."}</p>
+          ${resumeBuilderState.signedInEmail ? `
           <div class="wallet-badge" aria-label="Apple Pay available">
             <span class="wallet-badge-icon" aria-hidden="true">&#63743;</span>
             <span>Apple Pay available</span>
@@ -1625,9 +1627,10 @@ function PaywallOverlay() {
             resumeBuilderState.checkoutInProgress ? "disabled" : ""
           }>
             ${resumeBuilderState.checkoutInProgress ? "Opening Checkout..." : "Unlock Resume"}
-          </button>
+          </button>` : `
+          <button id="signInToViewBtn" class="paywall-cta" type="button">Sign In to View Resume</button>`}
           <button id="editInfoBtn" class="paywall-secondary" type="button">Edit Information</button>
-          <p class="paywall-subtext">Secure unlock flow. Supports card checkout with Apple Pay on supported devices.</p>
+          ${resumeBuilderState.signedInEmail ? `<p class="paywall-subtext">Secure unlock flow. Supports card checkout with Apple Pay on supported devices.</p>` : ""}
           ${
             resumeBuilderState.checkoutError
               ? `<p class="paywall-error">${escapeHtml(resumeBuilderState.checkoutError)}</p>`
@@ -1638,9 +1641,13 @@ function PaywallOverlay() {
     `;
 
     const payToUnlockBtn = document.getElementById("payToUnlockBtn");
+    const signInToViewBtn = document.getElementById("signInToViewBtn");
     const editInfoBtn = document.getElementById("editInfoBtn");
     if (payToUnlockBtn) {
       payToUnlockBtn.addEventListener("click", handlePayToUnlock);
+    }
+    if (signInToViewBtn) {
+      signInToViewBtn.addEventListener("click", openAuthModal);
     }
     if (editInfoBtn) {
       editInfoBtn.addEventListener("click", () => {
@@ -1797,7 +1804,9 @@ async function fetchAccessState() {
     const data = await response.json();
 
     if (response.ok && data && typeof data.isUnlocked === "boolean") {
-      resumeBuilderState.isUnlocked = data.isUnlocked;
+      // Require sign-in to unlock: the API controls eligibility (Stripe),
+      // but the user must also be authenticated.
+      resumeBuilderState.isUnlocked = data.isUnlocked && Boolean(resumeBuilderState.signedInEmail);
     }
   } catch (_error) {
     resumeBuilderState.isUnlocked = false;

@@ -59,6 +59,14 @@ body.blog-body {
   background: rgba(99, 102, 241, 0.2);
 }
 
+/* Auth button inside blog nav — inherits #navAuthBtn base from auth.css,
+   this just tweaks sizing to match the blog nav pill row */
+.blog-nav-auth-btn {
+  font-size: 0.84rem;
+  padding: 6px 14px;
+  margin-left: 4px;
+}
+
 .blog-hero {
   width: min(900px, 100% - 32px);
   margin: 12px auto 26px;
