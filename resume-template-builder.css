@@ -149,6 +149,10 @@ body.resume-builder-body {
   padding: 24px;
 }
 
+.builder-form-panel.is-collapsed {
+  display: none;
+}
+
 .builder-preview-panel {
   padding: 20px;
   margin-top: 18px;
@@ -176,6 +180,17 @@ body.resume-builder-body {
 
 .panel-header {
   margin-bottom: 14px;
+}
+
+.panel-header--preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.panel-header-copy {
+  min-width: 0;
 }
 
 .panel-header h2 {
@@ -1141,6 +1156,11 @@ body.resume-builder-body {
   .builder-preview-panel {
     padding: 16px;
     border-radius: 14px;
+  }
+
+  .panel-header--preview {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .form-grid-two {

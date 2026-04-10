@@ -40,6 +40,7 @@ const SAMPLE_FORM_DATA = {
 
 const resumeBuilderState = {
   hasSubmitted: false,
+  isFormCollapsed: false,
   isUnlocked: false,
   generatedData: null,
   checkoutInProgress: false,
@@ -70,6 +71,7 @@ const elementRefs = {
   heroResumeAccessBtn: document.getElementById("heroResumeAccessBtn"),
   heroResumeAccessStatus: document.getElementById("heroResumeAccessStatus"),
   paymentStatusBadge: document.getElementById("paymentStatusBadge"),
+  editResumeBtn: document.getElementById("editResumeBtn"),
   authStatus: document.getElementById("resumeAuthStatus"),
   authBtn: document.getElementById("resumeAuthBtn"),
   saveBtn: document.getElementById("saveResumeBtn"),
@@ -181,7 +183,10 @@ function restoreResumeAfterAuthRedirect() {
     if (saved?.generatedData) resumeBuilderState.generatedData = saved.generatedData;
     if (saved?.resumeStyle) resumeBuilderState.resumeStyle = saved.resumeStyle;
     if (saved?.resumeFont) resumeBuilderState.resumeFont = saved.resumeFont;
-    if (saved?.hasSubmitted) resumeBuilderState.hasSubmitted = true;
+    if (saved?.hasSubmitted) {
+      resumeBuilderState.hasSubmitted = true;
+      resumeBuilderState.isFormCollapsed = true;
+    }
 
     localStorage.removeItem(PENDING_AUTH_RESUME_KEY);
     return true;
@@ -243,7 +248,10 @@ async function loadSavedResumeForSignedInUser() {
     if (saved.generatedData) resumeBuilderState.generatedData = saved.generatedData;
     if (saved.resumeStyle) resumeBuilderState.resumeStyle = saved.resumeStyle;
     if (saved.resumeFont) resumeBuilderState.resumeFont = saved.resumeFont;
-    if (saved.hasSubmitted) resumeBuilderState.hasSubmitted = true;
+    if (saved.hasSubmitted) {
+      resumeBuilderState.hasSubmitted = true;
+      resumeBuilderState.isFormCollapsed = true;
+    }
   } catch (_err) {
     // Silent fail to keep builder usable if cloud auth is temporarily unavailable.
   }
@@ -1270,6 +1278,7 @@ function ResumeBuilderForm() {
       syncFormDataFromDom(form);
       resumeBuilderState.generatedData = cloneFormData();
       resumeBuilderState.hasSubmitted = true;
+      resumeBuilderState.isFormCollapsed = true;
       resumeBuilderState.checkoutError = "";
       refreshUi({ animatePreview: true });
     });
@@ -1693,6 +1702,19 @@ function updatePreviewVisibility(animatePreview = false) {
   }
 }
 
+function updateFormVisibility() {
+  const shouldShowForm = !resumeBuilderState.hasSubmitted || !resumeBuilderState.isFormCollapsed;
+
+  const formPanel = elementRefs.formRoot?.closest(".builder-form-panel") || null;
+  if (formPanel) {
+    formPanel.classList.toggle("is-collapsed", !shouldShowForm);
+  }
+
+  if (elementRefs.editResumeBtn) {
+    elementRefs.editResumeBtn.hidden = !resumeBuilderState.hasSubmitted;
+  }
+}
+
 function updateLockStateUi() {
   const isUnlocked = resumeBuilderState.isUnlocked;
 
@@ -1746,6 +1768,17 @@ function bindGlobalEvents() {
       }
 
       scrollToResumePreview();
+    });
+  }
+
+  if (elementRefs.editResumeBtn) {
+    elementRefs.editResumeBtn.addEventListener("click", () => {
+      resumeBuilderState.isFormCollapsed = false;
+      refreshUi();
+      const form = document.getElementById("resumeBuilderForm");
+      if (form) {
+        form.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     });
   }
 
@@ -1964,6 +1997,7 @@ function appendBulletToExperience(bulletText, entryIndex, form) {
 function refreshUi(options = {}) {
   const animatePreview = Boolean(options.animatePreview);
   ResumeBuilderForm().render();
+  updateFormVisibility();
   updatePreviewVisibility(animatePreview);
   ResumePreview().render();
   PaywallOverlay().render();
