@@ -40,22 +40,27 @@ export async function getCurrentAuthUser() {
   return data?.user || null;
 }
 
-export async function getUserAccessProfile(userId) {
+export async function getUserData(userId) {
   if (!userId) return null;
   const supabase = await getSupabaseClient();
   const { data, error } = await supabase
     .from("users")
-    .select("id, is_admin")
+    .select("*")
     .eq("id", userId)
-    .maybeSingle();
+    .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error fetching user:", error);
+    return null;
+  }
+
+  console.log("User data:", data);
   return data || null;
 }
 
 export async function isAdminUser(userId) {
-  const profile = await getUserAccessProfile(userId);
-  return Boolean(profile?.is_admin);
+  const userData = await getUserData(userId);
+  return Boolean(userData?.is_admin);
 }
 
 export async function updateUserPayment(userId, newStatus) {
