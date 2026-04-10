@@ -1,3 +1,43 @@
+const SAMPLE_FORM_DATA = {
+  fullName: "Jordan Lee",
+  email: "jordan.lee@email.com",
+  phone: "(555) 010-2784",
+  location: "Austin, TX",
+  professionalSummary:
+    "Results-driven product marketer with 6+ years of experience launching B2B SaaS products and improving conversion across full-funnel campaigns.",
+  workExperience: [
+    {
+      company: "Northstar Software",
+      role: "Senior Product Marketing Manager",
+      location: "Austin, TX",
+      startDate: "2022",
+      endDate: "Present",
+      details:
+        "Led GTM strategy for two flagship releases, increasing qualified pipeline by 34% and improving landing page conversion by 21%.",
+    },
+  ],
+  education: [
+    {
+      school: "University of Texas at Austin",
+      degree: "BBA, Marketing",
+      location: "Austin, TX",
+      startDate: "2013",
+      endDate: "2017",
+      details: "Graduated with honors. Led student marketing association workshops.",
+    },
+  ],
+  skills: "Product Marketing, GTM Strategy, Messaging, Lifecycle Email, SEO, Paid Acquisition, HubSpot, Tableau",
+  certifications: "Google Analytics Certification, HubSpot Inbound Marketing",
+  projects: [
+    {
+      name: "Pricing Page Conversion Redesign",
+      link: "https://example.com/case-study",
+      description:
+        "Redesigned pricing page narrative and CTAs, driving a 19% increase in trial starts in 90 days.",
+    },
+  ],
+};
+
 const resumeBuilderState = {
   hasSubmitted: false,
   isUnlocked: false,
@@ -5,43 +45,16 @@ const resumeBuilderState = {
   checkoutInProgress: false,
   checkoutError: "",
   formData: {
-    fullName: "Jordan Lee",
-    email: "jordan.lee@email.com",
-    phone: "(555) 010-2784",
-    location: "Austin, TX",
-    professionalSummary:
-      "Results-driven product marketer with 6+ years of experience launching B2B SaaS products and improving conversion across full-funnel campaigns.",
-    workExperience: [
-      {
-        company: "Northstar Software",
-        role: "Senior Product Marketing Manager",
-        location: "Austin, TX",
-        startDate: "2022",
-        endDate: "Present",
-        details:
-          "Led GTM strategy for two flagship releases, increasing qualified pipeline by 34% and improving landing page conversion by 21%.",
-      },
-    ],
-    education: [
-      {
-        school: "University of Texas at Austin",
-        degree: "BBA, Marketing",
-        location: "Austin, TX",
-        startDate: "2013",
-        endDate: "2017",
-        details: "Graduated with honors. Led student marketing association workshops.",
-      },
-    ],
-    skills: "Product Marketing, GTM Strategy, Messaging, Lifecycle Email, SEO, Paid Acquisition, HubSpot, Tableau",
-    certifications: "Google Analytics Certification, HubSpot Inbound Marketing",
-    projects: [
-      {
-        name: "Pricing Page Conversion Redesign",
-        link: "https://example.com/case-study",
-        description:
-          "Redesigned pricing page narrative and CTAs, driving a 19% increase in trial starts in 90 days.",
-      },
-    ],
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    professionalSummary: "",
+    workExperience: [{ company: "", role: "", location: "", startDate: "", endDate: "", details: "" }],
+    education: [{ school: "", degree: "", location: "", startDate: "", endDate: "", details: "" }],
+    skills: "",
+    certifications: "",
+    projects: [{ name: "", link: "", description: "" }],
   },
 };
 
@@ -235,7 +248,10 @@ function ResumeBuilderForm() {
           ${projectEntries}
         </section>
 
-        <button class="generate-resume-btn" type="submit">Generate Resume</button>
+        <div class="form-actions">
+          <button class="generate-resume-btn" type="submit">Generate Resume</button>
+          <button class="load-sample-btn" type="button" id="loadSampleDataBtn">Load Sample Data</button>
+        </div>
       </form>
     `;
 
@@ -281,6 +297,13 @@ function ResumeBuilderForm() {
       if (removeGroup && removeIndex !== null) {
         event.preventDefault();
         removeDynamicEntry(removeGroup, Number(removeIndex));
+        render();
+        return;
+      }
+
+      if (target.id === "loadSampleDataBtn" || target.closest("#loadSampleDataBtn")) {
+        event.preventDefault();
+        resumeBuilderState.formData = JSON.parse(JSON.stringify(SAMPLE_FORM_DATA));
         render();
       }
     });
