@@ -73,6 +73,43 @@
         </div>
 
           <div class="admin-table-wrap" id="adminTableRoot" aria-live="polite"></div>
+
+          <section class="blog-generator" aria-labelledby="blogGeneratorTitle">
+            <div class="blog-generator-header">
+              <h2 id="blogGeneratorTitle">AI Blog Generator</h2>
+              <p>Create, preview, and publish SEO-ready posts to your blog.</p>
+            </div>
+
+            <div class="blog-generator-controls">
+              <label class="control-search" for="blogTopicInput">
+                <span>Blog Topic</span>
+                <input id="blogTopicInput" type="text" placeholder="e.g. How to write resume bullet points that get interviews" />
+              </label>
+
+              <label class="control-select" for="blogToneSelect">
+                <span>Tone</span>
+                <select id="blogToneSelect">
+                  <option value="Professional">Professional</option>
+                  <option value="Casual">Casual</option>
+                  <option value="SEO Optimized">SEO Optimized</option>
+                </select>
+              </label>
+
+              <div class="blog-generator-actions">
+                <button id="generateBlogBtn" class="admin-gate-btn" type="button">Generate Post</button>
+                <button id="publishBlogBtn" class="admin-gate-btn" type="button" disabled>Publish Post</button>
+              </div>
+            </div>
+
+            <p id="blogGeneratorStatus" class="blog-generator-status" aria-live="polite"></p>
+
+            <div class="blog-preview-shell" id="blogPreviewShell" hidden>
+              <article class="blog-preview-paper">
+                <h3 id="blogPreviewTitle">Untitled Draft</h3>
+                <div id="blogPreviewContent" class="blog-preview-content"></div>
+              </article>
+            </div>
+          </section>
         </div>
       </section>
     </main>

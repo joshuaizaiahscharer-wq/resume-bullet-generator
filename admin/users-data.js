@@ -221,6 +221,72 @@ export async function subscribeToUsers(onRefresh) {
   };
 }
 
+export function slugifyTitle(title) {
+  return String(title || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+export async function generateBlogPostDraft(topic, tone) {
+  const supabase = await getSupabaseClient();
+  const { data: sessionResult } = await supabase.auth.getSession();
+  const accessToken = sessionResult?.session?.access_token || "";
+
+  const response = await fetch("/api/admin/blog/generate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ topic, tone }),
+  });
+
+  const payload = await response.json();
+  if (!response.ok) {
+    throw new Error(payload?.error || "Failed to generate blog post.");
+  }
+
+  return {
+    title: payload?.title || "",
+    content: payload?.content || "",
+  };
+}
+
+export async function publishBlogPost({ title, content, authorId }) {
+  const supabase = await getSupabaseClient();
+  const baseSlug = slugifyTitle(title) || `post-${Date.now()}`;
+
+  const attemptInsert = async (slug) => {
+    return supabase
+      .from("blog_posts")
+      .insert({
+        title,
+        slug,
+        content,
+        author_id: authorId,
+        is_published: true,
+      })
+      .select("id, slug")
+      .single();
+  };
+
+  let { data, error } = await attemptInsert(baseSlug);
+  if (error && String(error.code) === "23505") {
+    const retrySlug = `${baseSlug}-${Date.now()}`;
+    ({ data, error } = await attemptInsert(retrySlug));
+  }
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
 async function updateCurrentUserPresence(user, isLoggedIn) {
   const supabase = await getSupabaseClient();
   const nowIso = new Date().toISOString();

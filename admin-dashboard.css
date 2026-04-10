@@ -115,6 +115,97 @@ body.admin-page-body {
   border-radius: 10px;
 }
 
+.blog-generator {
+  margin-top: 28px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 18px;
+  background: #fcfdff;
+}
+
+.blog-generator-header h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.blog-generator-header p {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.blog-generator-controls {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 220px auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.blog-generator-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.blog-generator-status {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: #475569;
+  min-height: 18px;
+}
+
+.blog-preview-shell {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  border: 1px solid #d9e1ea;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #eef3f8 0%, #f8fafc 100%);
+  padding: 16px;
+}
+
+.blog-preview-paper {
+  width: min(740px, 100%);
+  min-height: 420px;
+  max-height: 620px;
+  overflow: auto;
+  background: #fff;
+  color: #0f172a;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  padding: 28px;
+}
+
+.blog-preview-paper h3 {
+  margin: 0 0 14px;
+  font-size: 1.5rem;
+  line-height: 1.25;
+}
+
+.blog-preview-content {
+  font-family: "Merriweather", Georgia, serif;
+  line-height: 1.7;
+  color: #1e293b;
+}
+
+.blog-preview-content h2,
+.blog-preview-content h3 {
+  margin: 18px 0 8px;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  line-height: 1.3;
+}
+
+.blog-preview-content p {
+  margin: 8px 0;
+}
+
+.blog-preview-content ul {
+  margin: 8px 0 8px 20px;
+}
+
 .admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -311,5 +402,15 @@ input:checked + .slider {
 @media (max-width: 920px) {
   .admin-controls {
     grid-template-columns: 1fr;
+  }
+
+  .blog-generator-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .blog-generator-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }

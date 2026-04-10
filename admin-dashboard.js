@@ -1,9 +1,11 @@
 import { UsersTable } from "/admin/ui-components.js";
 import {
   fetchUsers,
+  generateBlogPostDraft,
   getCurrentAuthUser,
   getOrCreateUserData,
   maybeTrackPaymentFromUrl,
+  publishBlogPost,
   subscribeToUsers,
   syncCurrentUserPresence,
   updateUserPayment,
@@ -18,7 +20,160 @@ const dashboardState = {
   sort: "lastActive_desc",
   isAdmin: null,
   pendingUserIds: new Set(),
+  currentUserId: null,
+  blogDraft: null,
 };
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function renderDraftContent(markdown) {
+  const lines = String(markdown || "").split(/\r?\n/);
+  let html = "";
+  let inList = false;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) {
+      if (inList) {
+        html += "</ul>";
+        inList = false;
+      }
+      continue;
+    }
+
+    if (line.startsWith("### ")) {
+      if (inList) {
+        html += "</ul>";
+        inList = false;
+      }
+      html += `<h3>${escapeHtml(line.slice(4))}</h3>`;
+      continue;
+    }
+
+    if (line.startsWith("## ")) {
+      if (inList) {
+        html += "</ul>";
+        inList = false;
+      }
+      html += `<h2>${escapeHtml(line.slice(3))}</h2>`;
+      continue;
+    }
+
+    if (line.startsWith("- ")) {
+      if (!inList) {
+        html += "<ul>";
+        inList = true;
+      }
+      html += `<li>${escapeHtml(line.slice(2))}</li>`;
+      continue;
+    }
+
+    if (inList) {
+      html += "</ul>";
+      inList = false;
+    }
+
+    html += `<p>${escapeHtml(line)}</p>`;
+  }
+
+  if (inList) html += "</ul>";
+  return html;
+}
+
+function setBlogGeneratorStatus(message, tone = "neutral") {
+  const status = document.getElementById("blogGeneratorStatus");
+  if (!status) return;
+  status.textContent = message || "";
+  status.style.color = tone === "error" ? "#b91c1c" : tone === "success" ? "#166534" : "#475569";
+}
+
+function renderBlogPreview(draft) {
+  const shell = document.getElementById("blogPreviewShell");
+  const title = document.getElementById("blogPreviewTitle");
+  const content = document.getElementById("blogPreviewContent");
+  const publishBtn = document.getElementById("publishBlogBtn");
+  if (!shell || !title || !content || !publishBtn) return;
+
+  if (!draft?.title || !draft?.content) {
+    shell.hidden = true;
+    publishBtn.disabled = true;
+    return;
+  }
+
+  shell.hidden = false;
+  title.textContent = draft.title;
+  content.innerHTML = renderDraftContent(draft.content);
+  publishBtn.disabled = false;
+}
+
+async function handleGenerateBlogPost() {
+  const topicInput = document.getElementById("blogTopicInput");
+  const toneSelect = document.getElementById("blogToneSelect");
+  const generateBtn = document.getElementById("generateBlogBtn");
+  const publishBtn = document.getElementById("publishBlogBtn");
+  const topic = String(topicInput?.value || "").trim();
+  const tone = String(toneSelect?.value || "Professional");
+
+  if (!topic) {
+    setBlogGeneratorStatus("Enter a topic before generating.", "error");
+    return;
+  }
+
+  if (generateBtn) generateBtn.disabled = true;
+  if (publishBtn) publishBtn.disabled = true;
+  setBlogGeneratorStatus("Generating post draft...", "neutral");
+
+  try {
+    const draft = await generateBlogPostDraft(topic, tone);
+    dashboardState.blogDraft = draft;
+    renderBlogPreview(draft);
+    setBlogGeneratorStatus("Draft generated. Review and publish when ready.", "success");
+  } catch (error) {
+    setBlogGeneratorStatus(String(error?.message || "Failed to generate post."), "error");
+  } finally {
+    if (generateBtn) generateBtn.disabled = false;
+  }
+}
+
+async function handlePublishBlogPost() {
+  const publishBtn = document.getElementById("publishBlogBtn");
+  const draft = dashboardState.blogDraft;
+
+  if (!draft?.title || !draft?.content) {
+    setBlogGeneratorStatus("Nothing to publish yet. Generate a draft first.", "error");
+    return;
+  }
+
+  if (!dashboardState.currentUserId) {
+    setBlogGeneratorStatus("No authenticated author detected.", "error");
+    return;
+  }
+
+  if (publishBtn) publishBtn.disabled = true;
+  setBlogGeneratorStatus("Publishing post...", "neutral");
+
+  try {
+    const saved = await publishBlogPost({
+      title: draft.title,
+      content: draft.content,
+      authorId: dashboardState.currentUserId,
+    });
+    setBlogGeneratorStatus(`Published successfully: /blog/${saved.slug}`, "success");
+    showToast("Blog post published", "success");
+  } catch (error) {
+    setBlogGeneratorStatus(String(error?.message || "Failed to publish post."), "error");
+    showToast("Publish failed", "error");
+  } finally {
+    if (publishBtn) publishBtn.disabled = false;
+  }
+}
 
 function renderLoadingState() {
   const gate = document.getElementById("adminAuthGate");
@@ -220,6 +375,9 @@ function bindControls() {
       return;
     }
   });
+
+  document.getElementById("generateBlogBtn")?.addEventListener("click", handleGenerateBlogPost);
+  document.getElementById("publishBlogBtn")?.addEventListener("click", handlePublishBlogPost);
 }
 
 async function refreshUsers() {
@@ -242,6 +400,8 @@ async function initDashboard() {
       renderAccessDenied("Please sign in to continue.");
       return;
     }
+
+    dashboardState.currentUserId = currentUser.id;
 
     const userData = await getOrCreateUserData(currentUser);
     if (!userData) {

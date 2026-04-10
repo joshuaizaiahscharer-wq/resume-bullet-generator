@@ -9,8 +9,6 @@ const OpenAI = require("openai");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 const {
-  blogPosts,
-  blogPostBySlug,
   renderBlogListPage,
   renderBlogPostPage,
 } = require("../lib/blogPages");
@@ -712,13 +710,23 @@ app.get("/robots.txt", (req, res) => {
   res.type("text/plain").send(robotsText);
 });
 
-app.get("/sitemap.xml", (req, res) => {
+app.get("/sitemap.xml", async (req, res) => {
+  let blogSlugs = [];
+  const { data: publishedPosts, error } = await supabase
+    .from("blog_posts")
+    .select("slug")
+    .eq("is_published", true);
+
+  if (!error) {
+    blogSlugs = (publishedPosts || []).map((row) => row.slug).filter(Boolean);
+  }
+
   const paths = [
     "/",
     "/blog",
     "/jobs",
     "/resume-template-builder",
-    ...blogPosts.map((post) => `/blog/${post.slug}`),
+    ...blogSlugs.map((slug) => `/blog/${slug}`),
     ...allClusterPages.map((page) => `/${page.slug}`),
   ];
 
@@ -760,15 +768,53 @@ app.get("/jobs", (req, res) => {
   res.send(renderJobsPage());
 });
 
-app.get("/blog", (req, res) => {
-  res.send(renderBlogListPage(SITE_URL));
+app.get("/blog", async (req, res) => {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select("slug, title, content, created_at")
+    .eq("is_published", true)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[/blog] fetch error:", error.message);
+    return res.status(500).send("Unable to load blog posts.");
+  }
+
+  const posts = (data || []).map((row) => ({
+    slug: row.slug,
+    title: row.title,
+    date: row.created_at,
+    excerpt: buildExcerpt(row.content, 150),
+    description: buildExcerpt(row.content, 170),
+  }));
+
+  res.send(renderBlogListPage(SITE_URL, posts));
 });
 
-app.get("/blog/:slug", (req, res) => {
-  const post = blogPostBySlug[req.params.slug];
-  if (!post) {
+app.get("/blog/:slug", async (req, res) => {
+  const { data, error } = await supabase
+    .from("blog_posts")
+    .select("slug, title, content, created_at")
+    .eq("slug", req.params.slug)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[/blog/:slug] fetch error:", error.message);
+    return res.status(500).send("Unable to load this blog post.");
+  }
+
+  if (!data) {
     return res.status(404).send("Blog post not found.");
   }
+
+  const post = {
+    slug: data.slug,
+    title: data.title,
+    date: data.created_at,
+    description: buildExcerpt(data.content, 180),
+    content: data.content,
+  };
 
   return res.send(renderBlogPostPage(post, SITE_URL));
 });
@@ -792,6 +838,66 @@ app.get("/api/public-auth-config", (req, res) => {
     supabaseAnonKey: SUPABASE_PUBLISHABLE_KEY,
     supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
   });
+});
+
+app.post("/api/admin/blog/generate", async (req, res) => {
+  try {
+    const user = await getSupabaseUserFromAuthHeader(req);
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const isAdmin = await isAdminUserById(user.id);
+    if (!isAdmin) {
+      return res.status(403).json({ error: "Admin access required." });
+    }
+
+    const topic = String(req.body?.topic || "").trim();
+    const tone = String(req.body?.tone || "Professional").trim();
+    if (!topic) {
+      return res.status(400).json({ error: "Topic is required." });
+    }
+
+    const prompt = [
+      `Write a high-quality SEO blog post about: ${topic}.`,
+      `Tone: ${tone}.`,
+      "Include:",
+      "- Engaging introduction",
+      "- Clear sections with headings",
+      "- Bullet points where helpful",
+      "- Strong conclusion",
+      "- Keep it readable and valuable",
+      'Return strict JSON only: {"title":"...","content":"..."}',
+    ].join("\n");
+
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_BLOG_MODEL || "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an expert SEO blog writer. Return valid JSON only, no markdown fences, no extra commentary.",
+        },
+        { role: "user", content: prompt },
+      ],
+      temperature: 0.7,
+      max_tokens: 1800,
+    });
+
+    const text = completion.choices?.[0]?.message?.content || "";
+    const parsed = parseJsonPayload(text);
+    const title = String(parsed?.title || topic).trim();
+    const content = String(parsed?.content || "").trim();
+
+    if (!content) {
+      return res.status(502).json({ error: "AI returned empty content." });
+    }
+
+    return res.json({ title, content });
+  } catch (error) {
+    console.error("[/api/admin/blog/generate] error:", error.message);
+    return res.status(500).json({ error: "Failed to generate blog post." });
+  }
 });
 
 app.get("/api/resume-builder/load-cloud", async (req, res) => {
