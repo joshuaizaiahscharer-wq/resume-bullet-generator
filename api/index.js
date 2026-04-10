@@ -789,6 +789,7 @@ app.get("/api/resume-builder/access", async (req, res) => {
 app.get("/api/public-auth-config", (req, res) => {
   return res.json({
     supabaseUrl: process.env.SUPABASE_URL || "",
+    supabaseAnonKey: SUPABASE_PUBLISHABLE_KEY,
     supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
   });
 });
