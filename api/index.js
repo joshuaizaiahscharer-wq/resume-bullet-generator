@@ -32,8 +32,8 @@ const RESUME_UNLOCK_COOKIE = "resume_builder_unlock";
 const RESUME_UNLOCK_TTL_MS = 1000 * 60 * 60 * 24 * 30;
 
 // Temporary paywall toggle for resume builder.
-// Set to false to re-enable normal Stripe + unlock flow.
-const DISABLE_RESUME_BUILDER_PAYWALL = true;
+// Keep false to enforce normal Stripe + unlock flow.
+const DISABLE_RESUME_BUILDER_PAYWALL = false;
 
 // Support email address for notifications
 const SUPPORT_NOTIFY_EMAIL = process.env.SUPPORT_NOTIFY_EMAIL;

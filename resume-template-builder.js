@@ -356,7 +356,6 @@ async function initCloudAuth() {
 
     resumeAuthClient.auth.onAuthStateChange(async (_event, session) => {
       resumeBuilderState.signedInEmail = normalizeEmail(session?.user?.email || "");
-      resumeBuilderState.isUnlocked = Boolean(resumeBuilderState.signedInEmail);
       if (resumeBuilderState.signedInEmail) {
         const restoredLocalDraft = restoreResumeAfterAuthRedirect();
         if (restoredLocalDraft) {
@@ -365,6 +364,7 @@ async function initCloudAuth() {
           await loadSavedResumeForSignedInUser();
         }
       }
+      await fetchAccessState();
       refreshUi();
       restoreScrollAfterAuthRedirect();
     });
@@ -1804,9 +1804,7 @@ async function fetchAccessState() {
     const data = await response.json();
 
     if (response.ok && data && typeof data.isUnlocked === "boolean") {
-      // Require sign-in to unlock: the API controls eligibility (Stripe),
-      // but the user must also be authenticated.
-      resumeBuilderState.isUnlocked = data.isUnlocked && Boolean(resumeBuilderState.signedInEmail);
+      resumeBuilderState.isUnlocked = data.isUnlocked;
     }
   } catch (_error) {
     resumeBuilderState.isUnlocked = false;
