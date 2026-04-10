@@ -610,11 +610,13 @@ function drawResumePdf(doc, previewData, filenameBase) {
     drawWrappedText(item.details, { gapAfter: 10 });
   });
 
-  drawSectionHeading("Education");
-  (previewData.education || []).forEach((item) => {
-    const hasContent = [item.degree, item.school, item.location, item.startDate, item.endDate, item.details]
-      .some((value) => String(value || "").trim());
-    if (!hasContent) return;
+  const educationItems = (previewData.education || []).filter((item) =>
+    hasEntryContent(item, ["degree", "school", "location", "startDate", "endDate", "details"])
+  );
+
+  if (educationItems.length) {
+    drawSectionHeading("Education");
+    educationItems.forEach((item) => {
     drawItemHeader(item.degree || "Degree", formatDateRange(item.startDate, item.endDate));
     const schoolLine = [item.school, item.location].filter(Boolean).join(" | ");
     if (schoolLine) {
@@ -627,7 +629,8 @@ function drawResumePdf(doc, previewData, filenameBase) {
       });
     }
     drawWrappedText(item.details, { gapAfter: 10 });
-  });
+    });
+  }
 
   if (String(previewData.skills || "").trim()) {
     drawSectionHeading("Skills");
@@ -762,11 +765,13 @@ async function downloadResumeAsDocx() {
     addTextParagraph(item.details, { after: 100 });
   });
 
-  addSectionHeading("Education");
-  (previewData.education || []).forEach((item) => {
-    const hasContent = [item.degree, item.school, item.location, item.startDate, item.endDate, item.details]
-      .some((value) => String(value || "").trim());
-    if (!hasContent) return;
+  const educationItems = (previewData.education || []).filter((item) =>
+    hasEntryContent(item, ["degree", "school", "location", "startDate", "endDate", "details"])
+  );
+
+  if (educationItems.length) {
+    addSectionHeading("Education");
+    educationItems.forEach((item) => {
 
     children.push(
       new Paragraph({
@@ -789,7 +794,8 @@ async function downloadResumeAsDocx() {
     }
 
     addTextParagraph(item.details, { after: 100 });
-  });
+    });
+  }
 
   if (String(previewData.skills || "").trim()) {
     addSectionHeading("Skills");
@@ -1400,7 +1406,11 @@ function ResumePreview() {
       )
       .join("");
 
-    const educationMarkup = previewData.education
+    const educationEntries = (previewData.education || []).filter((item) =>
+      hasEntryContent(item, ["degree", "school", "location", "startDate", "endDate", "details"])
+    );
+
+    const educationMarkup = educationEntries
       .map(
         (item) => `
           <article class="resume-item">
@@ -1415,7 +1425,11 @@ function ResumePreview() {
       )
       .join("");
 
-    const projectMarkup = previewData.projects
+    const projectEntries = (previewData.projects || []).filter((item) =>
+      hasEntryContent(item, ["name", "link", "description"])
+    );
+
+    const projectMarkup = projectEntries
       .map(
         (item) => `
           <article class="resume-item">
@@ -1452,10 +1466,11 @@ function ResumePreview() {
             ${workMarkup}
           </section>
 
+          ${educationEntries.length ? `
           <section class="resume-block">
             <h4>Education</h4>
             ${educationMarkup}
-          </section>
+          </section>` : ""}
 
           <section class="resume-block">
             <h4>Skills</h4>
@@ -1467,10 +1482,11 @@ function ResumePreview() {
             <p class="resume-certs-text">${escapeHtml(previewData.certifications)}</p>
           </section>
 
+          ${projectEntries.length ? `
           <section class="resume-block">
             <h4>Projects</h4>
             ${projectMarkup}
-          </section>
+          </section>` : ""}
         </div>
       </article>
     `;
@@ -1565,6 +1581,11 @@ function syncFormDataFromDom(formElement) {
     if (!key) return;
     updateFormDataByKey(key, getElementValue(field));
   });
+}
+
+function hasEntryContent(entry, fields) {
+  if (!entry || !Array.isArray(fields)) return false;
+  return fields.some((field) => String(entry[field] || "").trim().length > 0);
 }
 
 function addDynamicEntry(groupName) {
