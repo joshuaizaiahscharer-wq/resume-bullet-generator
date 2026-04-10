@@ -95,47 +95,8 @@
       }
 
       if (!existingUser) {
-        console.log('Creating new user');
-
-        const { error: insertError } = await BulletAuth._supabase.from('users').insert([
-          {
-            id: authUser.id,
-            email: safeEmail,
-            is_logged_in: true,
-            has_paid: false,
-            plan: 'free',
-            payment_date: null,
-            last_active: nowIso,
-          },
-        ]);
-
-        if (insertError) {
-          const duplicateInsert = insertError.code === '23505'
-            || String(insertError.message || '').toLowerCase().includes('duplicate');
-
-          if (!duplicateInsert) {
-            console.error('Insert error:', insertError);
-            return;
-          }
-
-          const { error: updateError } = await BulletAuth._supabase
-            .from('users')
-            .update({
-              email: safeEmail,
-              is_logged_in: true,
-              last_active: nowIso,
-            })
-            .eq('id', authUser.id);
-
-          if (updateError) {
-            console.error('Update error:', updateError);
-            return;
-          }
-
-          console.log('User updated successfully');
-        } else {
-          console.log('User created successfully');
-        }
+        console.warn('No users row found yet for auth user. Expected DB trigger to create it:', authUser.id);
+        return;
       } else {
         console.log('Updating existing user');
 

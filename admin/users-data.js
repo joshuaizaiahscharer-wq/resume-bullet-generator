@@ -40,7 +40,7 @@ export async function syncCurrentUserPresence() {
   let previousUserId = data?.session?.user?.id || null;
 
   if (data?.session?.user) {
-    await upsertCurrentUser(data.session.user, true);
+    await updateCurrentUserPresence(data.session.user, true);
   }
 
   const { data: authSubscription } = supabase.auth.onAuthStateChange(async (_event, session) => {
@@ -51,7 +51,7 @@ export async function syncCurrentUserPresence() {
     }
 
     if (currentUser) {
-      await upsertCurrentUser(currentUser, true);
+      await updateCurrentUserPresence(currentUser, true);
       previousUserId = currentUser.id;
     } else {
       previousUserId = null;
@@ -110,20 +110,20 @@ export async function subscribeToUsers(onRefresh) {
   };
 }
 
-async function upsertCurrentUser(user, isLoggedIn) {
+async function updateCurrentUserPresence(user, isLoggedIn) {
   const supabase = await getSupabaseClient();
   const nowIso = new Date().toISOString();
 
-  const payload = {
-    id: user.id,
-    email: user.email || "",
-    is_logged_in: Boolean(isLoggedIn),
-    last_active: nowIso,
-  };
-
   const { error } = await supabase
     .from("users")
-    .upsert(payload, { onConflict: "id" });
+    .update({
+      email: user.email || "",
+      is_logged_in: Boolean(isLoggedIn),
+      last_active: nowIso,
+    })
+    .eq("id", user.id);
 
-  if (error) throw error;
+  if (error) {
+    console.error("Update error:", error);
+  }
 }
