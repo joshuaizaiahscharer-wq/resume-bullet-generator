@@ -92,6 +92,25 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+const REVISABLE_KEYS = new Set(["professionalSummary"]);
+const REVISABLE_SUFFIXES = [".details", ".description"];
+
+function isRevisableField(key, multiline) {
+  if (!multiline) return false;
+  if (REVISABLE_KEYS.has(key)) return true;
+  return REVISABLE_SUFFIXES.some((s) => key.endsWith(s));
+}
+
+function fieldTypeFromKey(key) {
+  if (key === "professionalSummary") return "summary";
+  if (key.endsWith(".description")) return "description";
+  if (key.includes("education") && key.endsWith(".details")) return "education";
+  return "details";
+}
+
+// Per-field undo storage: { [dataKey]: previousValue }
+const reviseUndoMap = {};
+
 function createField({ label, key, value, type = "text", multiline = false, placeholder = "" }) {
   const isLocation = !multiline && (key === "location" || key.endsWith(".location"));
   const dropdownId = `acdrop_${key.replace(/\./g, "_")}`;
@@ -104,10 +123,17 @@ function createField({ label, key, value, type = "text", multiline = false, plac
     ? `<div class="autocomplete-wrapper">${inputMarkup}<div class="autocomplete-dropdown" id="${dropdownId}"></div></div>`
     : inputMarkup;
 
+  const reviseBar = isRevisableField(key, multiline) ? `
+    <div class="revise-bar" data-revise-key="${escapeHtml(key)}">
+      <button class="revise-btn" type="button" data-revise="${escapeHtml(key)}" data-field-type="${escapeHtml(fieldTypeFromKey(key))}">&#10022; Revise with AI</button>
+      <button class="revise-undo-btn" type="button" data-undo-revise="${escapeHtml(key)}" hidden>&#8630; Undo</button>
+      <span class="revise-status" data-revise-status="${escapeHtml(key)}"></span>
+    </div>` : "";
+
   return `
     <div class="form-field">
       <label>${escapeHtml(label)}</label>
-      ${fieldContent}
+      ${fieldContent}${reviseBar}
     </div>
   `;
 }
@@ -400,6 +426,23 @@ function ResumeBuilderForm() {
           if (key) updateFormDataByKey(key, input.value);
           hideAutocompleteDropdown(input);
         }
+        return;
+      }
+
+      // AI Revise button
+      const reviseKey = target.getAttribute("data-revise");
+      if (reviseKey !== null) {
+        event.preventDefault();
+        const fieldType = target.getAttribute("data-field-type") || "details";
+        handleRevise(reviseKey, fieldType, target, form);
+        return;
+      }
+
+      // AI Revise — Undo button
+      const undoKey = target.getAttribute("data-undo-revise");
+      if (undoKey !== null) {
+        event.preventDefault();
+        handleUndoRevise(undoKey, form);
         return;
       }
     });
@@ -785,6 +828,75 @@ function bindGlobalEvents() {
       });
       ResumePreview().render();
     });
+  }
+}
+
+}
+
+// ── AI Revise ────────────────────────────────────────────────────────────────
+
+async function handleRevise(key, fieldType, btn, form) {
+  const textarea = form.querySelector(`[data-key="${key}"]`);
+  if (!textarea) return;
+  const currentText = textarea.value.trim();
+  if (!currentText) return;
+
+  const statusEl = form.querySelector(`[data-revise-status="${key}"]`);
+  const undoBtn = form.querySelector(`[data-undo-revise="${key}"]`);
+
+  btn.disabled = true;
+  btn.textContent = "Revising…";
+  if (statusEl) statusEl.textContent = "";
+
+  try {
+    const response = await fetch("/api/resume-builder/revise", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: currentText, fieldType }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.revised) throw new Error(data.error || "Revision failed.");
+
+    // Save current value for undo before overwriting
+    reviseUndoMap[key] = currentText;
+
+    textarea.value = data.revised;
+    updateFormDataByKey(key, data.revised);
+
+    if (undoBtn) undoBtn.hidden = false;
+    if (statusEl) {
+      statusEl.textContent = "Revised!";
+      setTimeout(() => { statusEl.textContent = ""; }, 2500);
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = err.message || "Error revising.";
+      statusEl.classList.add("revise-status--error");
+      setTimeout(() => {
+        statusEl.textContent = "";
+        statusEl.classList.remove("revise-status--error");
+      }, 3500);
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "✦ Revise with AI";
+  }
+}
+
+function handleUndoRevise(key, form) {
+  const previous = reviseUndoMap[key];
+  if (previous === undefined) return;
+  const textarea = form.querySelector(`[data-key="${key}"]`);
+  if (!textarea) return;
+  textarea.value = previous;
+  updateFormDataByKey(key, previous);
+  delete reviseUndoMap[key];
+  const undoBtn = form.querySelector(`[data-undo-revise="${key}"]`);
+  if (undoBtn) undoBtn.hidden = true;
+  const statusEl = form.querySelector(`[data-revise-status="${key}"]`);
+  if (statusEl) {
+    statusEl.textContent = "Restored.";
+    setTimeout(() => { statusEl.textContent = ""; }, 1800);
   }
 }
 

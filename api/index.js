@@ -844,6 +844,52 @@ app.post("/api/resume-builder/verify-checkout-session", async (req, res) => {
   }
 });
 
+// ─── POST /api/resume-builder/revise ─────────────────────────────────────────
+app.post("/api/resume-builder/revise", async (req, res) => {
+  const { text, fieldType } = req.body;
+
+  if (!text || typeof text !== "string" || !text.trim()) {
+    return res.status(400).json({ error: "text is required." });
+  }
+
+  const sanitizedText = text.trim().slice(0, 2000);
+
+  const systemPrompts = {
+    summary:
+      "You are a professional resume writer. Rewrite the following professional summary to sound polished, confident, and compelling for a resume. Keep it concise (2–4 sentences). Return only the revised text, no commentary.",
+    details:
+      "You are a professional resume writer. Rewrite the following work experience description to use strong action verbs and quantified impact where possible. Keep it concise. Return only the revised text, no commentary.",
+    description:
+      "You are a professional resume writer. Rewrite the following project description to sound professional and results-oriented. Keep it concise. Return only the revised text, no commentary.",
+    education:
+      "You are a professional resume writer. Rewrite the following education details to sound polished and professional. Keep it concise. Return only the revised text, no commentary.",
+  };
+
+  const systemPrompt =
+    systemPrompts[fieldType] ||
+    "You are a professional resume writer. Rewrite the following text to sound more professional and polished for a resume. Return only the revised text, no commentary.";
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: sanitizedText },
+      ],
+      temperature: 0.6,
+      max_tokens: 400,
+    });
+
+    const revised = (completion.choices[0]?.message?.content ?? "").trim();
+    if (!revised) return res.status(500).json({ error: "No revision returned." });
+
+    return res.json({ revised });
+  } catch (err) {
+    console.error("[/api/resume-builder/revise] OpenAI error:", err.message);
+    return res.status(err.status ?? 500).json({ error: err.message ?? "Failed to revise text." });
+  }
+});
+
 // ─── GET /admin ───────────────────────────────────────────────────────────────
 app.get("/admin", (req, res) => {
   res.send(renderAdminPage());

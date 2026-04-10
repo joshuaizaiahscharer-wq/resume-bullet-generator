@@ -306,6 +306,66 @@ body.resume-builder-body {
   margin-top: 9px;
 }
 
+/* ── AI Revise ───────────────────────────────────────────────*/
+.revise-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 5px;
+  flex-wrap: wrap;
+}
+
+.revise-btn {
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  border-radius: 6px;
+  padding: 4px 11px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #a5b4fc;
+  background: rgba(99, 102, 241, 0.1);
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  font-family: inherit;
+}
+
+.revise-btn:hover:not(:disabled) {
+  background: rgba(99, 102, 241, 0.22);
+  color: #e0e7ff;
+  border-color: rgba(99, 102, 241, 0.65);
+}
+
+.revise-btn:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+
+.revise-undo-btn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.18s, border-color 0.18s;
+  font-family: inherit;
+}
+
+.revise-undo-btn:hover {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.revise-status {
+  font-size: 0.75rem;
+  color: #86efac;
+}
+
+.revise-status--error {
+  color: #fca5a5;
+}
+
 /* ── Bullet Assistant ─────────────────────────────────────── */
 .bullet-assistant {
   margin-top: 12px;
