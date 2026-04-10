@@ -104,6 +104,10 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function getAuthReturnUrl() {
+  return `${window.location.origin}${window.location.pathname}${window.location.search}${window.location.hash || ""}`;
+}
+
 function hasMeaningfulLocalResume() {
   if (resumeBuilderState.hasSubmitted || resumeBuilderState.generatedData) return true;
 
@@ -372,7 +376,7 @@ function initAuthModal() {
       stashResumeBeforeAuthRedirect();
       await resumeAuthClient.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${window.location.origin}/resume-template-builder` },
+        options: { emailRedirectTo: getAuthReturnUrl() },
       });
       emailBtn.textContent = "Link sent \u2713";
       if (statusEl) {
@@ -391,7 +395,7 @@ function initAuthModal() {
       stashResumeBeforeAuthRedirect();
       await resumeAuthClient.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/resume-template-builder` },
+        options: { redirectTo: getAuthReturnUrl() },
       });
     } catch (err) {
       const message = String(err?.message || "").toLowerCase();
