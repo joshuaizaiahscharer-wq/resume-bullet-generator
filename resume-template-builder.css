@@ -841,24 +841,31 @@ body.resume-builder-body {
   width: calc((8.5in * var(--paywalled-preview-scale)) + 24px);
   max-width: 100%;
   min-height: calc((11in * var(--paywalled-preview-scale)) + 24px);
+  height: calc((11in * var(--paywalled-preview-scale)) + 24px);
   justify-self: start;
 }
 
 .preview-paywall-row.is-paywalled #resumePreviewRoot {
+  position: relative;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
   overflow: hidden;
   padding: 12px;
+  width: calc(8.5in * var(--paywalled-preview-scale));
+  height: calc(11in * var(--paywalled-preview-scale));
 }
 
 .preview-paywall-row.is-paywalled .resume-preview-document {
+  position: absolute;
+  top: 12px;
+  left: 12px;
   width: 8.5in;
   height: 11in;
   min-height: 11in;
   overflow: hidden;
   transform: scale(var(--paywalled-preview-scale));
-  transform-origin: top center;
+  transform-origin: top left;
 }
 
 #resumePreviewShell {
@@ -1048,8 +1055,9 @@ body.resume-builder-body {
   }
 
   .preview-paywall-row.is-paywalled #resumePreviewShell {
-    width: 100%;
-    min-height: 620px;
+    width: min(100%, calc((8.5in * var(--paywalled-preview-scale)) + 24px));
+    min-height: calc((11in * var(--paywalled-preview-scale)) + 24px);
+    height: calc((11in * var(--paywalled-preview-scale)) + 24px);
   }
 
   .paywall-overlay {
