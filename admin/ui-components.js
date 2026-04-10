@@ -81,12 +81,7 @@ export function UsersTable(users, options = {}) {
     ? ""
     : '<div class="admin-access-note">Read-only mode. Admin access is required for payment edits.</div>';
 
-  const rows = users
-    .map((user) => {
-      console.log("User row:", user);
-      return Row(user);
-    })
-    .join("\n");
+  const rows = users.map((user) => Row(user)).join("\n");
 
   return `
     ${accessNote}
@@ -107,5 +102,3 @@ export function UsersTable(users, options = {}) {
     </table>
   `;
 }
-
-export const Table = UsersTable;
