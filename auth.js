@@ -50,7 +50,7 @@
 
   var previousSyncedUserId = null;
 
-  async function setLoggedOutInUsersTable(userId) {
+  async function updateUserLogoutState(userId) {
     if (!userId || !BulletAuth._supabase) return;
     try {
       await BulletAuth._supabase
@@ -69,30 +69,26 @@
     if (!BulletAuth._supabase) return;
 
     try {
-      const authResult = await BulletAuth._supabase.auth.getUser();
-      const user = authResult?.data?.user || null;
+      const { data: { user } = { user: null } } = await BulletAuth._supabase.auth.getUser();
       if (!user) return;
 
       const nowIso = new Date().toISOString();
-      const lookup = await BulletAuth._supabase
+      const safeEmail = normalizeEmail(user.email || user.user_metadata?.email || '');
+      const { data: existingUser, error: existingUserError } = await BulletAuth._supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-      const existingUser = lookup?.data || null;
-      const lookupError = lookup?.error || null;
-      const noRowFound = lookupError && lookupError.code === 'PGRST116';
-
-      if (lookupError && !noRowFound) {
-        throw lookupError;
+      if (existingUserError) {
+        throw existingUserError;
       }
 
       if (!existingUser) {
         const insertResult = await BulletAuth._supabase.from('users').insert([
           {
             id: user.id,
-            email: user.email || '',
+            email: safeEmail,
             is_logged_in: true,
             has_paid: false,
             plan: 'free',
@@ -113,7 +109,7 @@
           await BulletAuth._supabase
             .from('users')
             .update({
-              email: user.email || '',
+              email: safeEmail,
               is_logged_in: true,
               last_active: nowIso,
             })
@@ -123,7 +119,7 @@
         await BulletAuth._supabase
           .from('users')
           .update({
-            email: user.email || '',
+            email: safeEmail,
             is_logged_in: true,
             last_active: nowIso,
           })
@@ -355,13 +351,19 @@
         bindModalForm(BulletAuth._supabase);
       }
 
-      BulletAuth._supabase.auth.onAuthStateChange(async function (_event, session) {
+      BulletAuth._supabase.auth.onAuthStateChange(async function (event, session) {
         BulletAuth._user = (session && session.user) || null;
 
-        if (!BulletAuth._user && previousSyncedUserId) {
-          await setLoggedOutInUsersTable(previousSyncedUserId);
+        if (event === 'SIGNED_OUT') {
+          await updateUserLogoutState(previousSyncedUserId);
           previousSyncedUserId = null;
-        } else if (BulletAuth._user) {
+        }
+
+        if (session && session.user && previousSyncedUserId && previousSyncedUserId !== session.user.id) {
+          await updateUserLogoutState(previousSyncedUserId);
+        }
+
+        if (session && session.user) {
           await syncUserWithDatabase();
         }
 
