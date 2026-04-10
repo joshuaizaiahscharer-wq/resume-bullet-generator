@@ -18,6 +18,7 @@ const { recordGeneratorUsage } = require("../lib/usageTracking");
 const {
   renderBlogListPage,
   renderBlogPostPage,
+  buildExcerpt,
 } = require("../lib/blogPages");
 
 const app = express();
