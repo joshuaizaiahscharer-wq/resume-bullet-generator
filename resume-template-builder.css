@@ -835,13 +835,31 @@ body.resume-builder-body {
 }
 
 .resume-preview-shell.is-mini-preview {
+  --mini-preview-scale: 0.42;
   max-width: 620px;
-  min-height: 420px;
+  min-height: 460px;
   margin-inline: auto;
 }
 
-.resume-preview-shell.is-mini-preview .resume-locked-body {
-  filter: blur(4px);
+.resume-preview-shell.is-mini-preview #resumePreviewRoot {
+  height: 100%;
+  padding: 12px 14px 118px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.resume-preview-shell.is-mini-preview .resume-preview-document {
+  width: 8.5in;
+  min-height: 11in;
+  transform: scale(var(--mini-preview-scale));
+  transform-origin: top center;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+}
+
+.resume-preview-shell.is-locked.is-mini-preview .resume-locked-body {
+  filter: none;
 }
 
 .resume-preview-document {
