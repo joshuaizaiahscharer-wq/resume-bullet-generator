@@ -2,6 +2,7 @@ import { UsersTable } from "/admin/ui-components.js";
 import {
   fetchUsers,
   getCurrentAuthUser,
+  getUserAccessProfile,
   isAdminUser,
   maybeTrackPaymentFromUrl,
   subscribeToUsers,
@@ -10,7 +11,6 @@ import {
 } from "/admin/users-data.js";
 
 console.log("Admin dashboard loaded");
-console.log("ADMIN PAGE CONFIRMED");
 
 const dashboardState = {
   users: [],
@@ -25,6 +25,7 @@ function renderAuthGate(message) {
   const gate = document.getElementById("adminAuthGate");
   const dashboard = document.getElementById("adminDashboardContent");
   if (gate) {
+    gate.dataset.denied = "false";
     gate.hidden = false;
     const subtitle = gate.querySelector(".admin-gate-subtitle");
     if (subtitle && message) subtitle.textContent = message;
@@ -32,10 +33,29 @@ function renderAuthGate(message) {
   if (dashboard) dashboard.hidden = true;
 }
 
+function renderAccessDenied(message) {
+  const gate = document.getElementById("adminAuthGate");
+  const dashboard = document.getElementById("adminDashboardContent");
+  if (gate) {
+    gate.dataset.denied = "true";
+    gate.hidden = false;
+    const title = gate.querySelector(".admin-gate-title");
+    const subtitle = gate.querySelector(".admin-gate-subtitle");
+    const button = gate.querySelector("#adminGateSignInBtn");
+    if (title) title.textContent = "Access Denied";
+    if (subtitle) subtitle.textContent = message || "You do not have permission to access this page.";
+    if (button) button.hidden = true;
+  }
+  if (dashboard) dashboard.hidden = true;
+}
+
 function renderPostAuthDashboard() {
   const gate = document.getElementById("adminAuthGate");
   const dashboard = document.getElementById("adminDashboardContent");
-  if (gate) gate.hidden = true;
+  if (gate) {
+    gate.dataset.denied = "false";
+    gate.hidden = true;
+  }
   if (dashboard) dashboard.hidden = false;
   console.log("ADMIN DASHBOARD LOADED");
 }
@@ -199,16 +219,18 @@ async function refreshUsers() {
 async function initDashboard() {
   try {
     const currentUser = await getCurrentAuthUser();
-    dashboardState.isAdmin = isAdminUser(currentUser);
-
     if (!currentUser) {
-      renderAuthGate("Please sign in first. Admin dashboard appears after authentication.");
-      bindControls();
+      window.location.replace("/");
       return;
     }
 
+    const accessProfile = await getUserAccessProfile(currentUser.id);
+    dashboardState.isAdmin = await isAdminUser(currentUser.id);
+
+    console.log("Admin access profile:", accessProfile);
+
     if (!dashboardState.isAdmin) {
-      renderAuthGate("Your account is signed in, but does not have admin privileges.");
+      renderAccessDenied("Your account is signed in, but is_admin is false.");
       bindControls();
       return;
     }

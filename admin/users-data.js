@@ -40,11 +40,22 @@ export async function getCurrentAuthUser() {
   return data?.user || null;
 }
 
-export function isAdminUser(user) {
-  if (!user) return false;
-  const role = String(user.app_metadata?.role || "").toLowerCase();
-  const flag = Boolean(user.user_metadata?.is_admin);
-  return role === "admin" || flag;
+export async function getUserAccessProfile(userId) {
+  if (!userId) return null;
+  const supabase = await getSupabaseClient();
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, is_admin")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data || null;
+}
+
+export async function isAdminUser(userId) {
+  const profile = await getUserAccessProfile(userId);
+  return Boolean(profile?.is_admin);
 }
 
 export async function updateUserPayment(userId, newStatus) {
