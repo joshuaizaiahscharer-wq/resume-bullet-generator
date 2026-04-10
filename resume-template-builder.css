@@ -638,34 +638,38 @@ body.resume-builder-body {
 }
 
 .style-pill {
-  padding: 5px 13px;
+  padding: 6px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.46));
+  color: rgba(226, 232, 240, 0.74);
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  letter-spacing: 0.01em;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.16s;
 }
 
 .style-pill:hover {
-  color: rgba(255, 255, 255, 0.85);
-  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.96);
+  border-color: rgba(165, 180, 252, 0.6);
+  transform: translateY(-1px);
 }
 
 .style-pill--active {
-  background: rgba(99, 102, 241, 0.22);
-  color: #a5b4fc;
-  border-color: rgba(99, 102, 241, 0.55);
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.38), rgba(99, 102, 241, 0.2));
+  color: #e0e7ff;
+  border-color: rgba(129, 140, 248, 0.72);
+  box-shadow: 0 8px 22px rgba(79, 70, 229, 0.28);
 }
 
 .advanced-customize {
   margin-top: 10px;
-  border: 1px solid rgba(71, 85, 105, 0.55);
-  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: 14px;
   padding: 12px;
-  background: rgba(9, 14, 25, 0.46);
+  background: radial-gradient(circle at 0 0, rgba(79, 70, 229, 0.18), transparent 35%), rgba(9, 14, 25, 0.62);
+  backdrop-filter: blur(6px);
 }
 
 .advanced-customize-header {
@@ -682,6 +686,10 @@ body.resume-builder-body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  border: 1px solid rgba(71, 85, 105, 0.35);
+  border-radius: 10px;
+  padding: 8px;
+  background: rgba(15, 23, 42, 0.45);
 }
 
 .advanced-control-field label {
@@ -692,6 +700,24 @@ body.resume-builder-body {
 
 .advanced-control-field input[type="range"] {
   width: 100%;
+  accent-color: #818cf8;
+}
+
+.advanced-control-field input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.65), rgba(56, 189, 248, 0.55));
+}
+
+.advanced-control-field input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border-radius: 999px;
+  border: 2px solid rgba(224, 231, 255, 0.85);
+  background: #4f46e5;
 }
 
 .accent-row {
@@ -727,6 +753,13 @@ body.resume-builder-body {
 
 .accent-swatch.is-active {
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15), 0 0 0 4px rgba(99, 102, 241, 0.3);
+}
+
+.preview-toolbar {
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(8, 12, 22, 0.72), rgba(8, 12, 22, 0.5));
 }
 
 .payment-badge {
@@ -1032,7 +1065,7 @@ body.resume-builder-body {
 }
 
 /* ── Resume Themes ──────────────────────────────────────────
-   Applied as data-theme="classic|modern|executive|minimal"
+  Applied as data-theme="classic|modern|executive|minimal|neo|slate|journal|orbit"
    on .resume-preview-document
 ─────────────────────────────────────────────────────────── */
 
@@ -1142,6 +1175,131 @@ body.resume-builder-body {
 
 .resume-preview-document[data-theme="minimal"] .resume-item-meta {
   color: #9ca3af;
+}
+
+/* Neo - sharp lines, right-aligned metadata */
+.resume-preview-document[data-theme="neo"] {
+  background: #ffffff;
+  border: 2px solid #0f172a;
+  padding: 30px;
+}
+
+.resume-preview-document[data-theme="neo"] .resume-header {
+  border-bottom: 3px solid var(--resume-accent);
+  padding-bottom: 10px;
+}
+
+.resume-preview-document[data-theme="neo"] .resume-header h3 {
+  color: #020617;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.resume-preview-document[data-theme="neo"] .resume-contact {
+  color: #1e293b;
+}
+
+.resume-preview-document[data-theme="neo"] .resume-block h4 {
+  border-bottom: none;
+  color: var(--resume-accent);
+  letter-spacing: 0.12em;
+}
+
+.resume-preview-document[data-theme="neo"] .resume-item-title-row {
+  align-items: baseline;
+}
+
+.resume-preview-document[data-theme="neo"] .resume-item-title-row span {
+  color: #334155;
+}
+
+/* Slate - soft monochrome panel look */
+.resume-preview-document[data-theme="slate"] {
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+}
+
+.resume-preview-document[data-theme="slate"] .resume-header {
+  background: #e2e8f0;
+  margin: -28px -28px 0 -28px;
+  padding: 18px 28px;
+}
+
+.resume-preview-document[data-theme="slate"] .resume-header h3 {
+  color: #0f172a;
+}
+
+.resume-preview-document[data-theme="slate"] .resume-contact {
+  color: #334155;
+}
+
+.resume-preview-document[data-theme="slate"] .resume-block h4 {
+  color: #334155;
+  border-bottom: 1px solid #94a3b8;
+}
+
+.resume-preview-document[data-theme="slate"] .resume-item-title-row strong {
+  color: #0f172a;
+}
+
+/* Journal - editorial serif with understated separators */
+.resume-preview-document[data-theme="journal"] {
+  background: #fffef8;
+}
+
+.resume-preview-document[data-theme="journal"] .resume-header h3,
+.resume-preview-document[data-theme="journal"] .resume-block h4 {
+  font-family: "Playfair Display", serif;
+}
+
+.resume-preview-document[data-theme="journal"] .resume-header h3 {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.resume-preview-document[data-theme="journal"] .resume-contact,
+.resume-preview-document[data-theme="journal"] .resume-item-meta {
+  color: #6b7280;
+}
+
+.resume-preview-document[data-theme="journal"] .resume-block h4 {
+  border-bottom: 1px solid #d1d5db;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: #374151;
+}
+
+/* Orbit - left rail and colored anchors */
+.resume-preview-document[data-theme="orbit"] {
+  background: #ffffff;
+  border-left: 8px solid var(--resume-accent);
+  padding-left: 24px;
+}
+
+.resume-preview-document[data-theme="orbit"] .resume-header h3 {
+  color: #111827;
+}
+
+.resume-preview-document[data-theme="orbit"] .resume-contact {
+  color: var(--resume-accent);
+}
+
+.resume-preview-document[data-theme="orbit"] .resume-block h4 {
+  border-bottom: none;
+  color: #111827;
+  position: relative;
+  padding-left: 14px;
+}
+
+.resume-preview-document[data-theme="orbit"] .resume-block h4::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.38em;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--resume-accent);
 }
 
 /* ── Resume Fonts ───────────────────────────────────────────

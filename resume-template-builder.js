@@ -488,6 +488,50 @@ function getResumePdfTheme(style, customization) {
         divider: [229, 231, 235],
         font: "helvetica",
       };
+    case "neo":
+      return {
+        heading: [
+          parseInt(c.accentColor.slice(1, 3), 16),
+          parseInt(c.accentColor.slice(3, 5), 16),
+          parseInt(c.accentColor.slice(5, 7), 16),
+        ],
+        name: [2, 6, 23],
+        body: [30, 41, 59],
+        muted: [51, 65, 85],
+        divider: [148, 163, 184],
+        font: "helvetica",
+      };
+    case "slate":
+      return {
+        heading: [51, 65, 85],
+        name: [15, 23, 42],
+        body: [51, 65, 85],
+        muted: [71, 85, 105],
+        divider: [148, 163, 184],
+        font: "helvetica",
+      };
+    case "journal":
+      return {
+        heading: [55, 65, 81],
+        name: [31, 41, 55],
+        body: [55, 65, 81],
+        muted: [107, 114, 128],
+        divider: [209, 213, 219],
+        font: "times",
+      };
+    case "orbit":
+      return {
+        heading: [
+          parseInt(c.accentColor.slice(1, 3), 16),
+          parseInt(c.accentColor.slice(3, 5), 16),
+          parseInt(c.accentColor.slice(5, 7), 16),
+        ],
+        name: [17, 24, 39],
+        body: [31, 41, 55],
+        muted: [71, 85, 105],
+        divider: [186, 200, 240],
+        font: "helvetica",
+      };
     default:
       return {
         heading: [30, 41, 59],
