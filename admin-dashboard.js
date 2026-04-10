@@ -114,24 +114,50 @@ function renderBlogPreview(draft) {
   const shell = document.getElementById("blogPreviewShell");
   const title = document.getElementById("blogPreviewTitle");
   const content = document.getElementById("blogPreviewContent");
-  if (!shell || !title || !content) return;
+  const previewImage = document.getElementById("blogPreviewImage");
+  const previewImageMeta = document.getElementById("blogPreviewImageMeta");
+  if (!shell || !title || !content || !previewImage || !previewImageMeta) return;
 
   if (!draft?.title || !draft?.content) {
     shell.hidden = true;
+    previewImage.hidden = true;
+    previewImage.removeAttribute("src");
+    previewImageMeta.hidden = true;
+    previewImageMeta.textContent = "";
     syncBlogGeneratorUiState();
     return;
   }
 
   shell.hidden = false;
   title.textContent = draft.title;
+
+  if (draft.image) {
+    previewImage.src = draft.image;
+    previewImage.hidden = false;
+  } else {
+    previewImage.hidden = true;
+    previewImage.removeAttribute("src");
+  }
+
+  if (draft.imagePrompt) {
+    const source = draft.imageSource ? ` (${draft.imageSource})` : "";
+    previewImageMeta.textContent = `Image prompt: ${draft.imagePrompt}${source}`;
+    previewImageMeta.hidden = false;
+  } else {
+    previewImageMeta.hidden = true;
+    previewImageMeta.textContent = "";
+  }
+
   content.innerHTML = renderDraftContent(draft.content);
   syncBlogGeneratorUiState();
 }
 
 async function handleGenerateBlogPost() {
   const topicInput = document.getElementById("blogTopicInput");
+  const imagePromptInput = document.getElementById("blogImagePromptInput");
   const toneSelect = document.getElementById("blogToneSelect");
   const topic = String(topicInput?.value || "").trim();
+  const imagePrompt = String(imagePromptInput?.value || "").trim();
   const tone = String(toneSelect?.value || "Professional");
 
   if (!topic) {
@@ -147,7 +173,7 @@ async function handleGenerateBlogPost() {
   setBlogGeneratorStatus("Generating post draft...", "neutral");
 
   try {
-    const draft = await generateBlogPostDraft(topic, tone);
+    const draft = await generateBlogPostDraft(topic, tone, imagePrompt);
     dashboardState.blogDraft = draft;
     renderBlogPreview(draft);
     setBlogGeneratorStatus("Draft generated. Review and publish when ready.", "success");
@@ -186,6 +212,8 @@ async function handlePublishBlogPost() {
       title: draft.title,
       content: draft.content,
       authorId: dashboardState.currentUserId,
+      image: draft.image || null,
+      imagePrompt: draft.imagePrompt || null,
     });
     setBlogGeneratorStatus(`Published successfully: /blog/${saved.slug}`, "success");
     showToast("Blog post published", "success");

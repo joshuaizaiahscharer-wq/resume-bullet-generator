@@ -288,11 +288,11 @@ site-navbar {
 }
 .blog-card:hover { transform: translateY(-4px); box-shadow: var(--blog-shadow-lg); }
 .blog-card-image-link { display: block; overflow: hidden; }
-.blog-card-image { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; transition: transform .4s; }
+.blog-card-image { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; transition: transform .4s; }
 .blog-card:hover .blog-card-image { transform: scale(1.04); }
 .blog-card-image-placeholder {
   width: 100%;
-  aspect-ratio: 16/10;
+  aspect-ratio: 16/9;
   background: linear-gradient(135deg, var(--blog-primary-light), #d4d0ff);
   display: flex;
   align-items: center;

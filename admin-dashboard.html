@@ -60,6 +60,11 @@
                 <input id="blogTopicInput" type="text" placeholder="e.g. How to write resume bullet points that get interviews" />
               </label>
 
+              <label class="control-search" for="blogImagePromptInput">
+                <span>Image Prompt (optional)</span>
+                <input id="blogImagePromptInput" type="text" placeholder="e.g. modern resume on desk, soft lighting, minimal style" />
+              </label>
+
               <label class="control-select" for="blogToneSelect">
                 <span>Tone</span>
                 <select id="blogToneSelect">
@@ -79,7 +84,9 @@
 
             <div class="blog-preview-shell" id="blogPreviewShell" hidden>
               <article class="blog-preview-paper">
+                <img id="blogPreviewImage" class="blog-preview-image" alt="Generated blog preview" loading="lazy" hidden />
                 <h3 id="blogPreviewTitle">Untitled Draft</h3>
+                <p id="blogPreviewImageMeta" class="blog-preview-image-meta" hidden></p>
                 <div id="blogPreviewContent" class="blog-preview-content"></div>
               </article>
             </div>

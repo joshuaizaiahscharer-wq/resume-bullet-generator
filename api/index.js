@@ -339,6 +339,140 @@ function extractResponseText(response) {
   return parts.join("\n").trim();
 }
 
+function buildBlogImagePrompt(topicOrTitle, customPrompt) {
+  const base = String(customPrompt || "").trim() || String(topicOrTitle || "").trim();
+  return [
+    base,
+    "modern, minimal, professional editorial photo",
+    "soft natural lighting",
+    "clean workspace aesthetic",
+    "resume/career context",
+    "subtle depth of field",
+    "no text, no logos, no watermark",
+    "high-quality, realistic, polished",
+    "16:9 composition",
+  ].join(", ");
+}
+
+function buildUnsplashFallbackUrl(topicOrTitle) {
+  const query = encodeURIComponent(
+    `${String(topicOrTitle || "career").trim()},professional,resume,office,minimal`
+  );
+  return `https://source.unsplash.com/1600x900/?${query}`;
+}
+
+async function generateBlogImageUrl(client, topicOrTitle, customPrompt) {
+  const imagePrompt = buildBlogImagePrompt(topicOrTitle, customPrompt);
+  const fallbackUrl = buildUnsplashFallbackUrl(topicOrTitle);
+
+  try {
+    const imageResponse = await client.images.generate({
+      model: process.env.OPENAI_IMAGE_MODEL || "dall-e-3",
+      prompt: imagePrompt,
+      size: "1792x1024",
+      quality: "standard",
+      n: 1,
+    });
+
+    const imageUrl = imageResponse?.data?.[0]?.url || null;
+    if (!imageUrl) {
+      return {
+        imageUrl: fallbackUrl,
+        imagePrompt,
+        imageSource: "unsplash-fallback",
+      };
+    }
+
+    return {
+      imageUrl,
+      imagePrompt,
+      imageSource: "openai",
+    };
+  } catch (err) {
+    console.warn("[blog-image] OpenAI image generation failed, using fallback:", err?.message);
+    return {
+      imageUrl: fallbackUrl,
+      imagePrompt,
+      imageSource: "unsplash-fallback",
+    };
+  }
+}
+
+async function fetchPublishedBlogPosts() {
+  let selectFields = "slug, title, content, created_at, image, image_prompt";
+  while (true) {
+    const { data, error } = await supabase
+      .from("blog_posts")
+      .select(selectFields)
+      .eq("is_published", true)
+      .order("created_at", { ascending: false });
+
+    if (!error) {
+      return (data || []).map((row) => ({
+        slug: row.slug,
+        title: row.title,
+        date: row.created_at,
+        excerpt: buildExcerpt(row.content, 150),
+        description: buildExcerpt(row.content, 170),
+        content: row.content,
+        author: null,
+        image: row.image || null,
+        imagePrompt: row.image_prompt || null,
+      }));
+    }
+
+    const missingColumn = getMissingColumnName(error);
+    if (missingColumn && selectFields.includes(missingColumn)) {
+      selectFields = selectFields
+        .split(",")
+        .map((field) => field.trim())
+        .filter((field) => field !== missingColumn)
+        .join(", ");
+      continue;
+    }
+
+    throw error;
+  }
+}
+
+async function fetchPublishedBlogPostBySlug(slug) {
+  let selectFields = "slug, title, content, created_at, image, image_prompt";
+  while (true) {
+    const { data, error } = await supabase
+      .from("blog_posts")
+      .select(selectFields)
+      .eq("slug", slug)
+      .eq("is_published", true)
+      .maybeSingle();
+
+    if (!error) {
+      if (!data) return null;
+      return {
+        slug: data.slug,
+        title: data.title,
+        date: data.created_at,
+        description: buildExcerpt(data.content, 180),
+        content: data.content,
+        author: null,
+        image: data.image || null,
+        imagePrompt: data.image_prompt || null,
+      };
+    }
+
+    const missingColumn = getMissingColumnName(error);
+    if (missingColumn && selectFields.includes(missingColumn)) {
+      selectFields = selectFields
+        .split(",")
+        .map((field) => field.trim())
+        .filter((field) => field !== missingColumn)
+        .join(", ");
+      continue;
+    }
+
+    throw error;
+  }
+}
+
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(cors());
 
@@ -872,23 +1006,7 @@ app.get("/jobs", (req, res) => {
 app.get("/blog", async (req, res) => {
   let dbPosts = [];
   try {
-    const { data, error } = await supabase
-      .from("blog_posts")
-      .select("slug, title, content, created_at")
-      .eq("is_published", true)
-      .order("created_at", { ascending: false });
-
-    if (!error && data) {
-      dbPosts = data.map((row) => ({
-        slug: row.slug,
-        title: row.title,
-        date: row.created_at,
-        excerpt: buildExcerpt(row.content, 150),
-        description: buildExcerpt(row.content, 170),
-        author: null,
-        image: null,
-      }));
-    }
+    dbPosts = await fetchPublishedBlogPosts();
   } catch (_err) {
     // Supabase unavailable — proceed with static posts only
   }
@@ -909,24 +1027,7 @@ app.get("/blog/:slug", async (req, res) => {
   // 1. Try Supabase first
   let dbPost = null;
   try {
-    const { data, error } = await supabase
-      .from("blog_posts")
-      .select("slug, title, content, created_at")
-      .eq("slug", slug)
-      .eq("is_published", true)
-      .maybeSingle();
-
-    if (!error && data) {
-      dbPost = {
-        slug: data.slug,
-        title: data.title,
-        date: data.created_at,
-        description: buildExcerpt(data.content, 180),
-        content: data.content,
-        author: null,
-        image: null,
-      };
-    }
+    dbPost = await fetchPublishedBlogPostBySlug(slug);
   } catch (_err) {
     // Supabase unavailable — fall through to static posts
   }
@@ -989,6 +1090,7 @@ app.post("/api/admin/blog/generate", async (req, res) => {
 
     const topic = String(body?.topic || "").trim();
     const tone = String(body?.tone || "professional").trim() || "professional";
+    const customImagePrompt = String(body?.imagePrompt || "").trim();
 
     if (!topic) {
       console.error("[/api/admin/blog/generate] Missing topic.");
@@ -1026,6 +1128,8 @@ app.post("/api/admin/blog/generate", async (req, res) => {
       const title = String(parsed?.title || fallback.title || topic).trim();
       const content = String(parsed?.content || fallback.content || "").trim();
 
+      const imageResult = await generateBlogImageUrl(client, title || topic, customImagePrompt);
+
       if (!content) {
         console.error("[/api/admin/blog/generate] AI returned empty content.", {
           topic,
@@ -1034,7 +1138,13 @@ app.post("/api/admin/blog/generate", async (req, res) => {
         return res.status(500).json({ error: "No content generated" });
       }
 
-      return res.status(200).json({ title, content });
+      return res.status(200).json({
+        title,
+        content,
+        image: imageResult.imageUrl,
+        imagePrompt: imageResult.imagePrompt,
+        imageSource: imageResult.imageSource,
+      });
     } catch (error) {
       console.error("[/api/admin/blog/generate] OpenAI request failed:", error);
       return res.status(500).json({

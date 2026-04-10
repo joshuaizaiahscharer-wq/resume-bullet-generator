@@ -231,7 +231,7 @@ export function slugifyTitle(title) {
     .replace(/^-|-$/g, "");
 }
 
-export async function generateBlogPostDraft(topic, tone) {
+export async function generateBlogPostDraft(topic, tone, imagePrompt = "") {
   const supabase = await getSupabaseClient();
   const { data: sessionResult } = await supabase.auth.getSession();
   const accessToken = sessionResult?.session?.access_token || "";
@@ -242,7 +242,7 @@ export async function generateBlogPostDraft(topic, tone) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ topic, tone }),
+    body: JSON.stringify({ topic, tone, imagePrompt }),
   });
 
   let payload = null;
@@ -274,25 +274,66 @@ export async function generateBlogPostDraft(topic, tone) {
   return {
     title: payload?.title || "",
     content: payload?.content || "",
+    image: payload?.image || "",
+    imagePrompt: payload?.imagePrompt || imagePrompt || "",
+    imageSource: payload?.imageSource || "",
   };
 }
 
-export async function publishBlogPost({ title, content, authorId }) {
+function getMissingColumnName(error) {
+  const message = String(error?.message || "");
+  const patterns = [
+    /column ["']?([a-zA-Z0-9_]+)["']? does not exist/i,
+    /Could not find the ['"]([a-zA-Z0-9_]+)['"] column/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
+export async function publishBlogPost({ title, content, authorId, image, imagePrompt }) {
   const supabase = await getSupabaseClient();
   const baseSlug = slugifyTitle(title) || `post-${Date.now()}`;
+  const fallbackImage = `https://source.unsplash.com/1600x900/?${encodeURIComponent(
+    `${title},professional,resume,office,minimal`
+  )}`;
+
+  const buildInsertPayload = (slug) => ({
+    title,
+    slug,
+    content,
+    author_id: authorId,
+    is_published: true,
+    image: image || fallbackImage,
+    image_prompt: imagePrompt || null,
+  });
 
   const attemptInsert = async (slug) => {
-    return supabase
-      .from("blog_posts")
-      .insert({
-        title,
-        slug,
-        content,
-        author_id: authorId,
-        is_published: true,
-      })
-      .select("id, slug")
-      .single();
+    const payload = buildInsertPayload(slug);
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("blog_posts")
+        .insert(payload)
+        .select("id, slug")
+        .single();
+
+      if (!error) {
+        return { data, error: null };
+      }
+
+      const missingColumn = getMissingColumnName(error);
+      if (missingColumn && Object.prototype.hasOwnProperty.call(payload, missingColumn)) {
+        delete payload[missingColumn];
+        continue;
+      }
+
+      return { data: null, error };
+    }
   };
 
   let { data, error } = await attemptInsert(baseSlug);
