@@ -249,6 +249,55 @@ body.resume-builder-body {
   color: #c7d2fe;
 }
 
+/* ── Address Autocomplete ─────────────────────────────────── */
+.autocomplete-wrapper {
+  position: relative;
+}
+
+.autocomplete-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: #131c30;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 9px;
+  overflow: hidden;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+}
+
+.autocomplete-dropdown.is-open {
+  display: block;
+}
+
+.autocomplete-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 13px;
+  font-size: 0.84rem;
+  color: #cbd5e1;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.autocomplete-option:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-option:hover,
+.autocomplete-option:focus {
+  background: rgba(99, 102, 241, 0.18);
+  color: #e0e7ff;
+  outline: none;
+}
+
 .entry-card {
   border: 1px solid rgba(100, 116, 139, 0.33);
   border-radius: 10px;

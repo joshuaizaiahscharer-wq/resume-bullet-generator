@@ -93,14 +93,21 @@ function escapeHtml(value) {
 }
 
 function createField({ label, key, value, type = "text", multiline = false, placeholder = "" }) {
+  const isLocation = !multiline && (key === "location" || key.endsWith(".location"));
+  const dropdownId = `acdrop_${key.replace(/\./g, "_")}`;
+
   const inputMarkup = multiline
     ? `<textarea data-key="${escapeHtml(key)}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(value)}</textarea>`
-    : `<input type="${escapeHtml(type)}" data-key="${escapeHtml(key)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" />`;
+    : `<input type="${escapeHtml(type)}" data-key="${escapeHtml(key)}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}"${isLocation ? ` data-address-autocomplete autocomplete="off"` : ""} />`;
+
+  const fieldContent = isLocation
+    ? `<div class="autocomplete-wrapper">${inputMarkup}<div class="autocomplete-dropdown" id="${dropdownId}"></div></div>`
+    : inputMarkup;
 
   return `
     <div class="form-field">
       <label>${escapeHtml(label)}</label>
-      ${inputMarkup}
+      ${fieldContent}
     </div>
   `;
 }
@@ -291,7 +298,29 @@ function ResumeBuilderForm() {
       if (!key) return;
       const value = getElementValue(target);
       updateFormDataByKey(key, value);
+
+      // Address autocomplete debounce
+      if (target.hasAttribute("data-address-autocomplete")) {
+        clearTimeout(_locationDebounceTimer);
+        const query = value.trim();
+        if (query.length < 2) {
+          hideAutocompleteDropdown(target);
+          return;
+        }
+        _locationDebounceTimer = setTimeout(async () => {
+          const suggestions = await fetchLocationSuggestions(query).catch(() => []);
+          showAutocompleteDropdown(target, suggestions);
+        }, 380);
+      }
     });
+
+    form.addEventListener("blur", (event) => {
+      const target = event.target;
+      if (target instanceof HTMLInputElement && target.hasAttribute("data-address-autocomplete")) {
+        // Small delay so a click on an option registers before hiding
+        setTimeout(() => hideAutocompleteDropdown(target), 180);
+      }
+    }, true);
 
     form.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -356,6 +385,21 @@ function ResumeBuilderForm() {
         target.classList.add("bullet-chip--added");
         target.textContent = "Added ✓";
         target.disabled = true;
+        return;
+      }
+
+      // Address autocomplete — option selected
+      const option = target.closest(".autocomplete-option");
+      if (option) {
+        event.preventDefault();
+        const wrapper = option.closest(".autocomplete-wrapper");
+        const input = wrapper && wrapper.querySelector("[data-address-autocomplete]");
+        if (input) {
+          input.value = option.textContent;
+          const key = input.getAttribute("data-key");
+          if (key) updateFormDataByKey(key, input.value);
+          hideAutocompleteDropdown(input);
+        }
         return;
       }
     });
@@ -742,6 +786,58 @@ function bindGlobalEvents() {
       ResumePreview().render();
     });
   }
+}
+
+// ── Address Autocomplete ─────────────────────────────────────────────────────
+
+let _locationDebounceTimer = null;
+
+async function fetchLocationSuggestions(query) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=6`;
+  const response = await fetch(url, { headers: { "Accept-Language": "en" } });
+  if (!response.ok) return [];
+  const results = await response.json();
+  const seen = new Set();
+  const suggestions = [];
+  for (const r of results) {
+    const a = r.address || {};
+    const city = a.city || a.town || a.village || a.municipality || a.county || "";
+    const state = a.state || a.region || "";
+    const countryCode = (a.country_code || "").toUpperCase();
+    let label;
+    if (city && state) {
+      label = `${city}, ${state}`;
+    } else if (city && countryCode) {
+      label = `${city}, ${countryCode}`;
+    } else {
+      label = r.display_name.split(",").slice(0, 2).join(",").trim();
+    }
+    if (label && !seen.has(label)) {
+      seen.add(label);
+      suggestions.push(label);
+    }
+  }
+  return suggestions.slice(0, 5);
+}
+
+function showAutocompleteDropdown(input, suggestions) {
+  const dropdown = input.parentElement && input.parentElement.querySelector(".autocomplete-dropdown");
+  if (!dropdown) return;
+  if (suggestions.length === 0) {
+    hideAutocompleteDropdown(input);
+    return;
+  }
+  dropdown.innerHTML = suggestions
+    .map((s) => `<button class="autocomplete-option" type="button">${escapeHtml(s)}</button>`)
+    .join("");
+  dropdown.classList.add("is-open");
+}
+
+function hideAutocompleteDropdown(input) {
+  const dropdown = input.parentElement && input.parentElement.querySelector(".autocomplete-dropdown");
+  if (!dropdown) return;
+  dropdown.innerHTML = "";
+  dropdown.classList.remove("is-open");
 }
 
 // ── Bullet Assistant ──────────────────────────────────────────────────────────
