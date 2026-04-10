@@ -836,6 +836,21 @@ body.resume-builder-body {
   align-items: start;
 }
 
+.preview-paywall-row.is-paywalled #resumePreviewRoot {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: hidden;
+  padding: 12px;
+}
+
+.preview-paywall-row.is-paywalled .resume-preview-document {
+  width: 8.5in;
+  min-height: 11in;
+  transform: scale(0.5);
+  transform-origin: top center;
+}
+
 #resumePreviewShell {
   grid-area: preview;
 }
