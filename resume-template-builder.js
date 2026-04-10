@@ -270,17 +270,57 @@ async function downloadResumeAsPdf() {
     .replace(/^-+|-+$/g, "") || "resume";
 
   if (typeof window.html2pdf === "function") {
-    const options = {
-      margin: [10, 10, 10, 10],
-      filename: `${filenameBase}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["css", "legacy"] },
-    };
+    // Clone into an isolated offscreen container. This avoids html2canvas
+    // blank captures caused by transforms/filters/layout constraints.
+    const exportHost = document.createElement("div");
+    exportHost.style.position = "fixed";
+    exportHost.style.left = "-99999px";
+    exportHost.style.top = "0";
+    exportHost.style.width = "794px"; // ~A4 at 96 DPI
+    exportHost.style.background = "#ffffff";
+    exportHost.style.padding = "0";
+    exportHost.style.margin = "0";
+    exportHost.style.zIndex = "-1";
 
-    await window.html2pdf().set(options).from(documentRoot).save();
-    return;
+    const exportNode = documentRoot.cloneNode(true);
+    exportNode.style.width = "100%";
+    exportNode.style.maxWidth = "none";
+    exportNode.style.filter = "none";
+    exportNode.style.transform = "none";
+    exportNode.style.boxShadow = "none";
+    exportNode.style.background = "#ffffff";
+
+    exportHost.appendChild(exportNode);
+    document.body.appendChild(exportHost);
+
+    try {
+      if (document.fonts?.ready) {
+        await document.fonts.ready;
+      }
+
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+
+      const options = {
+        margin: [10, 10, 10, 10],
+        filename: `${filenameBase}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          scrollX: 0,
+          scrollY: 0,
+          windowWidth: 794,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "legacy"] },
+      };
+
+      await window.html2pdf().set(options).from(exportNode).save();
+      return;
+    } finally {
+      exportHost.remove();
+    }
   }
 
   // Fallback for environments where the PDF library fails to load.
