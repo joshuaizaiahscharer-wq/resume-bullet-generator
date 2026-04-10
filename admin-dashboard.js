@@ -1,4 +1,4 @@
-import { Table } from "/admin/ui-components.js";
+import { UsersTable } from "/admin/ui-components.js";
 import {
   fetchUsers,
   getCurrentAuthUser,
@@ -7,10 +7,9 @@ import {
   subscribeToUsers,
   syncCurrentUserPresence,
   updateUserPayment,
-  updateUserPlan,
 } from "/admin/users-data.js";
 
-console.log("ADMIN PAGE LOADED");
+console.log("Admin dashboard loaded");
 
 const dashboardState = {
   users: [],
@@ -75,9 +74,10 @@ function renderDashboard() {
   const usersWithUiState = sorted.map((user) => ({
     ...user,
     controlsDisabled: !dashboardState.isAdmin || dashboardState.pendingUserIds.has(user.userId),
+    isLoading: dashboardState.pendingUserIds.has(user.userId),
   }));
 
-  root.innerHTML = Table(usersWithUiState, { canEdit: dashboardState.isAdmin });
+  root.innerHTML = UsersTable(usersWithUiState, { canEdit: dashboardState.isAdmin });
 }
 
 function showToast(message, tone = "success") {
@@ -133,10 +133,6 @@ async function handlePaymentToggle(userId, nextPaidStatus) {
   }
 }
 
-async function handlePlanChange(userId, nextPlan) {
-  await handlePaymentToggle(userId, nextPlan === "paid");
-}
-
 function bindControls() {
   const searchInput = document.getElementById("userSearchInput");
   const filterSelect = document.getElementById("paymentFilterSelect");
@@ -167,32 +163,6 @@ function bindControls() {
 
       await handlePaymentToggle(userId, Boolean(toggle.checked));
       return;
-    }
-
-    const select = event.target.closest("[data-action='change-plan']");
-    if (!select) return;
-
-    const paymentControls = select.closest(".payment-controls");
-    const userId = paymentControls?.getAttribute("data-user-id");
-    if (!userId) return;
-
-    const nextPlan = select.value || "free";
-    try {
-      dashboardState.pendingUserIds.add(userId);
-      const previous = getUserSnapshot(userId);
-      if (!previous) return;
-
-      updateLocalUserPayment(userId, nextPlan === "paid");
-      renderDashboard();
-
-      await updateUserPlan(userId, nextPlan);
-      showToast(nextPlan === "paid" ? "User upgraded to paid" : "User downgraded to free", "success");
-    } catch (_error) {
-      showToast("Update failed. Reverted.", "error");
-      await refreshUsers();
-    } finally {
-      dashboardState.pendingUserIds.delete(userId);
-      renderDashboard();
     }
   });
 }

@@ -44,19 +44,18 @@ export function StatusBadge(type, value) {
 
 export function Row(user) {
   const controlsDisabled = user.controlsDisabled ? "disabled" : "";
+  const loadingClass = user.isLoading ? " is-loading" : "";
 
   return `
     <tr>
-      <td class="user-id-cell">${escapeHtml(user.userId)}</td>
       <td>${escapeHtml(user.email)}</td>
       <td>${StatusBadge("login", user.isLoggedIn)}</td>
-      <td>${StatusBadge("payment", user.hasPaid)}</td>
       <td>${StatusBadge("plan", user.plan)}</td>
-      <td>${user.paymentDate ? escapeHtml(formatDateTime(user.paymentDate)) : "-"}</td>
+      <td>${StatusBadge("payment", user.hasPaid)}</td>
       <td>${escapeHtml(formatDateTime(user.lastActive))}</td>
       <td>
         <div class="payment-controls" data-user-id="${escapeHtml(user.userId)}">
-          <label class="switch" aria-label="Toggle paid access">
+          <label class="switch${loadingClass}" aria-label="Toggle paid access">
             <input
               type="checkbox"
               data-action="toggle-paid"
@@ -65,18 +64,13 @@ export function Row(user) {
             />
             <span class="slider"></span>
           </label>
-
-          <select class="plan-select" data-action="change-plan" ${controlsDisabled}>
-            <option value="free" ${user.plan === "free" ? "selected" : ""}>Free</option>
-            <option value="paid" ${user.plan === "paid" ? "selected" : ""}>Paid</option>
-          </select>
         </div>
       </td>
     </tr>
   `;
 }
 
-export function Table(users, options = {}) {
+export function UsersTable(users, options = {}) {
   const canEdit = Boolean(options.canEdit);
 
   if (!users.length) {
@@ -99,14 +93,12 @@ export function Table(users, options = {}) {
     <table class="admin-table" aria-label="Users with login and payment status">
       <thead>
         <tr>
-          <th>User ID</th>
           <th>Email</th>
-          <th>Logged In Status</th>
-          <th>Payment Status</th>
+          <th>Status</th>
           <th>Plan</th>
-          <th>Payment Date</th>
+          <th>Payment Status</th>
           <th>Last Active</th>
-          <th>Paid Access</th>
+          <th>Paywall Toggle</th>
         </tr>
       </thead>
       <tbody>
@@ -115,3 +107,5 @@ export function Table(users, options = {}) {
     </table>
   `;
 }
+
+export const Table = UsersTable;
