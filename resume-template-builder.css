@@ -16,7 +16,7 @@ body.resume-builder-body {
   width: 100%;
   max-width: 1120px;
   margin: 0 auto;
-  padding: 36px 8px 18px;
+  padding: 24px 8px 10px;
   text-align: center;
 }
 
@@ -99,7 +99,7 @@ body.resume-builder-body {
 }
 
 .builder-benefits {
-  margin-top: 26px;
+  margin-top: 18px;
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -130,7 +130,7 @@ body.resume-builder-body {
   width: 100%;
   max-width: 1160px;
   margin: 0 auto;
-  padding: 24px 4px 70px;
+  padding: 16px 4px 34px;
 }
 
 .builder-layout {
@@ -155,7 +155,7 @@ body.resume-builder-body {
 
 .builder-preview-panel {
   padding: 20px;
-  margin-top: 18px;
+  margin-top: 12px;
 }
 
 .generated-preview-section {
@@ -837,7 +837,7 @@ body.resume-builder-body {
 .resume-preview-shell.is-mini-preview {
   --mini-preview-scale: 0.42;
   max-width: 620px;
-  min-height: 470px;
+  min-height: calc((11in * var(--mini-preview-scale)) + 26px);
   margin-inline: auto;
 }
 
