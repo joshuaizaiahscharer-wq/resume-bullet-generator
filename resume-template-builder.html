@@ -75,10 +75,18 @@
           </div>
 
           <div class="preview-toolbar">
-            <span id="paymentStatusBadge" class="payment-badge payment-badge--locked">Locked</span>
-            <button id="downloadResumeBtn" class="download-btn" type="button" disabled>
-              Download PDF
-            </button>
+            <div class="style-picker" id="stylePickerRoot" aria-label="Resume style">
+              <button class="style-pill style-pill--active" data-style="classic" type="button">Classic</button>
+              <button class="style-pill" data-style="modern" type="button">Modern</button>
+              <button class="style-pill" data-style="executive" type="button">Executive</button>
+              <button class="style-pill" data-style="minimal" type="button">Minimal</button>
+            </div>
+            <div class="toolbar-right">
+              <span id="paymentStatusBadge" class="payment-badge payment-badge--locked">Locked</span>
+              <button id="downloadResumeBtn" class="download-btn" type="button" disabled>
+                Download PDF
+              </button>
+            </div>
           </div>
 
           <div id="resumePreviewShell" class="resume-preview-shell is-locked">

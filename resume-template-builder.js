@@ -44,6 +44,7 @@ const resumeBuilderState = {
   generatedData: null,
   checkoutInProgress: false,
   checkoutError: "",
+  resumeStyle: "classic",
   formData: {
     fullName: "",
     email: "",
@@ -66,6 +67,7 @@ const elementRefs = {
   previewSection: document.getElementById("generatedResumeSection"),
   paymentStatusBadge: document.getElementById("paymentStatusBadge"),
   downloadBtn: document.getElementById("downloadResumeBtn"),
+  stylePicker: document.getElementById("stylePickerRoot"),
 };
 
 function cloneFormData() {
@@ -362,8 +364,9 @@ function ResumePreview() {
       )
       .join("");
 
+
     elementRefs.previewRoot.innerHTML = `
-      <article class="resume-preview-document" aria-label="Generated Resume Preview">
+      <article class="resume-preview-document" aria-label="Generated Resume Preview" data-theme="${resumeBuilderState.resumeStyle}">
         <header class="resume-header">
           <h3>${escapeHtml(previewData.fullName || "Your Name")}</h3>
           <p class="resume-contact">
@@ -659,6 +662,20 @@ function bindGlobalEvents() {
     elementRefs.downloadBtn.addEventListener("click", () => {
       if (!resumeBuilderState.hasSubmitted || !resumeBuilderState.isUnlocked) return;
       window.print();
+    });
+  }
+
+  if (elementRefs.stylePicker) {
+    elementRefs.stylePicker.addEventListener("click", (event) => {
+      const pill = event.target.closest(".style-pill");
+      if (!pill) return;
+      const style = pill.getAttribute("data-style");
+      if (!style || style === resumeBuilderState.resumeStyle) return;
+      resumeBuilderState.resumeStyle = style;
+      elementRefs.stylePicker.querySelectorAll(".style-pill").forEach((btn) => {
+        btn.classList.toggle("style-pill--active", btn.getAttribute("data-style") === style);
+      });
+      ResumePreview().render();
     });
   }
 }

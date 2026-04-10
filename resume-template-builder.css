@@ -307,6 +307,43 @@ body.resume-builder-body {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Style picker ─────────────────────────────────────────── */
+.style-picker {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.style-pill {
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+
+.style-pill:hover {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.style-pill--active {
+  background: rgba(99, 102, 241, 0.22);
+  color: #a5b4fc;
+  border-color: rgba(99, 102, 241, 0.55);
 }
 
 .payment-badge {
@@ -544,6 +581,119 @@ body.resume-builder-body {
   margin-top: 9px;
   font-size: 0.8rem;
   color: #fca5a5;
+}
+
+/* ── Resume Themes ──────────────────────────────────────────
+   Applied as data-theme="classic|modern|executive|minimal"
+   on .resume-preview-document
+─────────────────────────────────────────────────────────── */
+
+/* Classic (default) — already set by base styles */
+
+/* Modern — indigo accent bar for section headings */
+.resume-preview-document[data-theme="modern"] {
+  font-family: "Inter", sans-serif;
+  background: #ffffff;
+}
+
+.resume-preview-document[data-theme="modern"] .resume-header {
+  border-left: 4px solid #6366f1;
+  padding-left: 14px;
+}
+
+.resume-preview-document[data-theme="modern"] .resume-header h3 {
+  color: #1e1b4b;
+}
+
+.resume-preview-document[data-theme="modern"] .resume-contact {
+  color: #4f46e5;
+}
+
+.resume-preview-document[data-theme="modern"] .resume-block h4 {
+  border-bottom: 2px solid #6366f1;
+  color: #4338ca;
+  text-transform: none;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+}
+
+.resume-preview-document[data-theme="modern"] .resume-item-title-row strong {
+  color: #312e81;
+}
+
+/* Executive — dark navy header band, serif-weight name */
+.resume-preview-document[data-theme="executive"] {
+  background: #ffffff;
+}
+
+.resume-preview-document[data-theme="executive"] .resume-header {
+  background: #0f172a;
+  margin: -28px -28px 0 -28px;
+  padding: 22px 28px;
+  border-radius: 0;
+}
+
+.resume-preview-document[data-theme="executive"] .resume-header h3 {
+  color: #f1f5f9;
+  font-size: 1.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.resume-preview-document[data-theme="executive"] .resume-contact {
+  color: #94a3b8;
+}
+
+.resume-preview-document[data-theme="executive"] .resume-block {
+  margin-top: 20px;
+}
+
+.resume-preview-document[data-theme="executive"] .resume-block h4 {
+  background: #f1f5f9;
+  border-bottom: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  color: #0f172a;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+}
+
+/* Minimal — lots of whitespace, subtle grey dividers, no caps */
+.resume-preview-document[data-theme="minimal"] {
+  background: #fafafa;
+  padding: 36px;
+}
+
+.resume-preview-document[data-theme="minimal"] .resume-header h3 {
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: #111827;
+}
+
+.resume-preview-document[data-theme="minimal"] .resume-contact {
+  color: #6b7280;
+}
+
+.resume-preview-document[data-theme="minimal"] .resume-block {
+  margin-top: 22px;
+}
+
+.resume-preview-document[data-theme="minimal"] .resume-block h4 {
+  border-bottom: 1px solid #e5e7eb;
+  text-transform: none;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #374151;
+}
+
+.resume-preview-document[data-theme="minimal"] .resume-item-title-row strong {
+  font-weight: 500;
+}
+
+.resume-preview-document[data-theme="minimal"] .resume-item-meta {
+  color: #9ca3af;
 }
 
 @media (max-width: 1080px) {
