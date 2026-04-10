@@ -186,11 +186,124 @@ body.admin-page-body {
   background: #f0f9ff;
 }
 
+.payment-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.payment-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #d7dde5;
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 3px 10px 3px 5px;
+  cursor: pointer;
+}
+
+.payment-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.payment-toggle-track {
+  width: 34px;
+  height: 20px;
+  border-radius: 999px;
+  position: relative;
+  background: #d1d5db;
+  transition: background 0.2s ease;
+}
+
+.payment-toggle-track.is-paid {
+  background: #16a34a;
+}
+
+.payment-toggle-track.is-free {
+  background: #9ca3af;
+}
+
+.payment-toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: #ffffff;
+  transition: transform 0.2s ease;
+}
+
+.payment-toggle-track.is-paid .payment-toggle-thumb {
+  transform: translateX(14px);
+}
+
+.payment-toggle-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.payment-toggle--busy {
+  opacity: 0.7;
+}
+
+.plan-select {
+  border: 1px solid #d5dbe3;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 0.82rem;
+  height: 30px;
+  padding: 0 8px;
+}
+
+.admin-toast {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  border-radius: 10px;
+  border: 1px solid #d5dbe3;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 10px 14px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.14);
+  font-size: 0.84rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.admin-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.admin-toast[data-tone="error"] {
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
 .empty-state {
   padding: 28px;
   text-align: center;
   color: #64748b;
   font-size: 0.95rem;
+}
+
+.admin-access-note {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 @media (max-width: 920px) {

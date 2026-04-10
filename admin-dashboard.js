@@ -1,9 +1,13 @@
 import { Table } from "/admin/ui-components.js";
 import {
   fetchUsers,
+  getCurrentAuthUser,
+  isAdminUser,
   maybeTrackPaymentFromUrl,
   subscribeToUsers,
   syncCurrentUserPresence,
+  updateUserPayment,
+  updateUserPlan,
 } from "/admin/users-data.js";
 
 const dashboardState = {
@@ -11,6 +15,8 @@ const dashboardState = {
   query: "",
   filter: "all",
   sort: "lastActive_desc",
+  isAdmin: false,
+  pendingUserIds: new Set(),
 };
 
 function applyFilter(users) {
@@ -64,7 +70,69 @@ function renderDashboard() {
   const searched = applySearch(filtered);
   const sorted = applySort(searched);
 
-  root.innerHTML = Table(sorted);
+  const usersWithUiState = sorted.map((user) => ({
+    ...user,
+    controlsDisabled: !dashboardState.isAdmin || dashboardState.pendingUserIds.has(user.userId),
+  }));
+
+  root.innerHTML = Table(usersWithUiState, { canEdit: dashboardState.isAdmin });
+}
+
+function showToast(message, tone = "success") {
+  const toast = document.getElementById("adminToast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.dataset.tone = tone;
+  toast.classList.add("is-visible");
+
+  window.clearTimeout(showToast._timer);
+  showToast._timer = window.setTimeout(() => {
+    toast.classList.remove("is-visible");
+  }, 1800);
+}
+
+function updateLocalUserPayment(userId, paidStatus) {
+  const now = paidStatus ? new Date().toISOString() : null;
+  dashboardState.users = dashboardState.users.map((user) => {
+    if (user.userId !== userId) return user;
+    return {
+      ...user,
+      hasPaid: paidStatus,
+      plan: paidStatus ? "paid" : "free",
+      paymentDate: now,
+      lastActive: Date.now(),
+    };
+  });
+}
+
+function getUserSnapshot(userId) {
+  return dashboardState.users.find((user) => user.userId === userId) || null;
+}
+
+async function handlePaymentToggle(userId, nextPaidStatus) {
+  if (!dashboardState.isAdmin || dashboardState.pendingUserIds.has(userId)) return;
+
+  const previous = getUserSnapshot(userId);
+  if (!previous) return;
+
+  dashboardState.pendingUserIds.add(userId);
+  updateLocalUserPayment(userId, nextPaidStatus);
+  renderDashboard();
+
+  try {
+    await updateUserPayment(userId, nextPaidStatus);
+    showToast(nextPaidStatus ? "User upgraded to paid" : "User downgraded to free", "success");
+  } catch (_error) {
+    dashboardState.users = dashboardState.users.map((user) => (user.userId === userId ? previous : user));
+    showToast("Update failed. Reverted.", "error");
+  } finally {
+    dashboardState.pendingUserIds.delete(userId);
+    renderDashboard();
+  }
+}
+
+async function handlePlanChange(userId, nextPlan) {
+  await handlePaymentToggle(userId, nextPlan === "paid");
 }
 
 function bindControls() {
@@ -86,6 +154,47 @@ function bindControls() {
     dashboardState.sort = event.target.value || "lastActive_desc";
     renderDashboard();
   });
+
+  const tableRoot = document.getElementById("adminTableRoot");
+  tableRoot?.addEventListener("click", async (event) => {
+    const btn = event.target.closest("[data-action='toggle-paid']");
+    if (!btn) return;
+
+    const paymentControls = btn.closest(".payment-controls");
+    const userId = paymentControls?.getAttribute("data-user-id");
+    if (!userId) return;
+
+    const nextPaidStatus = btn.getAttribute("data-next-paid") === "true";
+    await handlePaymentToggle(userId, nextPaidStatus);
+  });
+
+  tableRoot?.addEventListener("change", async (event) => {
+    const select = event.target.closest("[data-action='change-plan']");
+    if (!select) return;
+
+    const paymentControls = select.closest(".payment-controls");
+    const userId = paymentControls?.getAttribute("data-user-id");
+    if (!userId) return;
+
+    const nextPlan = select.value || "free";
+    try {
+      dashboardState.pendingUserIds.add(userId);
+      const previous = getUserSnapshot(userId);
+      if (!previous) return;
+
+      updateLocalUserPayment(userId, nextPlan === "paid");
+      renderDashboard();
+
+      await updateUserPlan(userId, nextPlan);
+      showToast(nextPlan === "paid" ? "User upgraded to paid" : "User downgraded to free", "success");
+    } catch (_error) {
+      showToast("Update failed. Reverted.", "error");
+      await refreshUsers();
+    } finally {
+      dashboardState.pendingUserIds.delete(userId);
+      renderDashboard();
+    }
+  });
 }
 
 async function refreshUsers() {
@@ -95,6 +204,9 @@ async function refreshUsers() {
 
 async function initDashboard() {
   try {
+    const currentUser = await getCurrentAuthUser();
+    dashboardState.isAdmin = isAdminUser(currentUser);
+
     await maybeTrackPaymentFromUrl();
     await syncCurrentUserPresence();
     await refreshUsers();

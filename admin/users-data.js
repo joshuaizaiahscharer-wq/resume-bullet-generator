@@ -33,6 +33,54 @@ export async function fetchUsers() {
   return (data || []).map(mapRow);
 }
 
+export async function getCurrentAuthUser() {
+  const supabase = await getSupabaseClient();
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  return data?.user || null;
+}
+
+export function isAdminUser(user) {
+  if (!user) return false;
+  const role = String(user.app_metadata?.role || "").toLowerCase();
+  const flag = Boolean(user.user_metadata?.is_admin);
+  return role === "admin" || flag;
+}
+
+export async function updateUserPayment(userId, newStatus) {
+  const supabase = await getSupabaseClient();
+
+  const updates = newStatus
+    ? {
+        has_paid: true,
+        plan: "paid",
+        payment_date: new Date().toISOString(),
+      }
+    : {
+        has_paid: false,
+        plan: "free",
+        payment_date: null,
+      };
+
+  const { error } = await supabase
+    .from("users")
+    .update(updates)
+    .eq("id", userId);
+
+  if (error) {
+    console.error("Update failed:", error);
+    throw error;
+  }
+
+  console.log("User updated successfully");
+  return updates;
+}
+
+export async function updateUserPlan(userId, plan) {
+  const nextPlan = plan === "paid" ? "paid" : "free";
+  return updateUserPayment(userId, nextPlan === "paid");
+}
+
 export async function syncCurrentUserPresence() {
   const supabase = await getSupabaseClient();
 
