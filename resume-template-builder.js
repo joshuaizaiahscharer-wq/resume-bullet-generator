@@ -1285,9 +1285,10 @@ function ResumeBuilderForm() {
 
     form.addEventListener("click", (event) => {
       const target = event.target;
-      if (!(target instanceof HTMLElement)) return;
+      if (!(target instanceof Element)) return;
 
-      const addGroup = target.getAttribute("data-add-group");
+      const addGroupBtn = target.closest("[data-add-group]");
+      const addGroup = addGroupBtn ? addGroupBtn.getAttribute("data-add-group") : null;
       if (addGroup) {
         event.preventDefault();
         addDynamicEntry(addGroup);
@@ -1295,8 +1296,9 @@ function ResumeBuilderForm() {
         return;
       }
 
-      const removeGroup = target.getAttribute("data-remove-group");
-      const removeIndex = target.getAttribute("data-remove-index");
+      const removeBtn = target.closest("[data-remove-group][data-remove-index]");
+      const removeGroup = removeBtn ? removeBtn.getAttribute("data-remove-group") : null;
+      const removeIndex = removeBtn ? removeBtn.getAttribute("data-remove-index") : null;
       if (removeGroup && removeIndex !== null) {
         event.preventDefault();
         removeDynamicEntry(removeGroup, Number(removeIndex));
