@@ -128,6 +128,24 @@ function createDynamicEntryCard(groupName, index, fields) {
         </button>
       </div>
       ${fieldMarkup}
+      ${groupName === "workExperience" ? `
+      <div class="bullet-assistant" data-entry-index="${index}">
+        <div class="bullet-assistant-header">
+          <span class="bullet-assistant-label">&#10022; Bullet Assistant</span>
+          <span class="bullet-assistant-hint">Generate AI bullet points for this role and click to add them</span>
+        </div>
+        <div class="bullet-assistant-input-row">
+          <input
+            class="bullet-assistant-job-input"
+            type="text"
+            placeholder="e.g. Product Marketing Manager"
+            aria-label="Job title for bullet generation"
+          />
+          <button class="bullet-assistant-generate-btn" type="button" data-generate-index="${index}">Generate</button>
+        </div>
+        <div class="bullet-assistant-results" id="bulletResults_${index}" aria-live="polite"></div>
+      </div>
+      ` : ""}
     </div>
   `;
 }
@@ -309,6 +327,36 @@ function ResumeBuilderForm() {
         event.preventDefault();
         resumeBuilderState.formData = JSON.parse(JSON.stringify(SAMPLE_FORM_DATA));
         render();
+        return;
+      }
+
+      // Bullet Assistant — Generate button
+      const generateIndex = target.getAttribute("data-generate-index");
+      if (generateIndex !== null) {
+        event.preventDefault();
+        const entryIndex = Number(generateIndex);
+        const assistant = target.closest(".bullet-assistant");
+        if (!assistant) return;
+        const jobInput = assistant.querySelector(".bullet-assistant-job-input");
+        const jobTitle = jobInput ? jobInput.value.trim() : "";
+        if (!jobTitle) {
+          jobInput && jobInput.focus();
+          return;
+        }
+        handleBulletAssistantGenerate(jobTitle, entryIndex, target);
+        return;
+      }
+
+      // Bullet Assistant — Add bullet chip
+      const bulletText = target.getAttribute("data-bullet-text");
+      if (bulletText !== null) {
+        event.preventDefault();
+        const entryIndex = Number(target.getAttribute("data-bullet-index"));
+        appendBulletToExperience(bulletText, entryIndex, form);
+        target.classList.add("bullet-chip--added");
+        target.textContent = "Added ✓";
+        target.disabled = true;
+        return;
       }
     });
   }
@@ -694,6 +742,54 @@ function bindGlobalEvents() {
       ResumePreview().render();
     });
   }
+}
+
+// ── Bullet Assistant ──────────────────────────────────────────────────────────
+
+async function handleBulletAssistantGenerate(jobTitle, entryIndex, btn) {
+  const resultsEl = document.getElementById(`bulletResults_${entryIndex}`);
+  if (!resultsEl) return;
+
+  btn.disabled = true;
+  btn.textContent = "Generating…";
+  resultsEl.innerHTML = `<p class="bullet-assistant-loading">Generating bullet points for <strong>${escapeHtml(jobTitle)}</strong>…</p>`;
+
+  try {
+    const response = await fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobTitle, pageType: "resume-builder" }),
+    });
+    const data = await response.json();
+
+    if (!response.ok || !data.bullets || data.bullets.length === 0) {
+      throw new Error(data.error || "No bullets returned.");
+    }
+
+    const chipsHtml = data.bullets
+      .map(
+        (text) =>
+          `<button class="bullet-chip" type="button" data-bullet-text="${escapeHtml(text)}" data-bullet-index="${entryIndex}">${escapeHtml(text)}</button>`
+      )
+      .join("");
+
+    resultsEl.innerHTML = `<div class="bullet-chip-list">${chipsHtml}</div>`;
+  } catch (err) {
+    resultsEl.innerHTML = `<p class="bullet-assistant-error">${escapeHtml(err.message || "Something went wrong.")}</p>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Generate";
+  }
+}
+
+function appendBulletToExperience(bulletText, entryIndex, form) {
+  const key = `workExperience.${entryIndex}.details`;
+  const textarea = form.querySelector(`[data-key="${key}"]`);
+  if (!textarea) return;
+
+  const current = textarea.value.trim();
+  textarea.value = current ? `${current}\n• ${bulletText}` : `• ${bulletText}`;
+  updateFormDataByKey(key, textarea.value);
 }
 
 function refreshUi(options = {}) {
