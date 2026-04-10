@@ -1005,19 +1005,16 @@ body.resume-builder-body {
 }
 
 .paywall-overlay {
-  position: absolute;
-  inset: 0;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(180deg, rgba(11, 15, 26, 0.06), rgba(11, 15, 26, 0.24) 55%, rgba(11, 15, 26, 0.62));
-  padding: 18px;
-  pointer-events: none;
+  margin-top: 12px;
+  padding: 0;
 }
 
 .resume-preview-shell.is-mini-preview .paywall-overlay {
-  align-items: flex-end;
-  padding: 14px;
+  align-items: center;
 }
 
 .paywall-card {
@@ -1028,7 +1025,6 @@ body.resume-builder-body {
   box-shadow: 0 20px 55px rgba(2, 6, 23, 0.58);
   padding: 20px;
   text-align: center;
-  pointer-events: auto;
 }
 
 .paywall-card h4 {
