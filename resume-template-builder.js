@@ -1561,38 +1561,40 @@ function ResumePreview() {
           </p>
         </header>
 
-        <section class="resume-block">
+        <section class="resume-block resume-block--summary">
           <h4>Professional Summary</h4>
           <p class="resume-summary-text">${escapeHtml(previewData.professionalSummary)}</p>
         </section>
 
         <div class="resume-locked-body">
-          <section class="resume-block">
+          <section class="resume-block resume-block--work">
             <h4>Work Experience</h4>
             ${workMarkup}
           </section>
 
           ${educationEntries.length ? `
-          <section class="resume-block">
+          <section class="resume-block resume-block--education">
             <h4>Education</h4>
             ${educationMarkup}
           </section>` : ""}
 
-          <section class="resume-block">
-            <h4>Skills</h4>
-            <p class="resume-skills-text">${escapeHtml(previewData.skills)}</p>
-          </section>
+          <aside class="resume-sidebar-group">
+            <section class="resume-block resume-block--skills">
+              <h4>Skills</h4>
+              <p class="resume-skills-text">${escapeHtml(previewData.skills)}</p>
+            </section>
 
-          <section class="resume-block">
-            <h4>Certifications</h4>
-            <p class="resume-certs-text">${escapeHtml(previewData.certifications)}</p>
-          </section>
+            <section class="resume-block resume-block--certifications">
+              <h4>Certifications</h4>
+              <p class="resume-certs-text">${escapeHtml(previewData.certifications)}</p>
+            </section>
 
-          ${projectEntries.length ? `
-          <section class="resume-block">
-            <h4>Projects</h4>
-            ${projectMarkup}
-          </section>` : ""}
+            ${projectEntries.length ? `
+            <section class="resume-block resume-block--projects">
+              <h4>Projects</h4>
+              ${projectMarkup}
+            </section>` : ""}
+          </aside>
         </div>
       </article>
     `;
