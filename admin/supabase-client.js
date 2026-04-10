@@ -3,6 +3,13 @@ let cachedClient = null;
 export async function getSupabaseClient() {
   if (cachedClient) return cachedClient;
 
+  // Reuse auth.js client when available to avoid multiple GoTrue instances
+  // sharing the same storage key in one browser context.
+  if (window.BulletAuth?._supabase) {
+    cachedClient = window.BulletAuth._supabase;
+    return cachedClient;
+  }
+
   if (!window.supabase?.createClient) {
     throw new Error("Supabase client library is not loaded.");
   }
