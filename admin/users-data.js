@@ -298,9 +298,8 @@ function getMissingColumnName(error) {
 export async function publishBlogPost({ title, content, authorId, image, imagePrompt }) {
   const supabase = await getSupabaseClient();
   const baseSlug = slugifyTitle(title) || `post-${Date.now()}`;
-  const fallbackImage = `https://source.unsplash.com/1600x900/?${encodeURIComponent(
-    `${title},professional,resume,office,minimal`
-  )}`;
+  const fallbackSeed = slugifyTitle(title) || `blog-${Date.now()}`;
+  const fallbackImage = `https://picsum.photos/seed/${fallbackSeed}/1600/900`;
 
   const buildInsertPayload = (slug) => ({
     title,

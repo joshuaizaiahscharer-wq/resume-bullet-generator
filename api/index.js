@@ -354,16 +354,43 @@ function buildBlogImagePrompt(topicOrTitle, customPrompt) {
   ].join(", ");
 }
 
-function buildUnsplashFallbackUrl(topicOrTitle) {
+function slugifyForSeed(value) {
+  return String(value || "career")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60) || "career";
+}
+
+function buildReliableStockFallbackUrl(topicOrTitle) {
+  const seed = slugifyForSeed(topicOrTitle);
+  return `https://picsum.photos/seed/${seed}/1600/900`;
+}
+
+async function fetchUnsplashImageUrl(topicOrTitle) {
+  const accessKey = String(process.env.UNSPLASH_ACCESS_KEY || "").trim();
+  if (!accessKey) return null;
+
   const query = encodeURIComponent(
-    `${String(topicOrTitle || "career").trim()},professional,resume,office,minimal`
+    `${String(topicOrTitle || "career").trim()} professional resume office minimal`
   );
-  return `https://source.unsplash.com/1600x900/?${query}`;
+
+  try {
+    const response = await fetch(
+      `https://api.unsplash.com/photos/random?orientation=landscape&content_filter=high&query=${query}&client_id=${encodeURIComponent(accessKey)}`
+    );
+    if (!response.ok) return null;
+    const payload = await response.json();
+    return payload?.urls?.regular || payload?.urls?.full || null;
+  } catch (_err) {
+    return null;
+  }
 }
 
 async function generateBlogImageUrl(client, topicOrTitle, customPrompt) {
   const imagePrompt = buildBlogImagePrompt(topicOrTitle, customPrompt);
-  const fallbackUrl = buildUnsplashFallbackUrl(topicOrTitle);
+  const unsplashUrl = await fetchUnsplashImageUrl(topicOrTitle);
+  const fallbackUrl = unsplashUrl || buildReliableStockFallbackUrl(topicOrTitle);
 
   try {
     const imageResponse = await client.images.generate({
@@ -379,7 +406,7 @@ async function generateBlogImageUrl(client, topicOrTitle, customPrompt) {
       return {
         imageUrl: fallbackUrl,
         imagePrompt,
-        imageSource: "unsplash-fallback",
+        imageSource: unsplashUrl ? "unsplash-api" : "stock-fallback",
       };
     }
 
@@ -393,7 +420,7 @@ async function generateBlogImageUrl(client, topicOrTitle, customPrompt) {
     return {
       imageUrl: fallbackUrl,
       imagePrompt,
-      imageSource: "unsplash-fallback",
+      imageSource: unsplashUrl ? "unsplash-api" : "stock-fallback",
     };
   }
 }
