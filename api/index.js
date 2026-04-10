@@ -777,6 +777,10 @@ app.get("/resume-template-builder", (req, res) => {
   res.sendFile(path.join(process.cwd(), "resume-template-builder.html"));
 });
 
+app.get("/admin-dashboard", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "admin-dashboard.html"));
+});
+
 // ─── Resume Builder payment state + Stripe checkout ─────────────────────────
 app.get("/api/resume-builder/access", async (req, res) => {
   return res.json({ isUnlocked: isResumeUnlocked(req) });
