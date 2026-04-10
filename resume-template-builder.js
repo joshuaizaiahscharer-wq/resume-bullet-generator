@@ -79,6 +79,7 @@ const elementRefs = {
 let resumeAuthClient = null;
 let cloudAuthAvailable = false;
 const PENDING_AUTH_RESUME_KEY = "resume_builder_pending_auth_resume_v1";
+let pendingAuthScrollRestoreY = null;
 
 function cloneFormData() {
   return JSON.parse(JSON.stringify(resumeBuilderState.formData));
@@ -150,6 +151,7 @@ function stashResumeBeforeAuthRedirect() {
   try {
     const payload = {
       savedAt: Date.now(),
+      scrollY: Number(window.scrollY || window.pageYOffset || 0),
       hasSubmitted: resumeBuilderState.hasSubmitted,
       formData: cloneFormData(),
       generatedData: resumeBuilderState.generatedData || null,
@@ -168,6 +170,8 @@ function restoreResumeAfterAuthRedirect() {
     if (!raw) return false;
 
     const saved = JSON.parse(raw);
+    const scrollY = Number(saved?.scrollY);
+    pendingAuthScrollRestoreY = Number.isFinite(scrollY) ? Math.max(0, scrollY) : null;
     if (saved?.formData) resumeBuilderState.formData = saved.formData;
     if (saved?.generatedData) resumeBuilderState.generatedData = saved.generatedData;
     if (saved?.resumeStyle) resumeBuilderState.resumeStyle = saved.resumeStyle;
@@ -179,6 +183,18 @@ function restoreResumeAfterAuthRedirect() {
   } catch (_err) {
     return false;
   }
+}
+
+function restoreScrollAfterAuthRedirect() {
+  if (pendingAuthScrollRestoreY == null) return;
+  const targetY = pendingAuthScrollRestoreY;
+  pendingAuthScrollRestoreY = null;
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: targetY, left: 0, behavior: "auto" });
+    });
+  });
 }
 
 function buildCloudResumePayload() {
@@ -283,6 +299,7 @@ async function initCloudAuth() {
         }
       }
       refreshUi();
+      restoreScrollAfterAuthRedirect();
     });
   } catch (_err) {
     cloudAuthAvailable = false;
@@ -1424,6 +1441,7 @@ async function init() {
   await fetchAccessState();
   await maybeVerifyCheckoutFromUrl();
   refreshUi();
+  restoreScrollAfterAuthRedirect();
 }
 
 init();
