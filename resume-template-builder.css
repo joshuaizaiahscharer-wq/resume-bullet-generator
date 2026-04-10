@@ -837,13 +837,13 @@ body.resume-builder-body {
 .resume-preview-shell.is-mini-preview {
   --mini-preview-scale: 0.42;
   max-width: 620px;
-  min-height: 460px;
+  min-height: 470px;
   margin-inline: auto;
 }
 
 .resume-preview-shell.is-mini-preview #resumePreviewRoot {
   height: 100%;
-  padding: 12px 14px 118px;
+  padding: 12px 14px 12px;
   overflow: hidden;
   display: flex;
   justify-content: center;
