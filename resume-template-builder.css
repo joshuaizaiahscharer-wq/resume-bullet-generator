@@ -637,6 +637,25 @@ body.resume-builder-body {
   transition: opacity 0.2s, transform 0.16s;
 }
 
+.download-btn--secondary {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: transparent;
+  color: #dbe4f3;
+}
+
+.download-btn--secondary:hover:not(:disabled) {
+  border-color: rgba(148, 163, 184, 0.6);
+}
+
+.resume-auth-status {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .download-btn:hover:not(:disabled) {
   opacity: 0.94;
   transform: translateY(-1px);

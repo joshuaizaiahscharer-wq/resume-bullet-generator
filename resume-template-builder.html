@@ -98,6 +98,13 @@
             </div>
             <div class="toolbar-right">
               <span id="paymentStatusBadge" class="payment-badge payment-badge--locked">Locked</span>
+              <span id="resumeAuthStatus" class="resume-auth-status">Not signed in</span>
+              <button id="resumeAuthBtn" class="download-btn download-btn--secondary" type="button">
+                Sign In
+              </button>
+              <button id="saveResumeBtn" class="download-btn download-btn--secondary" type="button" disabled>
+                Save Resume
+              </button>
               <button id="downloadResumeBtn" class="download-btn" type="button" disabled>
                 Download PDF
               </button>
@@ -125,6 +132,7 @@
       </div>
     </footer>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="/resume-template-builder.js"></script>
   </body>
 </html>

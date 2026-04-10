@@ -46,6 +46,7 @@ const resumeBuilderState = {
   checkoutError: "",
   resumeStyle: "classic",
   resumeFont: "inter",
+  signedInEmail: "",
   formData: {
     fullName: "",
     email: "",
@@ -67,10 +68,16 @@ const elementRefs = {
   previewShell: document.getElementById("resumePreviewShell"),
   previewSection: document.getElementById("generatedResumeSection"),
   paymentStatusBadge: document.getElementById("paymentStatusBadge"),
+  authStatus: document.getElementById("resumeAuthStatus"),
+  authBtn: document.getElementById("resumeAuthBtn"),
+  saveBtn: document.getElementById("saveResumeBtn"),
   downloadBtn: document.getElementById("downloadResumeBtn"),
   stylePicker: document.getElementById("stylePickerRoot"),
   fontPicker: document.getElementById("fontPickerRoot"),
 };
+
+const RESUME_USER_STORAGE_KEY = "resume_builder_user_email";
+const RESUME_SAVE_STORAGE_KEY = "resume_builder_saves_v1";
 
 function cloneFormData() {
   return JSON.parse(JSON.stringify(resumeBuilderState.formData));
@@ -90,6 +97,116 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function readSaveStore() {
+  try {
+    const raw = localStorage.getItem(RESUME_SAVE_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (_err) {
+    return {};
+  }
+}
+
+function writeSaveStore(store) {
+  localStorage.setItem(RESUME_SAVE_STORAGE_KEY, JSON.stringify(store));
+}
+
+function loadSavedResumeForSignedInUser() {
+  if (!resumeBuilderState.signedInEmail) return;
+  const store = readSaveStore();
+  const saved = store[resumeBuilderState.signedInEmail];
+  if (!saved) return;
+
+  if (saved.formData) resumeBuilderState.formData = saved.formData;
+  if (saved.generatedData) resumeBuilderState.generatedData = saved.generatedData;
+  if (saved.resumeStyle) resumeBuilderState.resumeStyle = saved.resumeStyle;
+  if (saved.resumeFont) resumeBuilderState.resumeFont = saved.resumeFont;
+  if (saved.hasSubmitted) resumeBuilderState.hasSubmitted = true;
+}
+
+function saveCurrentResumeForSignedInUser() {
+  if (!resumeBuilderState.signedInEmail) return false;
+
+  const store = readSaveStore();
+  store[resumeBuilderState.signedInEmail] = {
+    savedAt: Date.now(),
+    hasSubmitted: resumeBuilderState.hasSubmitted,
+    formData: cloneFormData(),
+    generatedData: resumeBuilderState.generatedData || null,
+    resumeStyle: resumeBuilderState.resumeStyle,
+    resumeFont: resumeBuilderState.resumeFont,
+  };
+  writeSaveStore(store);
+  return true;
+}
+
+function updateAuthUi() {
+  const isSignedIn = Boolean(resumeBuilderState.signedInEmail);
+
+  if (elementRefs.authStatus) {
+    elementRefs.authStatus.textContent = isSignedIn
+      ? `Signed in: ${resumeBuilderState.signedInEmail}`
+      : "Not signed in";
+  }
+
+  if (elementRefs.authBtn) {
+    elementRefs.authBtn.textContent = isSignedIn ? "Sign Out" : "Sign In";
+  }
+
+  if (elementRefs.saveBtn) {
+    elementRefs.saveBtn.disabled = !isSignedIn || !resumeBuilderState.hasSubmitted;
+  }
+}
+
+function signInOrOut() {
+  if (resumeBuilderState.signedInEmail) {
+    resumeBuilderState.signedInEmail = "";
+    localStorage.removeItem(RESUME_USER_STORAGE_KEY);
+    updateAuthUi();
+    return;
+  }
+
+  const email = normalizeEmail(window.prompt("Enter your email to sign in and save resumes:"));
+  if (!email || !email.includes("@")) return;
+
+  resumeBuilderState.signedInEmail = email;
+  localStorage.setItem(RESUME_USER_STORAGE_KEY, email);
+  loadSavedResumeForSignedInUser();
+  refreshUi();
+}
+
+async function downloadResumeAsPdf() {
+  if (!resumeBuilderState.hasSubmitted || !resumeBuilderState.isUnlocked) return;
+  const documentRoot = elementRefs.previewRoot?.querySelector(".resume-preview-document");
+  if (!documentRoot) return;
+
+  const filenameBase = (resumeBuilderState.generatedData?.fullName || resumeBuilderState.formData.fullName || "resume")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "resume";
+
+  if (typeof window.html2pdf === "function") {
+    const options = {
+      margin: [10, 10, 10, 10],
+      filename: `${filenameBase}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css", "legacy"] },
+    };
+
+    await window.html2pdf().set(options).from(documentRoot).save();
+    return;
+  }
+
+  // Fallback for environments where the PDF library fails to load.
+  window.print();
 }
 
 const REVISABLE_KEYS = new Set(["professionalSummary"]);
@@ -792,13 +909,36 @@ function updateLockStateUi() {
   if (elementRefs.downloadBtn) {
     elementRefs.downloadBtn.disabled = !resumeBuilderState.hasSubmitted || !isUnlocked;
   }
+
+  updateAuthUi();
 }
 
 function bindGlobalEvents() {
   if (elementRefs.downloadBtn) {
-    elementRefs.downloadBtn.addEventListener("click", () => {
-      if (!resumeBuilderState.hasSubmitted || !resumeBuilderState.isUnlocked) return;
-      window.print();
+    elementRefs.downloadBtn.addEventListener("click", async () => {
+      await downloadResumeAsPdf();
+    });
+  }
+
+  if (elementRefs.authBtn) {
+    elementRefs.authBtn.addEventListener("click", () => {
+      signInOrOut();
+    });
+  }
+
+  if (elementRefs.saveBtn) {
+    elementRefs.saveBtn.addEventListener("click", () => {
+      if (!resumeBuilderState.signedInEmail) {
+        signInOrOut();
+        return;
+      }
+      if (!resumeBuilderState.hasSubmitted) return;
+
+      const saved = saveCurrentResumeForSignedInUser();
+      if (saved && elementRefs.authStatus) {
+        elementRefs.authStatus.textContent = `Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+        setTimeout(updateAuthUi, 1800);
+      }
     });
   }
 
@@ -1008,6 +1148,12 @@ function refreshUi(options = {}) {
 }
 
 async function init() {
+  const storedEmail = normalizeEmail(localStorage.getItem(RESUME_USER_STORAGE_KEY));
+  if (storedEmail) {
+    resumeBuilderState.signedInEmail = storedEmail;
+    loadSavedResumeForSignedInUser();
+  }
+
   bindGlobalEvents();
   await fetchAccessState();
   await maybeVerifyCheckoutFromUrl();
