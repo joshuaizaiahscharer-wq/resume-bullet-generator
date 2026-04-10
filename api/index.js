@@ -16,6 +16,8 @@ const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || "";
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
 const PAYMENT_STATE_SECRET =
   process.env.PAYMENT_STATE_SECRET ||
   process.env.ADMIN_PASSWORD ||
@@ -196,6 +198,21 @@ function getAuthenticatedUserId(req) {
   }
 
   return null;
+}
+
+async function getSupabaseUserFromAuthHeader(req) {
+  const authHeader = req.get("authorization") || "";
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  const accessToken = match?.[1];
+  if (!accessToken) return null;
+
+  try {
+    const { data, error } = await supabase.auth.getUser(accessToken);
+    if (error || !data?.user) return null;
+    return data.user;
+  } catch (_err) {
+    return null;
+  }
 }
 
 function getMissingColumnName(error) {
@@ -742,6 +759,52 @@ app.get("/resume-template-builder", (req, res) => {
 // ─── Resume Builder payment state + Stripe checkout ─────────────────────────
 app.get("/api/resume-builder/access", async (req, res) => {
   return res.json({ isUnlocked: isResumeUnlocked(req) });
+});
+
+app.get("/api/public-auth-config", (req, res) => {
+  return res.json({
+    supabaseUrl: process.env.SUPABASE_URL || "",
+    supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
+  });
+});
+
+app.get("/api/resume-builder/load-cloud", async (req, res) => {
+  const user = await getSupabaseUserFromAuthHeader(req);
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const savedResume = user.user_metadata?.resume_builder_save || null;
+  return res.json({ savedResume });
+});
+
+app.post("/api/resume-builder/save-cloud", async (req, res) => {
+  const user = await getSupabaseUserFromAuthHeader(req);
+  if (!user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const payload = req.body?.payload;
+  if (!payload || typeof payload !== "object") {
+    return res.status(400).json({ error: "payload is required." });
+  }
+
+  const mergedMetadata = {
+    ...(user.user_metadata || {}),
+    resume_builder_save: payload,
+    resume_builder_saved_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase.auth.admin.updateUserById(user.id, {
+    user_metadata: mergedMetadata,
+  });
+
+  if (error) {
+    console.error("[/api/resume-builder/save-cloud] Supabase error:", error.message);
+    return res.status(500).json({ error: "Failed to save resume." });
+  }
+
+  return res.json({ ok: true });
 });
 
 app.post("/api/resume-builder/create-checkout-session", async (req, res) => {

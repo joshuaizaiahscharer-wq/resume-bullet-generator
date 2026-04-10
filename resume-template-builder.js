@@ -76,8 +76,8 @@ const elementRefs = {
   fontPicker: document.getElementById("fontPickerRoot"),
 };
 
-const RESUME_USER_STORAGE_KEY = "resume_builder_user_email";
-const RESUME_SAVE_STORAGE_KEY = "resume_builder_saves_v1";
+let resumeAuthClient = null;
+let cloudAuthAvailable = false;
 
 function cloneFormData() {
   return JSON.parse(JSON.stringify(resumeBuilderState.formData));
@@ -103,37 +103,8 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
-function readSaveStore() {
-  try {
-    const raw = localStorage.getItem(RESUME_SAVE_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch (_err) {
-    return {};
-  }
-}
-
-function writeSaveStore(store) {
-  localStorage.setItem(RESUME_SAVE_STORAGE_KEY, JSON.stringify(store));
-}
-
-function loadSavedResumeForSignedInUser() {
-  if (!resumeBuilderState.signedInEmail) return;
-  const store = readSaveStore();
-  const saved = store[resumeBuilderState.signedInEmail];
-  if (!saved) return;
-
-  if (saved.formData) resumeBuilderState.formData = saved.formData;
-  if (saved.generatedData) resumeBuilderState.generatedData = saved.generatedData;
-  if (saved.resumeStyle) resumeBuilderState.resumeStyle = saved.resumeStyle;
-  if (saved.resumeFont) resumeBuilderState.resumeFont = saved.resumeFont;
-  if (saved.hasSubmitted) resumeBuilderState.hasSubmitted = true;
-}
-
-function saveCurrentResumeForSignedInUser() {
-  if (!resumeBuilderState.signedInEmail) return false;
-
-  const store = readSaveStore();
-  store[resumeBuilderState.signedInEmail] = {
+function buildCloudResumePayload() {
+  return {
     savedAt: Date.now(),
     hasSubmitted: resumeBuilderState.hasSubmitted,
     formData: cloneFormData(),
@@ -141,43 +112,150 @@ function saveCurrentResumeForSignedInUser() {
     resumeStyle: resumeBuilderState.resumeStyle,
     resumeFont: resumeBuilderState.resumeFont,
   };
-  writeSaveStore(store);
-  return true;
+}
+
+async function getAuthAccessToken() {
+  if (!resumeAuthClient) return "";
+  const { data } = await resumeAuthClient.auth.getSession();
+  return data?.session?.access_token || "";
+}
+
+async function loadSavedResumeForSignedInUser() {
+  if (!resumeBuilderState.signedInEmail || !resumeAuthClient) return;
+
+  try {
+    const accessToken = await getAuthAccessToken();
+    if (!accessToken) return;
+
+    const response = await fetch("/api/resume-builder/load-cloud", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const data = await response.json();
+    if (!response.ok || !data?.savedResume) return;
+
+    const saved = data.savedResume;
+    if (saved.formData) resumeBuilderState.formData = saved.formData;
+    if (saved.generatedData) resumeBuilderState.generatedData = saved.generatedData;
+    if (saved.resumeStyle) resumeBuilderState.resumeStyle = saved.resumeStyle;
+    if (saved.resumeFont) resumeBuilderState.resumeFont = saved.resumeFont;
+    if (saved.hasSubmitted) resumeBuilderState.hasSubmitted = true;
+  } catch (_err) {
+    // Silent fail to keep builder usable if cloud auth is temporarily unavailable.
+  }
+}
+
+async function saveCurrentResumeForSignedInUser() {
+  if (!resumeBuilderState.signedInEmail || !resumeAuthClient) return false;
+
+  try {
+    const accessToken = await getAuthAccessToken();
+    if (!accessToken) return false;
+
+    const response = await fetch("/api/resume-builder/save-cloud", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({ payload: buildCloudResumePayload() }),
+    });
+
+    return response.ok;
+  } catch (_err) {
+    return false;
+  }
+}
+
+async function initCloudAuth() {
+  try {
+    if (!window.supabase?.createClient) return;
+
+    const response = await fetch("/api/public-auth-config");
+    const config = await response.json();
+    const supabaseUrl = config?.supabaseUrl || "";
+    const supabaseKey = config?.supabasePublishableKey || "";
+    if (!supabaseUrl || !supabaseKey) return;
+
+    resumeAuthClient = window.supabase.createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    });
+    cloudAuthAvailable = true;
+
+    const { data } = await resumeAuthClient.auth.getSession();
+    const user = data?.session?.user || null;
+    resumeBuilderState.signedInEmail = normalizeEmail(user?.email || "");
+
+    if (resumeBuilderState.signedInEmail) {
+      await loadSavedResumeForSignedInUser();
+    }
+
+    resumeAuthClient.auth.onAuthStateChange(async (_event, session) => {
+      resumeBuilderState.signedInEmail = normalizeEmail(session?.user?.email || "");
+      if (resumeBuilderState.signedInEmail) {
+        await loadSavedResumeForSignedInUser();
+      }
+      refreshUi();
+    });
+  } catch (_err) {
+    cloudAuthAvailable = false;
+  }
 }
 
 function updateAuthUi() {
   const isSignedIn = Boolean(resumeBuilderState.signedInEmail);
 
   if (elementRefs.authStatus) {
-    elementRefs.authStatus.textContent = isSignedIn
-      ? `Signed in: ${resumeBuilderState.signedInEmail}`
-      : "Not signed in";
+    if (!cloudAuthAvailable) {
+      elementRefs.authStatus.textContent = "Cloud auth unavailable";
+    } else {
+      elementRefs.authStatus.textContent = isSignedIn
+        ? `Signed in: ${resumeBuilderState.signedInEmail}`
+        : "Not signed in";
+    }
   }
 
   if (elementRefs.authBtn) {
     elementRefs.authBtn.textContent = isSignedIn ? "Sign Out" : "Sign In";
+    elementRefs.authBtn.disabled = !cloudAuthAvailable;
   }
 
   if (elementRefs.saveBtn) {
-    elementRefs.saveBtn.disabled = !isSignedIn || !resumeBuilderState.hasSubmitted;
+    elementRefs.saveBtn.disabled = !cloudAuthAvailable || !isSignedIn || !resumeBuilderState.hasSubmitted;
   }
 }
 
-function signInOrOut() {
+async function signInOrOut() {
+  if (!cloudAuthAvailable || !resumeAuthClient) return;
+
   if (resumeBuilderState.signedInEmail) {
+    await resumeAuthClient.auth.signOut();
     resumeBuilderState.signedInEmail = "";
-    localStorage.removeItem(RESUME_USER_STORAGE_KEY);
-    updateAuthUi();
+    refreshUi();
     return;
   }
 
-  const email = normalizeEmail(window.prompt("Enter your email to sign in and save resumes:"));
+  const choice = (window.prompt("Sign in with: email, google, or apple", "email") || "")
+    .trim()
+    .toLowerCase();
+
+  if (choice === "google" || choice === "apple") {
+    await resumeAuthClient.auth.signInWithOAuth({
+      provider: choice,
+      options: { redirectTo: `${window.location.origin}/resume-template-builder` },
+    });
+    return;
+  }
+
+  const email = normalizeEmail(window.prompt("Enter your email for a sign-in link:"));
   if (!email || !email.includes("@")) return;
 
-  resumeBuilderState.signedInEmail = email;
-  localStorage.setItem(RESUME_USER_STORAGE_KEY, email);
-  loadSavedResumeForSignedInUser();
-  refreshUi();
+  await resumeAuthClient.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: `${window.location.origin}/resume-template-builder` },
+  });
+  if (elementRefs.authStatus) {
+    elementRefs.authStatus.textContent = "Check your email for the sign-in link";
+  }
 }
 
 async function downloadResumeAsPdf() {
@@ -921,20 +999,20 @@ function bindGlobalEvents() {
   }
 
   if (elementRefs.authBtn) {
-    elementRefs.authBtn.addEventListener("click", () => {
-      signInOrOut();
+    elementRefs.authBtn.addEventListener("click", async () => {
+      await signInOrOut();
     });
   }
 
   if (elementRefs.saveBtn) {
-    elementRefs.saveBtn.addEventListener("click", () => {
+    elementRefs.saveBtn.addEventListener("click", async () => {
       if (!resumeBuilderState.signedInEmail) {
-        signInOrOut();
+        await signInOrOut();
         return;
       }
       if (!resumeBuilderState.hasSubmitted) return;
 
-      const saved = saveCurrentResumeForSignedInUser();
+      const saved = await saveCurrentResumeForSignedInUser();
       if (saved && elementRefs.authStatus) {
         elementRefs.authStatus.textContent = `Saved at ${new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
         setTimeout(updateAuthUi, 1800);
@@ -1148,13 +1226,8 @@ function refreshUi(options = {}) {
 }
 
 async function init() {
-  const storedEmail = normalizeEmail(localStorage.getItem(RESUME_USER_STORAGE_KEY));
-  if (storedEmail) {
-    resumeBuilderState.signedInEmail = storedEmail;
-    loadSavedResumeForSignedInUser();
-  }
-
   bindGlobalEvents();
+  await initCloudAuth();
   await fetchAccessState();
   await maybeVerifyCheckoutFromUrl();
   refreshUi();
