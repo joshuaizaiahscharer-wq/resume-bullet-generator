@@ -156,19 +156,17 @@ function bindControls() {
   });
 
   const tableRoot = document.getElementById("adminTableRoot");
-  tableRoot?.addEventListener("click", async (event) => {
-    const btn = event.target.closest("[data-action='toggle-paid']");
-    if (!btn) return;
-
-    const paymentControls = btn.closest(".payment-controls");
-    const userId = paymentControls?.getAttribute("data-user-id");
-    if (!userId) return;
-
-    const nextPaidStatus = btn.getAttribute("data-next-paid") === "true";
-    await handlePaymentToggle(userId, nextPaidStatus);
-  });
-
   tableRoot?.addEventListener("change", async (event) => {
+    const toggle = event.target.closest("[data-action='toggle-paid']");
+    if (toggle) {
+      const paymentControls = toggle.closest(".payment-controls");
+      const userId = paymentControls?.getAttribute("data-user-id");
+      if (!userId) return;
+
+      await handlePaymentToggle(userId, Boolean(toggle.checked));
+      return;
+    }
+
     const select = event.target.closest("[data-action='change-plan']");
     if (!select) return;
 

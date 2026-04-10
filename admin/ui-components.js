@@ -44,7 +44,6 @@ export function StatusBadge(type, value) {
 
 export function Row(user) {
   const controlsDisabled = user.controlsDisabled ? "disabled" : "";
-  const busyClass = user.controlsDisabled ? " payment-toggle--busy" : "";
 
   return `
     <tr>
@@ -57,18 +56,15 @@ export function Row(user) {
       <td>${escapeHtml(formatDateTime(user.lastActive))}</td>
       <td>
         <div class="payment-controls" data-user-id="${escapeHtml(user.userId)}">
-          <button
-            class="payment-toggle${busyClass}"
-            data-action="toggle-paid"
-            data-next-paid="${user.hasPaid ? "false" : "true"}"
-            aria-label="Toggle paid status"
-            ${controlsDisabled}
-          >
-            <span class="payment-toggle-track ${user.hasPaid ? "is-paid" : "is-free"}">
-              <span class="payment-toggle-thumb"></span>
-            </span>
-            <span class="payment-toggle-label">${user.hasPaid ? "Paid" : "Free"}</span>
-          </button>
+          <label class="switch" aria-label="Toggle paid access">
+            <input
+              type="checkbox"
+              data-action="toggle-paid"
+              ${user.hasPaid ? "checked" : ""}
+              ${controlsDisabled}
+            />
+            <span class="slider"></span>
+          </label>
 
           <select class="plan-select" data-action="change-plan" ${controlsDisabled}>
             <option value="free" ${user.plan === "free" ? "selected" : ""}>Free</option>
@@ -91,7 +87,12 @@ export function Table(users, options = {}) {
     ? ""
     : '<div class="admin-access-note">Read-only mode. Admin access is required for payment edits.</div>';
 
-  const rows = users.map((user) => Row(user)).join("\n");
+  const rows = users
+    .map((user) => {
+      console.log("User row:", user);
+      return Row(user);
+    })
+    .join("\n");
 
   return `
     ${accessNote}
@@ -105,7 +106,7 @@ export function Table(users, options = {}) {
           <th>Plan</th>
           <th>Payment Date</th>
           <th>Last Active</th>
-          <th>Edit Payment</th>
+          <th>Paid Access</th>
         </tr>
       </thead>
       <tbody>
