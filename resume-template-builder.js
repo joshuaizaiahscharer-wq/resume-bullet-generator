@@ -398,7 +398,7 @@ function PaywallOverlay() {
             ${resumeBuilderState.checkoutInProgress ? "Opening Checkout..." : "Unlock Resume"}
           </button>
           <button id="editInfoBtn" class="paywall-secondary" type="button">Edit Information</button>
-          <p class="paywall-subtext">Secure unlock flow. Payment access is controlled by the backend.</p>
+          <p class="paywall-subtext">Secure unlock flow. Supports card checkout with Apple Pay on supported devices.</p>
           ${
             resumeBuilderState.checkoutError
               ? `<p class="paywall-error">${escapeHtml(resumeBuilderState.checkoutError)}</p>`

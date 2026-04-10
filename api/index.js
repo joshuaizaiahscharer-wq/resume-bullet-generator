@@ -763,6 +763,9 @@ app.post("/api/resume-builder/create-checkout-session", async (req, res) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      // Apple Pay is surfaced by Stripe Checkout as a card wallet when enabled in
+      // Stripe Dashboard and the customer is on a supported device/browser.
+      payment_method_types: ["card"],
       line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
       billing_address_collection: "auto",
       success_url: `${normalizedReturnUrl}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
