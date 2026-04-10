@@ -200,7 +200,7 @@
       if (!btn) return;
       if (this._user) {
         var email = this.getEmail();
-        btn.textContent = email;
+        btn.textContent = 'Sign Out';
         btn.dataset.state = 'signed-in';
         btn.setAttribute('aria-label', 'Signed in as ' + email + '. Click to sign out.');
         btn.title = 'Sign out';
