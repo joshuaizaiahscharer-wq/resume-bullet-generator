@@ -1008,11 +1008,16 @@ body.resume-builder-body {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   background: linear-gradient(180deg, rgba(11, 15, 26, 0.06), rgba(11, 15, 26, 0.24) 55%, rgba(11, 15, 26, 0.62));
   padding: 18px;
   pointer-events: none;
+}
+
+.resume-preview-shell.is-mini-preview .paywall-overlay {
+  align-items: flex-end;
+  padding: 14px;
 }
 
 .paywall-card {
