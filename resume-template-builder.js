@@ -67,6 +67,8 @@ const elementRefs = {
   overlayRoot: document.getElementById("paywallOverlayRoot"),
   previewShell: document.getElementById("resumePreviewShell"),
   previewSection: document.getElementById("generatedResumeSection"),
+  heroResumeAccessBtn: document.getElementById("heroResumeAccessBtn"),
+  heroResumeAccessStatus: document.getElementById("heroResumeAccessStatus"),
   paymentStatusBadge: document.getElementById("paymentStatusBadge"),
   authStatus: document.getElementById("resumeAuthStatus"),
   authBtn: document.getElementById("resumeAuthBtn"),
@@ -197,6 +199,12 @@ function restoreScrollAfterAuthRedirect() {
   });
 }
 
+function scrollToResumePreview() {
+  const target = elementRefs.previewSection || document.getElementById("builderApp");
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function buildCloudResumePayload() {
   return {
     savedAt: Date.now(),
@@ -308,6 +316,7 @@ async function initCloudAuth() {
 
 function updateAuthUi() {
   const isSignedIn = Boolean(resumeBuilderState.signedInEmail);
+  const hasSavedResumeLoaded = Boolean(resumeBuilderState.hasSubmitted);
 
   if (elementRefs.authStatus) {
     if (!cloudAuthAvailable) {
@@ -322,6 +331,31 @@ function updateAuthUi() {
   if (elementRefs.authBtn) {
     elementRefs.authBtn.textContent = isSignedIn ? "Sign Out" : "Sign In";
     elementRefs.authBtn.disabled = !cloudAuthAvailable;
+  }
+
+  if (elementRefs.heroResumeAccessBtn) {
+    if (!cloudAuthAvailable) {
+      elementRefs.heroResumeAccessBtn.textContent = "Cloud Sign-In Unavailable";
+    } else if (!isSignedIn) {
+      elementRefs.heroResumeAccessBtn.textContent = "Sign In To View Saved Resumes";
+    } else if (hasSavedResumeLoaded) {
+      elementRefs.heroResumeAccessBtn.textContent = "View Saved Resume";
+    } else {
+      elementRefs.heroResumeAccessBtn.textContent = "Start A New Resume";
+    }
+    elementRefs.heroResumeAccessBtn.disabled = !cloudAuthAvailable;
+  }
+
+  if (elementRefs.heroResumeAccessStatus) {
+    if (!cloudAuthAvailable) {
+      elementRefs.heroResumeAccessStatus.textContent = "Cloud sign-in is unavailable right now.";
+    } else if (!isSignedIn) {
+      elementRefs.heroResumeAccessStatus.textContent = "Sign in to load a previously saved resume.";
+    } else if (hasSavedResumeLoaded) {
+      elementRefs.heroResumeAccessStatus.textContent = "Your saved resume is ready below.";
+    } else {
+      elementRefs.heroResumeAccessStatus.textContent = `Signed in as ${resumeBuilderState.signedInEmail}. No saved resume found yet.`;
+    }
   }
 
   if (elementRefs.saveBtn) {
@@ -444,19 +478,24 @@ async function downloadResumeAsPdf() {
     exportHost.style.position = "fixed";
     exportHost.style.left = "-99999px";
     exportHost.style.top = "0";
-    exportHost.style.width = "794px"; // ~A4 at 96 DPI
+    exportHost.style.width = "8.5in";
     exportHost.style.background = "#ffffff";
     exportHost.style.padding = "0";
     exportHost.style.margin = "0";
     exportHost.style.zIndex = "-1";
 
     const exportNode = documentRoot.cloneNode(true);
-    exportNode.style.width = "100%";
+    exportNode.setAttribute("data-export", "pdf");
+    exportNode.style.width = "8.5in";
+    exportNode.style.minHeight = "11in";
     exportNode.style.maxWidth = "none";
     exportNode.style.filter = "none";
     exportNode.style.transform = "none";
     exportNode.style.boxShadow = "none";
     exportNode.style.background = "#ffffff";
+    exportNode.style.borderRadius = "0";
+    exportNode.style.margin = "0";
+    exportNode.style.boxSizing = "border-box";
 
     exportHost.appendChild(exportNode);
     document.body.appendChild(exportHost);
@@ -469,7 +508,7 @@ async function downloadResumeAsPdf() {
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
       const options = {
-        margin: [10, 10, 10, 10],
+        margin: 0,
         filename: `${filenameBase}.pdf`,
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: {
@@ -478,10 +517,14 @@ async function downloadResumeAsPdf() {
           backgroundColor: "#ffffff",
           scrollX: 0,
           scrollY: 0,
-          windowWidth: 794,
+          width: exportNode.scrollWidth,
+          windowWidth: exportNode.scrollWidth,
         },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "legacy"] },
+        jsPDF: { unit: "in", format: "letter", orientation: "portrait" },
+        pagebreak: {
+          mode: ["avoid-all", "css", "legacy"],
+          avoid: [".resume-header", ".resume-block", ".resume-item"],
+        },
       };
 
       await window.html2pdf().set(options).from(exportNode).save();
@@ -1211,6 +1254,17 @@ function bindGlobalEvents() {
   if (elementRefs.authBtn) {
     elementRefs.authBtn.addEventListener("click", async () => {
       await signInOrOut();
+    });
+  }
+
+  if (elementRefs.heroResumeAccessBtn) {
+    elementRefs.heroResumeAccessBtn.addEventListener("click", async () => {
+      if (!resumeBuilderState.signedInEmail) {
+        await signInOrOut();
+        return;
+      }
+
+      scrollToResumePreview();
     });
   }
 

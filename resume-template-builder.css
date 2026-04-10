@@ -57,6 +57,47 @@ body.resume-builder-body {
   box-shadow: 0 14px 36px rgba(99, 102, 241, 0.48);
 }
 
+.builder-hero-actions {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.builder-secondary-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 13px 22px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+  color: #e2e8f0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.18s, border-color 0.2s, background 0.2s;
+}
+
+.builder-secondary-cta:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(165, 180, 252, 0.75);
+  background: rgba(30, 41, 59, 0.78);
+}
+
+.builder-secondary-cta:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.builder-hero-status {
+  margin: 10px auto 0;
+  color: #94a3b8;
+  font-size: 0.92rem;
+}
+
 .builder-benefits {
   margin-top: 26px;
   display: grid;
@@ -755,6 +796,46 @@ body.resume-builder-body {
   line-height: 1.5;
 }
 
+.resume-preview-document[data-export="pdf"] {
+  width: 8.5in;
+  min-height: 11in;
+  padding: 0.55in 0.6in;
+  background: #ffffff !important;
+  box-sizing: border-box;
+  border-radius: 0;
+  box-shadow: none;
+  filter: none;
+}
+
+.resume-preview-document[data-export="pdf"] .resume-header,
+.resume-preview-document[data-export="pdf"] .resume-block,
+.resume-preview-document[data-export="pdf"] .resume-item {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.resume-preview-document[data-export="pdf"] .resume-item-title-row {
+  align-items: baseline;
+}
+
+.resume-preview-document[data-export="pdf"] .resume-item:last-child {
+  margin-bottom: 0;
+}
+
+.resume-preview-document[data-export="pdf"] a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.resume-preview-document[data-export="pdf"][data-theme="executive"] .resume-header {
+  margin: -0.55in -0.6in 0 -0.6in;
+  padding: 0.36in 0.6in 0.32in;
+}
+
+.resume-preview-document[data-export="pdf"][data-theme="minimal"] {
+  padding: 0.62in;
+}
+
 .paywall-overlay {
   position: absolute;
   inset: 0;
@@ -1044,6 +1125,16 @@ body.resume-builder-body {
 @media (max-width: 720px) {
   .builder-benefits {
     grid-template-columns: 1fr;
+  }
+
+  .builder-hero-actions {
+    flex-direction: column;
+  }
+
+  .builder-primary-cta,
+  .builder-secondary-cta {
+    width: 100%;
+    max-width: 340px;
   }
 
   .builder-form-panel,
