@@ -7,8 +7,12 @@ const blogPosts = [
     excerpt:
       "No experience does not mean no value. Learn how to frame school, projects, volunteer work, and transferable skills into a resume that gets interviews.",
     author: "BulletAI Team",
+    authorBio: "The BulletAI Team writes practical, data-driven career advice to help job seekers at every level land more interviews.",
     date: "2026-04-01",
     image: null,
+    category: "Resume Tips",
+    tags: ["resume", "no experience", "entry level", "first job", "students"],
+    featured: true,
     metaTitle: "How To Make A Resume With No Experience (2026 Guide)",
     metaDescription:
       "Learn exactly how to write a resume with no experience using proven structure, examples, and formatting tips that help you get interviews.",
@@ -79,8 +83,12 @@ const blogPosts = [
     excerpt:
       "Not all templates are equal. See which layouts work best in 2026, how to choose one for your industry, and what design choices hurt your chances.",
     author: "BulletAI Team",
+    authorBio: "The BulletAI Team writes practical, data-driven career advice to help job seekers at every level land more interviews.",
     date: "2026-04-03",
     image: null,
+    category: "Resume Tips",
+    tags: ["resume", "templates", "design", "ATS", "formatting"],
+    featured: false,
     metaTitle: "Best Resume Templates 2026: What Actually Works",
     metaDescription:
       "Discover the best resume templates for 2026, including ATS-friendly layouts, modern design choices, and how to pick the right format for your industry.",
@@ -143,8 +151,12 @@ const blogPosts = [
     excerpt:
       "Small resume mistakes can quietly block interviews. Learn the biggest errors recruiters notice first and how to fix each one fast.",
     author: "BulletAI Team",
+    authorBio: "The BulletAI Team writes practical, data-driven career advice to help job seekers at every level land more interviews.",
     date: "2026-04-06",
     image: null,
+    category: "Resume Tips",
+    tags: ["resume", "mistakes", "ATS", "formatting", "job search"],
+    featured: false,
     metaTitle: "Resume Mistakes To Avoid: 12 Costly Errors (2026)",
     metaDescription:
       "Avoid the most common resume mistakes in 2026, including weak bullet points, poor formatting, ATS issues, and generic summaries that get ignored.",
@@ -215,8 +227,12 @@ const blogPosts = [
     excerpt:
       "Stop sending resumes into a void. These actionable resume tips will help you write stronger bullets, format smarter, and get more interview invitations.",
     author: "BulletAI Team",
+    authorBio: "The BulletAI Team writes practical, data-driven career advice to help job seekers at every level land more interviews.",
     date: "2026-04-08",
     image: null,
+    category: "Resume Tips",
+    tags: ["resume", "tips", "bullet points", "interviews", "job search"],
+    featured: false,
     metaTitle: "Top Resume Tips To Land More Interviews In 2026",
     metaDescription:
       "Discover the most effective resume tips for 2026. Learn how to write stronger bullet points, optimize formatting, and increase your interview callback rate.",
@@ -271,8 +287,12 @@ const blogPosts = [
     excerpt:
       "Nail your next interview with these preparation strategies, answer frameworks, and follow-up tactics that actually work in today's hiring market.",
     author: "BulletAI Team",
+    authorBio: "The BulletAI Team writes practical, data-driven career advice to help job seekers at every level land more interviews.",
     date: "2026-04-09",
     image: null,
+    category: "Interviews",
+    tags: ["interviews", "preparation", "STAR method", "follow up", "career"],
+    featured: false,
     metaTitle: "Job Interview Tips: How To Prepare And Impress (2026 Guide)",
     metaDescription:
       "Master your next job interview with proven preparation strategies, common question frameworks, and follow-up tactics that get offers in 2026.",
@@ -335,8 +355,12 @@ const blogPosts = [
     excerpt:
       "Career growth does not happen by accident. Learn the strategies top performers use to get promoted, increase their earnings, and build lasting professional momentum.",
     author: "BulletAI Team",
+    authorBio: "The BulletAI Team writes practical, data-driven career advice to help job seekers at every level land more interviews.",
     date: "2026-04-07",
     image: null,
+    category: "Career Advice",
+    tags: ["career growth", "promotions", "skills", "networking", "leadership"],
+    featured: false,
     metaTitle: "Career Growth Strategies That Actually Work In 2026",
     metaDescription:
       "Discover proven career growth strategies for 2026, including skill development, networking tactics, promotion positioning, and long-term career planning.",
@@ -391,8 +415,12 @@ const blogPosts = [
     excerpt:
       "Your LinkedIn profile is your digital first impression. Learn how to optimize every section so recruiters find you faster and send you better opportunities.",
     author: "BulletAI Team",
+    authorBio: "The BulletAI Team writes practical, data-driven career advice to help job seekers at every level land more interviews.",
     date: "2026-04-05",
     image: null,
+    category: "Career Advice",
+    tags: ["LinkedIn", "profile optimization", "networking", "recruiters", "personal branding"],
+    featured: false,
     metaTitle: "LinkedIn Optimization Tips For Job Seekers (2026 Guide)",
     metaDescription:
       "Optimize your LinkedIn profile for 2026 job searches. Learn how to write a compelling headline, summary, and experience section that attracts recruiters.",
@@ -447,8 +475,12 @@ const blogPosts = [
     excerpt:
       "Remote work is here to stay, but finding the right remote job takes strategy. Learn where to look, how to stand out, and what top remote employers expect.",
     author: "BulletAI Team",
+    authorBio: "The BulletAI Team writes practical, data-driven career advice to help job seekers at every level land more interviews.",
     date: "2026-04-04",
     image: null,
+    category: "Job Search",
+    tags: ["remote work", "job search", "work from home", "distributed teams", "career"],
+    featured: false,
     metaTitle: "How To Find Remote Jobs In 2026: A Complete Guide",
     metaDescription:
       "Find the best remote jobs in 2026 with this complete guide. Learn where to search, how to optimize your application, and what remote-first companies look for.",
@@ -503,8 +535,12 @@ const blogPosts = [
     excerpt:
       "Most cover letters get ignored because they repeat the resume. Learn how to write one that adds context, shows personality, and makes hiring managers take notice.",
     author: "BulletAI Team",
+    authorBio: "The BulletAI Team writes practical, data-driven career advice to help job seekers at every level land more interviews.",
     date: "2026-04-02",
     image: null,
+    category: "Job Search",
+    tags: ["cover letter", "job application", "writing", "hiring managers", "job search"],
+    featured: false,
     metaTitle: "How To Write A Cover Letter That Gets Read (2026 Guide)",
     metaDescription:
       "Learn how to write a cover letter that hiring managers actually read in 2026. Includes structure tips, real examples, and common mistakes to avoid.",
