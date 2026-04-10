@@ -23,16 +23,18 @@
 
   function renderNavbarHtml(activePage) {
     return `
-      <nav class="blog-nav" id="blogNav">
-        <a href="/" class="blog-logo">&#10022; BulletAI</a>
-        <button class="blog-nav-toggle" id="blogNavToggle" aria-label="Toggle navigation">
-          <span></span><span></span><span></span>
-        </button>
-        <div class="blog-nav-actions" id="blogNavActions">
-          ${renderLinks(activePage)}
-          <button id="navAuthBtn" class="blog-nav-auth-btn" type="button" aria-label="Sign in to BulletAI">Sign In</button>
-        </div>
-      </nav>
+      <div class="blog-nav-shell" id="blogNavShell">
+        <nav class="blog-nav" id="blogNav">
+          <a href="/" class="blog-logo">&#10022; BulletAI</a>
+          <button class="blog-nav-toggle" id="blogNavToggle" aria-label="Toggle navigation">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="blog-nav-actions" id="blogNavActions">
+            ${renderLinks(activePage)}
+            <button id="navAuthBtn" class="blog-nav-auth-btn" type="button" aria-label="Sign in to BulletAI">Sign In</button>
+          </div>
+        </nav>
+      </div>
     `;
   }
 
@@ -42,10 +44,11 @@
       const activePage = explicit || inferActivePage(window.location.pathname);
       this.innerHTML = renderNavbarHtml(activePage);
 
+      const navShell = this.querySelector("#blogNavShell");
       const nav = this.querySelector("#blogNav");
       const navToggle = this.querySelector("#blogNavToggle");
       const navActions = this.querySelector("#blogNavActions");
-      if (!nav || !navToggle || !navActions) return;
+      if (!navShell || !nav || !navToggle || !navActions) return;
 
       navToggle.addEventListener("click", () => {
         navActions.classList.toggle("open");
@@ -57,8 +60,7 @@
         "scroll",
         () => {
           const y = window.scrollY;
-          nav.classList.toggle("blog-nav--scrolled", y > 60);
-          nav.classList.toggle("blog-nav--hidden", y > 300 && y > lastY);
+          navShell.classList.toggle("blog-nav-shell--scrolled", y > 24);
           lastY = y;
         },
         { passive: true }
