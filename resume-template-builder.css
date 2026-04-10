@@ -853,7 +853,9 @@ body.resume-builder-body {
 
 .preview-paywall-row.is-paywalled .resume-preview-document {
   width: 8.5in;
+  height: 11in;
   min-height: 11in;
+  overflow: hidden;
 }
 
 #resumePreviewShell {
@@ -1037,13 +1039,14 @@ body.resume-builder-body {
   text-align: center;
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1260px) {
   .preview-paywall-row.is-paywalled {
     grid-template-columns: 1fr;
   }
 
   .preview-paywall-row.is-paywalled #resumePreviewShell {
     width: 100%;
+    min-height: 620px;
   }
 
   .paywall-overlay {
