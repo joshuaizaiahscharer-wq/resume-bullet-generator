@@ -41,39 +41,6 @@
         </div>
 
         <div id="adminDashboardContent" hidden>
-          <div class="admin-controls" aria-label="Dashboard controls">
-            <label class="control-search" for="userSearchInput">
-              <span>Search</span>
-              <input
-                id="userSearchInput"
-                type="search"
-                placeholder="Search by user ID or email"
-                autocomplete="off"
-              />
-            </label>
-
-            <label class="control-select" for="paymentFilterSelect">
-              <span>Filter</span>
-              <select id="paymentFilterSelect">
-                <option value="all">Show All</option>
-                <option value="paid">Paid Only</option>
-                <option value="free">Free Only</option>
-              </select>
-            </label>
-
-            <label class="control-select" for="sortSelect">
-              <span>Sort</span>
-              <select id="sortSelect">
-                <option value="lastActive_desc">Last Active (Newest)</option>
-                <option value="lastActive_asc">Last Active (Oldest)</option>
-                <option value="payment_desc">Payment Status (Paid First)</option>
-                <option value="payment_asc">Payment Status (Free First)</option>
-              </select>
-            </label>
-        </div>
-
-          <div class="admin-table-wrap" id="adminTableRoot" aria-live="polite"></div>
-
           <section class="blog-generator" aria-labelledby="blogGeneratorTitle">
             <div class="blog-generator-header">
               <h2 id="blogGeneratorTitle">AI Blog Generator</h2>
@@ -110,6 +77,39 @@
               </article>
             </div>
           </section>
+
+          <div class="admin-controls" aria-label="Dashboard controls">
+            <label class="control-search" for="userSearchInput">
+              <span>Search</span>
+              <input
+                id="userSearchInput"
+                type="search"
+                placeholder="Search by user ID or email"
+                autocomplete="off"
+              />
+            </label>
+
+            <label class="control-select" for="paymentFilterSelect">
+              <span>Filter</span>
+              <select id="paymentFilterSelect">
+                <option value="all">Show All</option>
+                <option value="paid">Paid Only</option>
+                <option value="free">Free Only</option>
+              </select>
+            </label>
+
+            <label class="control-select" for="sortSelect">
+              <span>Sort</span>
+              <select id="sortSelect">
+                <option value="lastActive_desc">Last Active (Newest)</option>
+                <option value="lastActive_asc">Last Active (Oldest)</option>
+                <option value="payment_desc">Payment Status (Paid First)</option>
+                <option value="payment_asc">Payment Status (Free First)</option>
+              </select>
+            </label>
+        </div>
+
+          <div class="admin-table-wrap" id="adminTableRoot" aria-live="polite"></div>
         </div>
       </section>
     </main>
