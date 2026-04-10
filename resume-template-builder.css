@@ -840,6 +840,10 @@ body.resume-builder-body {
   margin-inline: auto;
 }
 
+.resume-preview-shell.is-mini-preview .resume-locked-body {
+  filter: blur(4px);
+}
+
 .resume-preview-document {
   --resume-accent: #6366f1;
   --resume-name-size: 1.72rem;
@@ -986,10 +990,11 @@ body.resume-builder-body {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
-  background: linear-gradient(180deg, rgba(11, 15, 26, 0.45), rgba(11, 15, 26, 0.84));
+  background: linear-gradient(180deg, rgba(11, 15, 26, 0.06), rgba(11, 15, 26, 0.24) 55%, rgba(11, 15, 26, 0.62));
   padding: 18px;
+  pointer-events: none;
 }
 
 .paywall-card {
@@ -1000,6 +1005,7 @@ body.resume-builder-body {
   box-shadow: 0 20px 55px rgba(2, 6, 23, 0.58);
   padding: 20px;
   text-align: center;
+  pointer-events: auto;
 }
 
 .paywall-card h4 {
