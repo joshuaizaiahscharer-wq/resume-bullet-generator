@@ -738,6 +738,12 @@ app.get("/api/resume-builder/access", async (req, res) => {
 
 app.post("/api/resume-builder/create-checkout-session", async (req, res) => {
   try {
+    if (!STRIPE_SECRET_KEY) {
+      return res.status(500).json({
+        error: "STRIPE_SECRET_KEY is not configured.",
+      });
+    }
+
     if (!STRIPE_PRICE_ID) {
       return res.status(500).json({
         error: "STRIPE_PRICE_ID is not configured.",
@@ -783,8 +789,21 @@ app.post("/api/resume-builder/create-checkout-session", async (req, res) => {
 
     return res.json({ checkoutUrl: session.url });
   } catch (err) {
-    console.error("[/api/resume-builder/create-checkout-session] Stripe error:", err.message);
-    return res.status(500).json({ error: "Unable to create checkout session." });
+    const stripeErrorMessage =
+      err?.raw?.message ||
+      err?.message ||
+      "Unable to create checkout session.";
+
+    console.error("[/api/resume-builder/create-checkout-session] Stripe error:", {
+      type: err?.type,
+      code: err?.code,
+      message: stripeErrorMessage,
+    });
+
+    return res.status(500).json({
+      error: stripeErrorMessage,
+      code: err?.code || null,
+    });
   }
 });
 
