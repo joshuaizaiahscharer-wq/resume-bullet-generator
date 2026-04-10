@@ -876,7 +876,8 @@ app.get("/blog", async (req, res) => {
 
   if (error) {
     console.error("[/blog] fetch error:", error.message);
-    return res.status(500).send("Unable to load blog posts.");
+    // Fallback: render the blog list with static posts so users never see a raw error
+    return res.send(renderBlogListPage(SITE_URL, []));
   }
 
   const posts = (data || []).map((row) => ({
