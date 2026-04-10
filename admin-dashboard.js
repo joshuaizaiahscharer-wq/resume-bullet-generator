@@ -22,6 +22,7 @@ const dashboardState = {
   pendingUserIds: new Set(),
   currentUserId: null,
   blogDraft: null,
+  blogLoading: false,
 };
 
 function escapeHtml(value) {
@@ -94,40 +95,55 @@ function setBlogGeneratorStatus(message, tone = "neutral") {
   status.style.color = tone === "error" ? "#b91c1c" : tone === "success" ? "#166534" : "#475569";
 }
 
+function syncBlogGeneratorUiState() {
+  const generateBtn = document.getElementById("generateBlogBtn");
+  const publishBtn = document.getElementById("publishBlogBtn");
+
+  if (generateBtn) {
+    generateBtn.disabled = dashboardState.blogLoading;
+    generateBtn.textContent = dashboardState.blogLoading ? "Generating..." : "Generate Post";
+  }
+
+  if (publishBtn) {
+    publishBtn.disabled =
+      dashboardState.blogLoading || !dashboardState.blogDraft?.title || !dashboardState.blogDraft?.content;
+  }
+}
+
 function renderBlogPreview(draft) {
   const shell = document.getElementById("blogPreviewShell");
   const title = document.getElementById("blogPreviewTitle");
   const content = document.getElementById("blogPreviewContent");
-  const publishBtn = document.getElementById("publishBlogBtn");
-  if (!shell || !title || !content || !publishBtn) return;
+  if (!shell || !title || !content) return;
 
   if (!draft?.title || !draft?.content) {
     shell.hidden = true;
-    publishBtn.disabled = true;
+    syncBlogGeneratorUiState();
     return;
   }
 
   shell.hidden = false;
   title.textContent = draft.title;
   content.innerHTML = renderDraftContent(draft.content);
-  publishBtn.disabled = false;
+  syncBlogGeneratorUiState();
 }
 
 async function handleGenerateBlogPost() {
   const topicInput = document.getElementById("blogTopicInput");
   const toneSelect = document.getElementById("blogToneSelect");
-  const generateBtn = document.getElementById("generateBlogBtn");
-  const publishBtn = document.getElementById("publishBlogBtn");
   const topic = String(topicInput?.value || "").trim();
   const tone = String(toneSelect?.value || "Professional");
 
   if (!topic) {
     setBlogGeneratorStatus("Enter a topic before generating.", "error");
+    window.alert("Blog generation failed: Topic is required.");
     return;
   }
 
-  if (generateBtn) generateBtn.disabled = true;
-  if (publishBtn) publishBtn.disabled = true;
+  dashboardState.blogLoading = true;
+  dashboardState.blogDraft = null;
+  renderBlogPreview(null);
+  syncBlogGeneratorUiState();
   setBlogGeneratorStatus("Generating post draft...", "neutral");
 
   try {
@@ -136,9 +152,15 @@ async function handleGenerateBlogPost() {
     renderBlogPreview(draft);
     setBlogGeneratorStatus("Draft generated. Review and publish when ready.", "success");
   } catch (error) {
-    setBlogGeneratorStatus(String(error?.message || "Failed to generate post."), "error");
+    const message = String(error?.message || "Failed to generate post.");
+    console.error("GENERATION FAILED:", error);
+    dashboardState.blogDraft = null;
+    renderBlogPreview(null);
+    setBlogGeneratorStatus(message, "error");
+    window.alert("Blog generation failed: " + message);
   } finally {
-    if (generateBtn) generateBtn.disabled = false;
+    dashboardState.blogLoading = false;
+    syncBlogGeneratorUiState();
   }
 }
 
@@ -378,6 +400,7 @@ function bindControls() {
 
   document.getElementById("generateBlogBtn")?.addEventListener("click", handleGenerateBlogPost);
   document.getElementById("publishBlogBtn")?.addEventListener("click", handlePublishBlogPost);
+  syncBlogGeneratorUiState();
 }
 
 async function refreshUsers() {

@@ -65,6 +65,11 @@ body.admin-page-body {
   cursor: pointer;
 }
 
+.admin-gate-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .admin-gate[data-denied="true"] {
   border-color: #fecaca;
   background: #fff1f2;
@@ -167,11 +172,12 @@ body.admin-page-body {
 }
 
 .blog-preview-paper {
-  width: min(740px, 100%);
+  width: min(700px, 100%);
   min-height: 420px;
   max-height: 620px;
   overflow: auto;
-  background: #fff;
+  margin: 0 auto;
+  background: #ffffff;
   color: #0f172a;
   border: 1px solid #e2e8f0;
   border-radius: 8px;

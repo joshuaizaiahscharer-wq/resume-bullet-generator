@@ -1,7 +1,14 @@
-// Load environment variables for local development.
-require("dotenv").config();
-
 const path = require("path");
+// Load environment variables for local development.
+const fs = require("fs");
+const dotenv = require("dotenv");
+const envLocalPath = path.join(process.cwd(), ".env.local");
+
+if (fs.existsSync(envLocalPath)) {
+  dotenv.config({ path: envLocalPath });
+}
+dotenv.config();
+
 const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
@@ -219,6 +226,32 @@ async function getSupabaseUserFromAuthHeader(req) {
   }
 }
 
+async function getAdminProfileByUserId(userId) {
+  if (!userId) return null;
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, is_admin")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[admin] Failed to load user profile:", error.message);
+    throw new Error("Failed to verify admin access.");
+  }
+
+  return data || null;
+}
+
+function getOpenAIClient() {
+  const apiKey = String(process.env.OPENAI_API_KEY || "").trim();
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured.");
+  }
+
+  return new OpenAI({ apiKey });
+}
+
 function getMissingColumnName(error) {
   const message = error?.message || "";
   const patterns = [
@@ -236,6 +269,71 @@ function getMissingColumnName(error) {
 
 function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function parseJsonPayload(value) {
+  const text = String(value || "").trim();
+  if (!text) return null;
+
+  const normalized = text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(normalized);
+  } catch (_err) {
+    return null;
+  }
+}
+
+function parseBlogDraftFallback(value, topic) {
+  const text = String(value || "").trim();
+  if (!text) {
+    return {
+      title: String(topic || "Untitled Post").trim(),
+      content: "",
+    };
+  }
+
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  let title = String(topic || "Untitled Post").trim();
+  let content = text;
+
+  if (lines.length) {
+    const firstLine = lines[0].replace(/^#\s*/, "").trim();
+    if (firstLine.length >= 8 && firstLine.length <= 120) {
+      title = firstLine;
+      content = lines.slice(1).join("\n").trim() || text;
+    }
+  }
+
+  return { title, content };
+}
+
+function extractResponseText(response) {
+  if (response?.output_text) {
+    return String(response.output_text).trim();
+  }
+
+  const output = Array.isArray(response?.output) ? response.output : [];
+  const parts = [];
+
+  for (const item of output) {
+    const content = Array.isArray(item?.content) ? item.content : [];
+    for (const entry of content) {
+      if (entry?.type === "output_text" && entry?.text) {
+        parts.push(entry.text);
+      }
+    }
+  }
+
+  return parts.join("\n").trim();
 }
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
@@ -842,61 +940,85 @@ app.get("/api/public-auth-config", (req, res) => {
 
 app.post("/api/admin/blog/generate", async (req, res) => {
   try {
+    const body = req.body;
+    console.log("[/api/admin/blog/generate] Incoming request body:", body);
+
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      console.error("[/api/admin/blog/generate] Invalid request body:", body);
+      return res.status(400).json({ error: "Request body must be a JSON object." });
+    }
+
     const user = await getSupabaseUserFromAuthHeader(req);
     if (!user) {
+      console.error("[/api/admin/blog/generate] Missing or invalid auth token.");
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const isAdmin = await isAdminUserById(user.id);
-    if (!isAdmin) {
+    const adminProfile = await getAdminProfileByUserId(user.id);
+    if (!adminProfile?.is_admin) {
+      console.error("[/api/admin/blog/generate] Non-admin access attempt:", user.id);
       return res.status(403).json({ error: "Admin access required." });
     }
 
-    const topic = String(req.body?.topic || "").trim();
-    const tone = String(req.body?.tone || "Professional").trim();
+    const topic = String(body?.topic || "").trim();
+    const tone = String(body?.tone || "professional").trim() || "professional";
+
     if (!topic) {
-      return res.status(400).json({ error: "Topic is required." });
+      console.error("[/api/admin/blog/generate] Missing topic.");
+      return res.status(400).json({ error: "Topic is required" });
     }
 
     const prompt = [
-      `Write a high-quality SEO blog post about: ${topic}.`,
-      `Tone: ${tone}.`,
+      "Write a high-quality SEO blog post.",
+      "",
+      `Topic: ${topic}`,
+      `Tone: ${tone}`,
+      "",
       "Include:",
+      "- Strong title",
       "- Engaging introduction",
       "- Clear sections with headings",
       "- Bullet points where helpful",
       "- Strong conclusion",
-      "- Keep it readable and valuable",
-      'Return strict JSON only: {"title":"...","content":"..."}',
+      "- Keep it readable, valuable, and SEO-friendly",
+      "",
+      'Return strict JSON only with this shape: {"title":"...","content":"..."}',
     ].join("\n");
 
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_BLOG_MODEL || "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert SEO blog writer. Return valid JSON only, no markdown fences, no extra commentary.",
-        },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.7,
-      max_tokens: 1800,
-    });
+    try {
+      const client = getOpenAIClient();
+      const response = await client.responses.create({
+        model: process.env.OPENAI_BLOG_MODEL || "gpt-5-mini",
+        input: prompt,
+        max_output_tokens: 2200,
+      });
 
-    const text = completion.choices?.[0]?.message?.content || "";
-    const parsed = parseJsonPayload(text);
-    const title = String(parsed?.title || topic).trim();
-    const content = String(parsed?.content || "").trim();
+      const text = extractResponseText(response);
+      const parsed = parseJsonPayload(text);
+      const fallback = parseBlogDraftFallback(text, topic);
+      const title = String(parsed?.title || fallback.title || topic).trim();
+      const content = String(parsed?.content || fallback.content || "").trim();
 
-    if (!content) {
-      return res.status(502).json({ error: "AI returned empty content." });
+      if (!content) {
+        console.error("[/api/admin/blog/generate] AI returned empty content.", {
+          topic,
+          rawResponse: response,
+        });
+        return res.status(500).json({ error: "No content generated" });
+      }
+
+      return res.status(200).json({ title, content });
+    } catch (error) {
+      console.error("[/api/admin/blog/generate] OpenAI request failed:", error);
+      return res.status(500).json({
+        error: error?.message || "Blog generation failed",
+      });
     }
-
-    return res.json({ title, content });
   } catch (error) {
-    console.error("[/api/admin/blog/generate] error:", error.message);
-    return res.status(500).json({ error: "Failed to generate blog post." });
+    console.error("[/api/admin/blog/generate] Unexpected error:", error);
+    return res.status(500).json({
+      error: error?.message || "Blog generation failed",
+    });
   }
 });
 

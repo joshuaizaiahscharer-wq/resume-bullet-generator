@@ -245,9 +245,30 @@ export async function generateBlogPostDraft(topic, tone) {
     body: JSON.stringify({ topic, tone }),
   });
 
-  const payload = await response.json();
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    console.error("BLOG GENERATION RESPONSE PARSE ERROR:", error);
+    throw new Error(`Blog generation failed (${response.status}). The server returned invalid JSON.`);
+  }
+
   if (!response.ok) {
-    throw new Error(payload?.error || "Failed to generate blog post.");
+    let details = payload?.error || `Failed to generate blog post (${response.status}).`;
+    if (payload) {
+      const extra = [];
+      if (payload.code) extra.push(`code: ${payload.code}`);
+      if (payload.type) extra.push(`type: ${payload.type}`);
+      if (payload.status) extra.push(`status: ${payload.status}`);
+      if (payload.stack) extra.push(`stack: ${payload.stack}`);
+      if (payload.raw) extra.push(`raw: ${JSON.stringify(payload.raw)}`);
+      if (extra.length) details += '\n' + extra.join('\n');
+    }
+    console.error("BLOG GENERATION REQUEST FAILED:", {
+      status: response.status,
+      payload,
+    });
+    throw new Error(details);
   }
 
   return {
