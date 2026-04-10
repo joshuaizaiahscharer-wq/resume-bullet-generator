@@ -247,13 +247,20 @@ async function initDashboard() {
     if (!userData) {
       dashboardState.isAdmin = false;
       console.log("Admin state:", dashboardState.isAdmin);
-      renderAccessDenied("Unable to load your user profile.");
+      renderAccessDenied("Unable to load your user profile. Check console logs for AUTH USER, USER ROW, and ERROR.");
       bindControls();
       return;
     }
 
+    if (userData.id !== currentUser.id) {
+      console.error("AUTH/PROFILE ID MISMATCH:", {
+        authUserId: currentUser.id,
+        profileUserId: userData.id,
+      });
+    }
+
     console.log("is_admin value:", userData.is_admin);
-    dashboardState.isAdmin = Boolean(userData.is_admin);
+    dashboardState.isAdmin = userData.is_admin === true;
     console.log("Admin state:", dashboardState.isAdmin);
 
     if (!dashboardState.isAdmin) {

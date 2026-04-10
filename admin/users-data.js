@@ -35,8 +35,19 @@ export async function fetchUsers() {
 
 export async function getCurrentAuthUser() {
   const supabase = await getSupabaseClient();
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) {
+    console.error("SESSION ERROR:", sessionError.message);
+  }
+  console.log("AUTH SESSION:", sessionData?.session || null);
+
   const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
+  if (error) {
+    console.error("AUTH USER ERROR:", error.message);
+    throw error;
+  }
+
+  console.log("AUTH USER:", data?.user || null);
   return data?.user || null;
 }
 
@@ -47,15 +58,17 @@ export async function getUserData(userId) {
     .from("users")
     .select("*")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
+
+  console.log("USER ROW:", data || null);
+  console.log("ERROR:", error || null);
 
   if (error) {
     console.error("SUPABASE ERROR:", error.message);
     return null;
   }
 
-  console.log("User data:", data);
-  return data;
+  return data || null;
 }
 
 export async function getOrCreateUserData(authUser) {
