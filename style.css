@@ -528,6 +528,45 @@ body {
   padding: 0 20px 64px;
 }
 
+.explore-more {
+  width: 100%;
+  max-width: 680px;
+  padding: 0 20px 40px;
+}
+
+.explore-more-inner {
+  text-align: center;
+  border: 1px solid #1e293b;
+  border-radius: 14px;
+  background: rgba(19, 25, 41, 0.8);
+  padding: 22px 20px;
+}
+
+.explore-more h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 8px;
+}
+
+.explore-more p {
+  color: #94a3b8;
+  font-size: 0.94rem;
+  margin-bottom: 12px;
+}
+
+.explore-more-link {
+  color: #a5b4fc;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.explore-more-link:hover,
+.explore-more-link:focus-visible {
+  color: #c7d2fe;
+  text-decoration: underline;
+}
+
 .support-card {
   background: #131929;
   border: 1px solid #1e293b;
