@@ -14,22 +14,13 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=Source+Serif+4:wght@400;600;700&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="/blog.css" />
     <link rel="stylesheet" href="/style.css" />
     <link rel="stylesheet" href="/resume-template-builder.css" />
     <link rel="stylesheet" href="/auth.css" />
   </head>
   <body class="resume-builder-body">
-    <nav class="nav nav--wide">
-      <a href="/" class="nav-logo">&#10022; BulletAI</a>
-      <div class="nav-actions">
-        <a href="/" class="nav-link">Bullet Generator</a>
-        <a href="/jobs" class="nav-link">All Jobs</a>
-        <a href="/resume-template-builder" class="nav-link nav-link--active">Resume Template Builder</a>
-        <a href="/blog" class="nav-link">Blog</a>
-        <a href="/#support" class="nav-link">Support</a>
-        <button id="navAuthBtn" class="nav-auth-btn" type="button" aria-label="Sign in to BulletAI">Sign In</button>
-      </div>
-    </nav>
+    <site-navbar active-page="resume-builder"></site-navbar>
 
     <header class="builder-hero">
       <span class="badge">Premium Resume Builder</span>
@@ -224,6 +215,7 @@
       </div>
     </div>
 
+    <script src="/shared-navbar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="/auth.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>

@@ -5,28 +5,6 @@
 (function () {
   "use strict";
 
-  // ─── Mobile nav toggle ───────────────────────────────────────────────
-  const navToggle = document.getElementById("blogNavToggle");
-  const navActions = document.getElementById("blogNavActions");
-  if (navToggle && navActions) {
-    navToggle.addEventListener("click", () => {
-      navActions.classList.toggle("open");
-      navToggle.classList.toggle("open");
-    });
-  }
-
-  // ─── Sticky nav ─────────────────────────────────────────────────────
-  const blogNav = document.getElementById("blogNav");
-  if (blogNav) {
-    let lastY = 0;
-    window.addEventListener("scroll", () => {
-      const y = window.scrollY;
-      blogNav.classList.toggle("blog-nav--scrolled", y > 60);
-      blogNav.classList.toggle("blog-nav--hidden", y > 300 && y > lastY);
-      lastY = y;
-    }, { passive: true });
-  }
-
   // ─── Helpers ─────────────────────────────────────────────────────────
   function getBookmarks() {
     try { return JSON.parse(localStorage.getItem("blog_bookmarks") || "[]"); }

@@ -33,6 +33,10 @@
 }
 
 /* ─── Navigation ─────────────────────────────────────────────────────── */
+site-navbar {
+  display: block;
+}
+
 .blog-nav {
   position: sticky;
   top: 0;
