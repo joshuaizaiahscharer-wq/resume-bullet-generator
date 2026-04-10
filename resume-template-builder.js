@@ -1919,6 +1919,10 @@ function updateLockStateUi() {
 
   if (elementRefs.previewShell) {
     elementRefs.previewShell.classList.toggle("is-locked", !isUnlocked);
+    elementRefs.previewShell.classList.toggle(
+      "is-mini-preview",
+      resumeBuilderState.hasSubmitted && !isUnlocked
+    );
   }
 
   if (elementRefs.paymentStatusBadge) {

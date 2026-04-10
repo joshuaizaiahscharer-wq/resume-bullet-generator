@@ -831,6 +831,13 @@ body.resume-builder-body {
   overflow: hidden;
   background: #e8eef6;
   min-height: 540px;
+  transition: max-width 0.25s ease, min-height 0.25s ease;
+}
+
+.resume-preview-shell.is-mini-preview {
+  max-width: 620px;
+  min-height: 420px;
+  margin-inline: auto;
 }
 
 .resume-preview-document {
