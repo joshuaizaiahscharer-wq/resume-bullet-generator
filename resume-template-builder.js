@@ -73,6 +73,7 @@ const elementRefs = {
   authStatus: document.getElementById("resumeAuthStatus"),
   authBtn: document.getElementById("resumeAuthBtn"),
   saveBtn: document.getElementById("saveResumeBtn"),
+  downloadDocxBtn: document.getElementById("downloadResumeDocxBtn"),
   downloadBtn: document.getElementById("downloadResumeBtn"),
   stylePicker: document.getElementById("stylePickerRoot"),
   fontPicker: document.getElementById("fontPickerRoot"),
@@ -398,6 +399,465 @@ function closeAuthModal() {
   modal.setAttribute("aria-hidden", "true");
 }
 
+function getResumePdfTheme(style) {
+  switch (style) {
+    case "modern":
+      return {
+        heading: [79, 70, 229],
+        name: [30, 27, 75],
+        body: [51, 65, 85],
+        muted: [71, 85, 105],
+        divider: [199, 210, 254],
+        font: "helvetica",
+      };
+    case "executive":
+      return {
+        heading: [15, 23, 42],
+        name: [15, 23, 42],
+        body: [31, 41, 55],
+        muted: [71, 85, 105],
+        divider: [203, 213, 225],
+        font: "times",
+      };
+    case "minimal":
+      return {
+        heading: [55, 65, 81],
+        name: [17, 24, 39],
+        body: [55, 65, 81],
+        muted: [107, 114, 128],
+        divider: [229, 231, 235],
+        font: "helvetica",
+      };
+    default:
+      return {
+        heading: [30, 41, 59],
+        name: [11, 19, 37],
+        body: [51, 65, 85],
+        muted: [71, 85, 105],
+        divider: [203, 213, 225],
+        font: "helvetica",
+      };
+  }
+}
+
+function getPdfExportClient() {
+  return window.jspdf?.jsPDF || window.jsPDF || null;
+}
+
+function getDocxExportClient() {
+  return window.docx || null;
+}
+
+function buildResumePdfData() {
+  return resumeBuilderState.generatedData || cloneFormData();
+}
+
+function downloadBlobFile(blob, fileName) {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+}
+
+function drawResumePdf(doc, previewData, filenameBase) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const marginX = 54;
+  const topMargin = 52;
+  const bottomMargin = 44;
+  const contentWidth = pageWidth - marginX * 2;
+  const theme = getResumePdfTheme(resumeBuilderState.resumeStyle);
+
+  let y = topMargin;
+
+  const ensureSpace = (heightNeeded = 18) => {
+    if (y + heightNeeded <= pageHeight - bottomMargin) return;
+    doc.addPage();
+    y = topMargin;
+  };
+
+  const drawWrappedText = (text, options = {}) => {
+    const {
+      x = marginX,
+      maxWidth = contentWidth,
+      font = theme.font,
+      fontStyle = "normal",
+      fontSize = 10.5,
+      color = theme.body,
+      lineHeight = 14,
+      gapAfter = 0,
+    } = options;
+
+    const rawText = String(text || "").trim();
+    if (!rawText) return;
+
+    doc.setFont(font, fontStyle);
+    doc.setFontSize(fontSize);
+    doc.setTextColor(color[0], color[1], color[2]);
+
+    const paragraphs = rawText.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+    paragraphs.forEach((paragraph, index) => {
+      const isBullet = /^[•\-]/.test(paragraph);
+      const bulletPrefix = isBullet ? "• " : "";
+      const textContent = isBullet ? paragraph.replace(/^[•\-]\s*/, "") : paragraph;
+      const indentX = isBullet ? x + 10 : x;
+      const lines = doc.splitTextToSize(textContent, maxWidth - (isBullet ? 10 : 0));
+
+      ensureSpace(lines.length * lineHeight + lineHeight);
+      if (isBullet) {
+        doc.text(bulletPrefix, x, y);
+      }
+      doc.text(lines, indentX, y);
+      y += lines.length * lineHeight;
+      if (index < paragraphs.length - 1) {
+        y += 2;
+      }
+    });
+
+    y += gapAfter;
+  };
+
+  const drawSectionHeading = (label) => {
+    ensureSpace(28);
+    doc.setDrawColor(theme.divider[0], theme.divider[1], theme.divider[2]);
+    doc.setLineWidth(1);
+    doc.line(marginX, y + 4, pageWidth - marginX, y + 4);
+    doc.setFont(theme.font, "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(theme.heading[0], theme.heading[1], theme.heading[2]);
+    doc.text(String(label || "").toUpperCase(), marginX, y);
+    y += 20;
+  };
+
+  const drawItemHeader = (leftText, rightText) => {
+    ensureSpace(18);
+    doc.setFont(theme.font, "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(theme.name[0], theme.name[1], theme.name[2]);
+    const safeLeft = String(leftText || "").trim() || " ";
+    doc.text(safeLeft, marginX, y);
+
+    const safeRight = String(rightText || "").trim();
+    if (safeRight) {
+      doc.setFont(theme.font, "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(theme.muted[0], theme.muted[1], theme.muted[2]);
+      const textWidth = doc.getTextWidth(safeRight);
+      doc.text(safeRight, pageWidth - marginX - textWidth, y);
+    }
+
+    y += 14;
+  };
+
+  doc.setProperties({
+    title: `${filenameBase}.pdf`,
+    subject: "Resume",
+    author: previewData.fullName || "BulletAI",
+    creator: "BulletAI",
+  });
+
+  doc.setFont(theme.font, "bold");
+  doc.setFontSize(24);
+  doc.setTextColor(theme.name[0], theme.name[1], theme.name[2]);
+  doc.text(String(previewData.fullName || "Your Name"), marginX, y);
+  y += 22;
+
+  const contactParts = [previewData.email, previewData.phone, previewData.location].filter(Boolean);
+  if (contactParts.length) {
+    doc.setFont(theme.font, "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(theme.muted[0], theme.muted[1], theme.muted[2]);
+    drawWrappedText(contactParts.join(" | "), {
+      font: theme.font,
+      fontSize: 10.5,
+      color: theme.muted,
+      lineHeight: 13,
+      gapAfter: 6,
+    });
+  }
+
+  drawSectionHeading("Professional Summary");
+  drawWrappedText(previewData.professionalSummary, { gapAfter: 8 });
+
+  drawSectionHeading("Work Experience");
+  (previewData.workExperience || []).forEach((item) => {
+    const hasContent = [item.role, item.company, item.location, item.startDate, item.endDate, item.details]
+      .some((value) => String(value || "").trim());
+    if (!hasContent) return;
+    drawItemHeader(item.role || "Role", formatDateRange(item.startDate, item.endDate));
+    const companyLine = [item.company, item.location].filter(Boolean).join(" | ");
+    if (companyLine) {
+      drawWrappedText(companyLine, {
+        fontStyle: "italic",
+        fontSize: 10,
+        color: theme.muted,
+        lineHeight: 12,
+        gapAfter: 4,
+      });
+    }
+    drawWrappedText(item.details, { gapAfter: 10 });
+  });
+
+  drawSectionHeading("Education");
+  (previewData.education || []).forEach((item) => {
+    const hasContent = [item.degree, item.school, item.location, item.startDate, item.endDate, item.details]
+      .some((value) => String(value || "").trim());
+    if (!hasContent) return;
+    drawItemHeader(item.degree || "Degree", formatDateRange(item.startDate, item.endDate));
+    const schoolLine = [item.school, item.location].filter(Boolean).join(" | ");
+    if (schoolLine) {
+      drawWrappedText(schoolLine, {
+        fontStyle: "italic",
+        fontSize: 10,
+        color: theme.muted,
+        lineHeight: 12,
+        gapAfter: 4,
+      });
+    }
+    drawWrappedText(item.details, { gapAfter: 10 });
+  });
+
+  if (String(previewData.skills || "").trim()) {
+    drawSectionHeading("Skills");
+    drawWrappedText(previewData.skills, { gapAfter: 8 });
+  }
+
+  if (String(previewData.certifications || "").trim()) {
+    drawSectionHeading("Certifications");
+    drawWrappedText(previewData.certifications, { gapAfter: 8 });
+  }
+
+  const projects = (previewData.projects || []).filter((item) =>
+    [item.name, item.link, item.description].some((value) => String(value || "").trim())
+  );
+
+  if (projects.length) {
+    drawSectionHeading("Projects");
+    projects.forEach((item) => {
+      drawItemHeader(item.name || "Project", item.link || "");
+      if (item.link) {
+        drawWrappedText(item.link, {
+          fontSize: 9.5,
+          color: theme.muted,
+          lineHeight: 12,
+          gapAfter: 3,
+        });
+      }
+      drawWrappedText(item.description, { gapAfter: 10 });
+    });
+  }
+
+  doc.save(`${filenameBase}.pdf`);
+}
+
+async function downloadResumeAsDocx() {
+  if (!resumeBuilderState.hasSubmitted || !resumeBuilderState.isUnlocked) return;
+
+  const filenameBase = (resumeBuilderState.generatedData?.fullName || resumeBuilderState.formData.fullName || "resume")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "resume";
+
+  const docxClient = getDocxExportClient();
+  if (!docxClient) return;
+
+  const {
+    BorderStyle,
+    Document,
+    HeadingLevel,
+    Packer,
+    Paragraph,
+    TextRun,
+  } = docxClient;
+
+  const previewData = buildResumePdfData();
+  const children = [];
+
+  const addTextParagraph = (text, options = {}) => {
+    const value = String(text || "").trim();
+    if (!value) return;
+
+    const lines = value.split(/\n+/).map((line) => line.trim()).filter(Boolean);
+    lines.forEach((line) => {
+      const isBullet = /^[•\-]/.test(line);
+      children.push(
+        new Paragraph({
+          text: isBullet ? line.replace(/^[•\-]\s*/, "") : line,
+          bullet: isBullet ? { level: 0 } : undefined,
+          spacing: { after: options.after ?? 70, line: 300 },
+        })
+      );
+    });
+  };
+
+  const addSectionHeading = (label) => {
+    children.push(
+      new Paragraph({
+        text: label,
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 220, after: 80 },
+      })
+    );
+  };
+
+  children.push(
+    new Paragraph({
+      children: [new TextRun({ text: previewData.fullName || "Your Name", bold: true, size: 30 * 2 })],
+      spacing: { after: 80 },
+    })
+  );
+
+  const contactLine = [previewData.email, previewData.phone, previewData.location].filter(Boolean).join(" | ");
+  if (contactLine) {
+    children.push(
+      new Paragraph({
+        children: [new TextRun({ text: contactLine, color: "475569", size: 10 * 2 })],
+        spacing: { after: 180 },
+      })
+    );
+  }
+
+  addSectionHeading("Professional Summary");
+  addTextParagraph(previewData.professionalSummary, { after: 90 });
+
+  addSectionHeading("Work Experience");
+  (previewData.workExperience || []).forEach((item) => {
+    const hasContent = [item.role, item.company, item.location, item.startDate, item.endDate, item.details]
+      .some((value) => String(value || "").trim());
+    if (!hasContent) return;
+
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: item.role || "Role", bold: true, size: 11 * 2 }),
+          new TextRun({ text: formatDateRange(item.startDate, item.endDate) ? `    ${formatDateRange(item.startDate, item.endDate)}` : "", color: "64748b", size: 10 * 2 }),
+        ],
+        spacing: { after: 40 },
+      })
+    );
+
+    const companyLine = [item.company, item.location].filter(Boolean).join(" | ");
+    if (companyLine) {
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: companyLine, italics: true, color: "64748b", size: 10 * 2 })],
+          spacing: { after: 40 },
+        })
+      );
+    }
+
+    addTextParagraph(item.details, { after: 100 });
+  });
+
+  addSectionHeading("Education");
+  (previewData.education || []).forEach((item) => {
+    const hasContent = [item.degree, item.school, item.location, item.startDate, item.endDate, item.details]
+      .some((value) => String(value || "").trim());
+    if (!hasContent) return;
+
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: item.degree || "Degree", bold: true, size: 11 * 2 }),
+          new TextRun({ text: formatDateRange(item.startDate, item.endDate) ? `    ${formatDateRange(item.startDate, item.endDate)}` : "", color: "64748b", size: 10 * 2 }),
+        ],
+        spacing: { after: 40 },
+      })
+    );
+
+    const schoolLine = [item.school, item.location].filter(Boolean).join(" | ");
+    if (schoolLine) {
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: schoolLine, italics: true, color: "64748b", size: 10 * 2 })],
+          spacing: { after: 40 },
+        })
+      );
+    }
+
+    addTextParagraph(item.details, { after: 100 });
+  });
+
+  if (String(previewData.skills || "").trim()) {
+    addSectionHeading("Skills");
+    addTextParagraph(previewData.skills, { after: 90 });
+  }
+
+  if (String(previewData.certifications || "").trim()) {
+    addSectionHeading("Certifications");
+    addTextParagraph(previewData.certifications, { after: 90 });
+  }
+
+  const projects = (previewData.projects || []).filter((item) =>
+    [item.name, item.link, item.description].some((value) => String(value || "").trim())
+  );
+
+  if (projects.length) {
+    addSectionHeading("Projects");
+    projects.forEach((item) => {
+      children.push(
+        new Paragraph({
+          children: [new TextRun({ text: item.name || "Project", bold: true, size: 11 * 2 })],
+          spacing: { after: 40 },
+        })
+      );
+
+      if (item.link) {
+        children.push(
+          new Paragraph({
+            children: [new TextRun({ text: item.link, color: "2563eb", underline: {} })],
+            spacing: { after: 40 },
+          })
+        );
+      }
+
+      addTextParagraph(item.description, { after: 100 });
+    });
+  }
+
+  const doc = new Document({
+    creator: "BulletAI",
+    title: previewData.fullName || "Resume",
+    description: "Resume export",
+    styles: {
+      paragraphStyles: [
+        {
+          id: "Heading2",
+          name: "Heading 2",
+          basedOn: "Normal",
+          next: "Normal",
+          quickFormat: true,
+          run: { bold: true, size: 22, color: "1e293b" },
+          paragraph: {
+            spacing: { before: 220, after: 80 },
+            border: {
+              bottom: { color: "cbd5e1", style: BorderStyle.SINGLE, size: 6, space: 1 },
+            },
+          },
+        },
+      ],
+    },
+    sections: [
+      {
+        properties: {
+          page: {
+            margin: { top: 720, right: 720, bottom: 720, left: 720 },
+          },
+        },
+        children,
+      },
+    ],
+  });
+
+  const blob = await Packer.toBlob(doc);
+  downloadBlobFile(blob, `${filenameBase}.docx`);
+}
+
 function initAuthModal() {
   const modal = document.getElementById("authModal");
   if (!modal) return;
@@ -464,14 +924,23 @@ function initAuthModal() {
 
 async function downloadResumeAsPdf() {
   if (!resumeBuilderState.hasSubmitted || !resumeBuilderState.isUnlocked) return;
-  const documentRoot = elementRefs.previewRoot?.querySelector(".resume-preview-document");
-  if (!documentRoot) return;
 
   const filenameBase = (resumeBuilderState.generatedData?.fullName || resumeBuilderState.formData.fullName || "resume")
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "") || "resume";
+
+  const jsPdfClient = getPdfExportClient();
+  if (jsPdfClient) {
+    const previewData = buildResumePdfData();
+    const doc = new jsPdfClient({ unit: "pt", format: "letter", orientation: "portrait" });
+    drawResumePdf(doc, previewData, filenameBase);
+    return;
+  }
+
+  const documentRoot = elementRefs.previewRoot?.querySelector(".resume-preview-document");
+  if (!documentRoot) return;
 
   if (typeof window.html2pdf === "function") {
     // Clone into an isolated offscreen container. This avoids html2canvas
@@ -1241,6 +1710,10 @@ function updateLockStateUi() {
     elementRefs.downloadBtn.disabled = !resumeBuilderState.hasSubmitted || !isUnlocked;
   }
 
+  if (elementRefs.downloadDocxBtn) {
+    elementRefs.downloadDocxBtn.disabled = !resumeBuilderState.hasSubmitted || !isUnlocked;
+  }
+
   updateAuthUi();
 }
 
@@ -1250,6 +1723,12 @@ function bindGlobalEvents() {
   if (elementRefs.downloadBtn) {
     elementRefs.downloadBtn.addEventListener("click", async () => {
       await downloadResumeAsPdf();
+    });
+  }
+
+  if (elementRefs.downloadDocxBtn) {
+    elementRefs.downloadDocxBtn.addEventListener("click", async () => {
+      await downloadResumeAsDocx();
     });
   }
 
