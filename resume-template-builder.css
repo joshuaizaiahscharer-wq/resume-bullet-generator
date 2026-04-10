@@ -829,7 +829,7 @@ body.resume-builder-body {
 }
 
 .preview-paywall-row.is-paywalled {
-  --paywalled-preview-scale: 0.94;
+  --paywalled-preview-scale: 0.72;
   display: grid;
   grid-template-columns: auto 300px;
   grid-template-areas: "preview paywall";
