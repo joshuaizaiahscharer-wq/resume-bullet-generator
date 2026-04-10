@@ -830,16 +830,16 @@ body.resume-builder-body {
 
 .preview-paywall-row.is-paywalled {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: auto 300px;
   grid-template-areas: "preview paywall";
   gap: 14px;
   align-items: start;
 }
 
 .preview-paywall-row.is-paywalled #resumePreviewShell {
-  width: calc((8.5in * 0.5) + 24px);
+  width: calc(8.5in + 24px);
   max-width: 100%;
-  min-height: calc((11in * 0.5) + 24px);
+  min-height: calc(11in + 24px);
   justify-self: start;
 }
 
@@ -854,8 +854,6 @@ body.resume-builder-body {
 .preview-paywall-row.is-paywalled .resume-preview-document {
   width: 8.5in;
   min-height: 11in;
-  transform: scale(0.5);
-  transform-origin: top center;
 }
 
 #resumePreviewShell {
