@@ -51,43 +51,55 @@
   var previousSyncedUserId = null;
 
   async function updateUserLogoutState(userId) {
-    if (!userId || !BulletAuth._supabase) return;
+    if (!BulletAuth._supabase) return;
     try {
-      await BulletAuth._supabase
+      var targetUserId = userId || previousSyncedUserId;
+      if (!targetUserId) return;
+
+      const { error: updateError } = await BulletAuth._supabase
         .from('users')
         .update({
           is_logged_in: false,
           last_active: new Date().toISOString(),
         })
-        .eq('id', userId);
-    } catch (_err) {
-      // Keep auth UX resilient even if profile sync fails.
+        .eq('id', targetUserId);
+
+      if (updateError) {
+        console.error('Update error:', updateError);
+      }
+    } catch (err) {
+      console.error('Unexpected error:', err);
     }
   }
 
-  async function syncUserWithDatabase() {
+  async function syncUserWithDatabase(user) {
     if (!BulletAuth._supabase) return;
 
     try {
-      const { data: { user } = { user: null } } = await BulletAuth._supabase.auth.getUser();
-      if (!user) return;
+      const authUser = user || (await BulletAuth._supabase.auth.getUser())?.data?.user || null;
+      if (!authUser) return;
+
+      console.log('Syncing user:', authUser.id);
 
       const nowIso = new Date().toISOString();
-      const safeEmail = normalizeEmail(user.email || user.user_metadata?.email || '');
-      const { data: existingUser, error: existingUserError } = await BulletAuth._supabase
+      const safeEmail = normalizeEmail(authUser.email || authUser.user_metadata?.email || '');
+      const { data: existingUser, error: fetchError } = await BulletAuth._supabase
         .from('users')
         .select('*')
-        .eq('id', user.id)
+        .eq('id', authUser.id)
         .maybeSingle();
 
-      if (existingUserError) {
-        throw existingUserError;
+      if (fetchError) {
+        console.error('Fetch error:', fetchError);
+        return;
       }
 
       if (!existingUser) {
-        const insertResult = await BulletAuth._supabase.from('users').insert([
+        console.log('Creating new user');
+
+        const { error: insertError } = await BulletAuth._supabase.from('users').insert([
           {
-            id: user.id,
+            id: authUser.id,
             email: safeEmail,
             is_logged_in: true,
             has_paid: false,
@@ -97,38 +109,56 @@
           },
         ]);
 
-        const insertError = insertResult?.error || null;
         if (insertError) {
           const duplicateInsert = insertError.code === '23505'
             || String(insertError.message || '').toLowerCase().includes('duplicate');
 
           if (!duplicateInsert) {
-            throw insertError;
+            console.error('Insert error:', insertError);
+            return;
           }
 
-          await BulletAuth._supabase
+          const { error: updateError } = await BulletAuth._supabase
             .from('users')
             .update({
               email: safeEmail,
               is_logged_in: true,
               last_active: nowIso,
             })
-            .eq('id', user.id);
+            .eq('id', authUser.id);
+
+          if (updateError) {
+            console.error('Update error:', updateError);
+            return;
+          }
+
+          console.log('User updated successfully');
+        } else {
+          console.log('User created successfully');
         }
       } else {
-        await BulletAuth._supabase
+        console.log('Updating existing user');
+
+        const { error: updateError } = await BulletAuth._supabase
           .from('users')
           .update({
             email: safeEmail,
             is_logged_in: true,
             last_active: nowIso,
           })
-          .eq('id', user.id);
+          .eq('id', authUser.id);
+
+        if (updateError) {
+          console.error('Update error:', updateError);
+          return;
+        }
+
+        console.log('User updated successfully');
       }
 
-      previousSyncedUserId = user.id;
-    } catch (_err) {
-      // Keep auth UX resilient even if profile sync fails.
+      previousSyncedUserId = authUser.id;
+    } catch (err) {
+      console.error('Unexpected error:', err);
     }
   }
 
@@ -344,7 +374,7 @@
       BulletAuth._updateNavBtn();
 
       if (BulletAuth._user) {
-        await syncUserWithDatabase();
+        await syncUserWithDatabase(BulletAuth._user);
       }
 
       if (ownsModal) {
@@ -352,10 +382,17 @@
       }
 
       BulletAuth._supabase.auth.onAuthStateChange(async function (event, session) {
+        console.log('Auth event:', event);
         BulletAuth._user = (session && session.user) || null;
 
+        if (session && session.user) {
+          console.log('User detected:', session.user.id);
+          await syncUserWithDatabase(session.user);
+        }
+
         if (event === 'SIGNED_OUT') {
-          await updateUserLogoutState(previousSyncedUserId);
+          console.log('User signed out');
+          await updateUserLogoutState();
           previousSyncedUserId = null;
         }
 
@@ -363,16 +400,12 @@
           await updateUserLogoutState(previousSyncedUserId);
         }
 
-        if (session && session.user) {
-          await syncUserWithDatabase();
-        }
-
         BulletAuth._updateNavBtn();
         BulletAuth._notify();
         if (!BulletAuth._user) BulletAuth.closeAuthModal();
       });
-    } catch (_e) {
-      /* Silent fail — auth is a progressive enhancement */
+    } catch (e) {
+      console.error('Unexpected error:', e);
     }
   }
 
