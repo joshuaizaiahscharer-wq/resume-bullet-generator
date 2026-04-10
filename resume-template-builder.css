@@ -872,7 +872,7 @@ body.resume-builder-body {
 }
 
 .resume-preview-shell.is-locked .resume-locked-body {
-  filter: blur(8px);
+  filter: none;
   pointer-events: none;
   user-select: none;
 }
