@@ -32,6 +32,39 @@ body.admin-page-body {
   font-size: 0.96rem;
 }
 
+.admin-gate {
+  border: 1px dashed #d5dbe3;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.admin-gate-title {
+  margin: 0 0 6px;
+  color: #0f172a;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.admin-gate-subtitle {
+  margin: 0 0 14px;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.admin-gate-btn {
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0 12px;
+  cursor: pointer;
+}
+
 .admin-controls {
   display: grid;
   grid-template-columns: minmax(240px, 1fr) 190px 240px;

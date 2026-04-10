@@ -35,38 +35,48 @@
           </div>
         </div>
 
-        <div class="admin-controls" aria-label="Dashboard controls">
-          <label class="control-search" for="userSearchInput">
-            <span>Search</span>
-            <input
-              id="userSearchInput"
-              type="search"
-              placeholder="Search by user ID or email"
-              autocomplete="off"
-            />
-          </label>
-
-          <label class="control-select" for="paymentFilterSelect">
-            <span>Filter</span>
-            <select id="paymentFilterSelect">
-              <option value="all">Show All</option>
-              <option value="paid">Paid Only</option>
-              <option value="free">Free Only</option>
-            </select>
-          </label>
-
-          <label class="control-select" for="sortSelect">
-            <span>Sort</span>
-            <select id="sortSelect">
-              <option value="lastActive_desc">Last Active (Newest)</option>
-              <option value="lastActive_asc">Last Active (Oldest)</option>
-              <option value="payment_desc">Payment Status (Paid First)</option>
-              <option value="payment_asc">Payment Status (Free First)</option>
-            </select>
-          </label>
+        <div id="adminAuthGate" class="admin-gate" aria-live="polite">
+          <p class="admin-gate-title">Sign in to access admin controls.</p>
+          <p class="admin-gate-subtitle">After login, your dashboard tools and paywall controls will load here.</p>
+          <button id="adminGateSignInBtn" class="admin-gate-btn" type="button">Sign In</button>
         </div>
 
-        <div class="admin-table-wrap" id="adminTableRoot" aria-live="polite"></div>
+        <div id="adminDashboardContent" hidden>
+          <h1 style="color: green;">REAL ADMIN DASHBOARD</h1>
+
+          <div class="admin-controls" aria-label="Dashboard controls">
+            <label class="control-search" for="userSearchInput">
+              <span>Search</span>
+              <input
+                id="userSearchInput"
+                type="search"
+                placeholder="Search by user ID or email"
+                autocomplete="off"
+              />
+            </label>
+
+            <label class="control-select" for="paymentFilterSelect">
+              <span>Filter</span>
+              <select id="paymentFilterSelect">
+                <option value="all">Show All</option>
+                <option value="paid">Paid Only</option>
+                <option value="free">Free Only</option>
+              </select>
+            </label>
+
+            <label class="control-select" for="sortSelect">
+              <span>Sort</span>
+              <select id="sortSelect">
+                <option value="lastActive_desc">Last Active (Newest)</option>
+                <option value="lastActive_asc">Last Active (Oldest)</option>
+                <option value="payment_desc">Payment Status (Paid First)</option>
+                <option value="payment_asc">Payment Status (Free First)</option>
+              </select>
+            </label>
+        </div>
+
+          <div class="admin-table-wrap" id="adminTableRoot" aria-live="polite"></div>
+        </div>
       </section>
     </main>
 

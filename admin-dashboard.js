@@ -21,6 +21,25 @@ const dashboardState = {
   pendingUserIds: new Set(),
 };
 
+function renderAuthGate(message) {
+  const gate = document.getElementById("adminAuthGate");
+  const dashboard = document.getElementById("adminDashboardContent");
+  if (gate) {
+    gate.hidden = false;
+    const subtitle = gate.querySelector(".admin-gate-subtitle");
+    if (subtitle && message) subtitle.textContent = message;
+  }
+  if (dashboard) dashboard.hidden = true;
+}
+
+function renderPostAuthDashboard() {
+  const gate = document.getElementById("adminAuthGate");
+  const dashboard = document.getElementById("adminDashboardContent");
+  if (gate) gate.hidden = true;
+  if (dashboard) dashboard.hidden = false;
+  console.log("ADMIN DASHBOARD LOADED");
+}
+
 function applyFilter(users) {
   if (dashboardState.filter === "paid") {
     return users.filter((user) => user.hasPaid);
@@ -182,6 +201,20 @@ async function initDashboard() {
     const currentUser = await getCurrentAuthUser();
     dashboardState.isAdmin = isAdminUser(currentUser);
 
+    if (!currentUser) {
+      renderAuthGate("Please sign in first. Admin dashboard appears after authentication.");
+      bindControls();
+      return;
+    }
+
+    if (!dashboardState.isAdmin) {
+      renderAuthGate("Your account is signed in, but does not have admin privileges.");
+      bindControls();
+      return;
+    }
+
+    renderPostAuthDashboard();
+
     await maybeTrackPaymentFromUrl();
     await syncCurrentUserPresence();
     await refreshUsers();
@@ -195,5 +228,11 @@ async function initDashboard() {
 
   bindControls();
 }
+
+document.getElementById("adminGateSignInBtn")?.addEventListener("click", () => {
+  if (window.BulletAuth && typeof window.BulletAuth.openAuthModal === "function") {
+    window.BulletAuth.openAuthModal();
+  }
+});
 
 initDashboard();
