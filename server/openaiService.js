@@ -62,7 +62,7 @@ ${jobDescription}
   return parseJsonArray(response.choices?.[0]?.message?.content);
 }
 
-async function optimizeResumeBullets(jobDescription, bullets) {
+async function optimizeResumeBullets(bullets, jobDescription) {
   const response = await client.chat.completions.create({
     model: process.env.OPENAI_OPTIMIZER_MODEL || "gpt-4o-mini",
     messages: [
@@ -75,46 +75,29 @@ async function optimizeResumeBullets(jobDescription, bullets) {
         content: `
 You are an expert resume writer.
 
-Your goal is to rewrite resume bullet points so they naturally align with the job description.
+Rewrite the following resume bullet points so they naturally align with the job description.
 
-CRITICAL RULE:
-- DO NOT insert keywords into bullets
+CRITICAL RULES:
+- DO NOT insert keywords manually
 - DO NOT append phrases like:
-  - "with stocked bar area"
-  - "with checking ids"
-  - "with processing payments"
-- DO NOT force any keyword into a sentence
+  "with stocked bar area"
+  "with mixing drinks"
+  "with checking ids"
+- DO NOT force any wording from the job description
 
 Instead:
-- Understand the job description
-- Rewrite bullets so they MATCH the responsibilities and tone naturally
+- Understand the meaning of the job description
+- Rewrite bullets to match responsibilities naturally
 
-WRITING RULES:
-- Write like a human, not an AI
-- Focus on actions and results
-- Use clear, professional language
-- Keep bullets concise and impactful
+STYLE:
+- Clear, professional, human tone
+- Focus on actions and impact
+- Keep bullets concise
 
-SMART BEHAVIOR:
-- You may rewrite bullets completely
-- You may combine bullets
-- You may add up to 2 new bullets if important responsibilities are missing
+QUALITY CHECK:
+If any bullet sounds unnatural or forced, rewrite it again
 
-QUALITY CHECK (MANDATORY):
-If any bullet sounds unnatural, robotic, or forced -> rewrite it again
-
-EXAMPLES:
-
-BAD:
-"Handled payments with processing payments"
-"Served drinks with mixing drinks"
-
-GOOD:
-"Prepared and served a variety of alcoholic and non-alcoholic beverages"
-"Checked identification and ensured responsible alcohol service"
-"Managed inventory and restocked bar supplies to maintain service flow"
-
-Return ONLY a JSON array of clean, natural resume bullet points.
+Return ONLY a JSON array of improved bullets.
 
 Job Description:
 ${jobDescription}

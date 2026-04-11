@@ -373,32 +373,20 @@ function extractKeywordsFromJobDescriptionLocal(jobDescription, limit = 18) {
     .map(([term]) => term);
 }
 
-function optimizeBulletsLocal(bullets, keywords) {
-  const source = Array.isArray(bullets) ? bullets : [];
-  const missing = (keywords || []).filter(
-    (keyword) => !source.some((bullet) => String(bullet || "").toLowerCase().includes(String(keyword).toLowerCase()))
-  );
+function optimizeBulletsLocal(bullets) {
+  return (Array.isArray(bullets) ? bullets : [])
+    .map((bullet) => String(bullet || "").trim())
+    .filter(Boolean);
+}
 
-  const optimized = [];
-  let cursor = 0;
-
-  for (const bullet of source) {
-    let text = String(bullet || "").trim();
-    if (!text) continue;
-
-    if (cursor < missing.length) {
-      const keyword = missing[cursor];
-      if (!text.toLowerCase().includes(keyword.toLowerCase())) {
-        if (/[.!?]$/.test(text)) text = text.slice(0, -1);
-        text = `${text}, with ${keyword}.`;
-      }
-      cursor += 1;
-    }
-
-    optimized.push(text);
-  }
-
-  return optimized;
+function cleanBullets(bullets) {
+  return bullets.map(bullet => {
+    return bullet
+      .replace(/,\s*with\s+[^.]+/gi, "")
+      .replace(/">.*$/gi, "")
+      .replace(/\.\./g, ".")
+      .trim();
+  });
 }
 
 app.post("/api/optimize-resume", async (req, res) => {
@@ -427,16 +415,18 @@ app.post("/api/optimize-resume", async (req, res) => {
   }
 
   try {
-    const optimizedBullets = await optimizeResumeBullets(jobDescription, bullets);
+    const optimizedBullets = await optimizeResumeBullets(bullets, jobDescription);
+    const cleanedBullets = cleanBullets(optimizedBullets);
 
-    if (!optimizedBullets.length) {
+    if (!cleanedBullets.length) {
       throw new Error("AI returned no optimized bullets.");
     }
 
-    return res.json({ keywords, optimizedBullets, source: "ai" });
+    return res.json({ keywords, optimizedBullets: cleanedBullets, source: "ai" });
   } catch (err) {
-    const optimizedBullets = optimizeBulletsLocal(bullets, keywords);
-    return res.json({ keywords, optimizedBullets, source: "local" });
+    const optimizedBullets = optimizeBulletsLocal(bullets);
+    const cleanedBullets = cleanBullets(optimizedBullets);
+    return res.json({ keywords, optimizedBullets: cleanedBullets, source: "local" });
   }
 });
 

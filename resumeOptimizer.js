@@ -29,33 +29,10 @@
     return Math.round((included.length / total) * 100);
   }
 
-  function optimizeBulletsLocal(bullets, keywords) {
-    const sourceBullets = (bullets || []).slice();
-    const { missing } = collectIncludedAndMissing(sourceBullets, keywords || []);
-    if (!missing.length) return sourceBullets;
-
-    const optimized = [];
-    let cursor = 0;
-
-    for (const bullet of sourceBullets) {
-      let text = String(bullet || "").trim();
-      if (!text) continue;
-
-      if (cursor < missing.length) {
-        const keyword = missing[cursor];
-        if (!containsKeyword(text, keyword)) {
-          if (/[.!?]$/.test(text)) {
-            text = text.replace(/[.!?]$/, "");
-          }
-          text = `${text}, with ${keyword}.`;
-        }
-        cursor += 1;
-      }
-
-      optimized.push(text);
-    }
-
-    return optimized;
+  function optimizeBulletsLocal(bullets) {
+    return (bullets || [])
+      .map((bullet) => String(bullet || "").trim())
+      .filter(Boolean);
   }
 
   function escapeHtml(value) {

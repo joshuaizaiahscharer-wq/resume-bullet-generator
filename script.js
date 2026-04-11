@@ -269,7 +269,7 @@ async function handleAnalyzeOptimize() {
     try {
       optimizedBullets = await optimizeBulletsWithApi(jdText, currentBullets, keywords);
     } catch (_apiErr) {
-      optimizedBullets = optimizer.optimizeBulletsLocal(currentBullets, keywords);
+      optimizedBullets = optimizer.optimizeBulletsLocal(currentBullets);
     }
 
     currentBullets = optimizedBullets.slice();
@@ -340,29 +340,10 @@ function renderKeywordChips(container, keywords, type) {
     chip.className = `keyword-chip keyword-chip--${type}`;
     chip.textContent = keyword;
 
-    if (type === "missing") {
-      chip.title = "Click to insert into first bullet";
-      chip.addEventListener("click", () => insertKeywordIntoFirstBullet(keyword));
-    } else {
-      chip.disabled = true;
-    }
+    chip.disabled = true;
 
     container.appendChild(chip);
   });
-}
-
-function insertKeywordIntoFirstBullet(keyword) {
-  if (!currentBullets.length || !keyword) return;
-  if (String(currentBullets[0]).toLowerCase().includes(String(keyword).toLowerCase())) return;
-
-  currentBullets[0] = `${currentBullets[0].replace(/[.!?]$/, "")}, with ${keyword}.`;
-  renderBulletList(currentBullets, currentKeywords);
-
-  if (window.ResumeOptimizer) {
-    const score = window.ResumeOptimizer.computeMatchScore(currentBullets, currentKeywords);
-    const summary = window.ResumeOptimizer.collectIncludedAndMissing(currentBullets, currentKeywords);
-    renderKeywordFeedback(score, summary.included, summary.missing);
-  }
 }
 
 function showOptimizerStatus(message, isError, isSuccess = false) {
