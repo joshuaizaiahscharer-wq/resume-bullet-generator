@@ -16,6 +16,10 @@ const OpenAI = require("openai");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 const {
+  extractKeywords: extractKeywordsWithOpenAI,
+  optimizeResumeBullets,
+} = require("../server/openaiService");
+const {
   blogPosts: staticBlogPosts,
   blogPostBySlug: staticBlogPostBySlug,
   renderBlogListPage,
@@ -352,7 +356,7 @@ const KEYWORD_STOPWORDS = new Set([
   "yours", "yourself", "yourselves",
 ]);
 
-function extractKeywordsFromJobDescription(jobDescription, limit = 18) {
+function extractKeywordsFromJobDescriptionLocal(jobDescription, limit = 18) {
   const text = String(jobDescription || "").toLowerCase().replace(/\s+/g, " ").trim();
   if (!text) return [];
 
@@ -412,40 +416,18 @@ app.post("/api/optimize-resume", async (req, res) => {
     return res.status(400).json({ error: "bullets array is required." });
   }
 
-  const keywords = providedKeywords.length ? providedKeywords.slice(0, 20) : extractKeywordsFromJobDescription(jobDescription, 20);
+  let keywords = providedKeywords.length ? providedKeywords.slice(0, 20) : [];
+
+  if (!keywords.length) {
+    try {
+      keywords = (await extractKeywordsWithOpenAI(jobDescription)).slice(0, 20);
+    } catch (_err) {
+      keywords = extractKeywordsFromJobDescriptionLocal(jobDescription, 20);
+    }
+  }
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: process.env.OPENAI_OPTIMIZER_MODEL || "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You optimize resume bullet points for ATS relevance. Keep bullets concise, natural, and results-oriented. Avoid keyword stuffing.",
-        },
-        {
-          role: "user",
-          content: [
-            "Optimize these resume bullets for the provided job description keywords.",
-            "Return strict JSON: {\"optimizedBullets\":[\"...\"]}",
-            "",
-            `Keywords: ${keywords.join(", ")}`,
-            "",
-            `Job Description:\n${jobDescription}`,
-            "",
-            `Bullets:\n${bullets.map((b, i) => `${i + 1}. ${b}`).join("\n")}`,
-          ].join("\n"),
-        },
-      ],
-      temperature: 0.4,
-      max_tokens: 900,
-    });
-
-    const text = completion.choices?.[0]?.message?.content || "";
-    const parsed = parseJsonPayload(text);
-    const optimizedBullets = Array.isArray(parsed?.optimizedBullets)
-      ? parsed.optimizedBullets.map((b) => String(b || "").trim()).filter(Boolean)
-      : [];
+    const optimizedBullets = await optimizeResumeBullets(bullets, keywords);
 
     if (!optimizedBullets.length) {
       throw new Error("AI returned no optimized bullets.");
