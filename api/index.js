@@ -427,7 +427,7 @@ app.post("/api/optimize-resume", async (req, res) => {
   }
 
   try {
-    const optimizedBullets = await optimizeResumeBullets(bullets, keywords);
+    const optimizedBullets = await optimizeResumeBullets(jobDescription, bullets);
 
     if (!optimizedBullets.length) {
       throw new Error("AI returned no optimized bullets.");
