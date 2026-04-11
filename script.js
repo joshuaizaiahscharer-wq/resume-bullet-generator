@@ -52,6 +52,19 @@ const missingKeywordsEl = document.getElementById("missingKeywords");
 let currentBullets = [];
 let currentKeywords = [];
 
+function fallbackFilterKeywords(keywords) {
+  const bannedSingleWords = new Set([
+    "excel", "stocked", "mixing", "checking",
+    "processing", "managing", "providing",
+    "standing", "bartender", "serves", "prepares",
+  ]);
+
+  return (keywords || [])
+    .map((kw) => String(kw || "").toLowerCase().trim())
+    .filter((kw) => kw.split(/\s+/).length >= 2 && !bannedSingleWords.has(kw) && kw.length >= 8)
+    .slice(0, 8);
+}
+
 // ─── Event listeners ─────────────────────────────────────────────────────────
 if (generateBtn) {
   generateBtn.addEventListener("click", handleGenerate);
@@ -265,12 +278,15 @@ async function handleAnalyzeOptimize() {
     const keywords = extracted.keywords || [];
     const finalKeywords = optimizer.getFinalKeywords
       ? optimizer.getFinalKeywords(keywords)
-      : keywords;
+      : fallbackFilterKeywords(keywords);
     currentKeywords = finalKeywords;
 
     let optimizedBullets = [];
     try {
-      optimizedBullets = await optimizeBulletsWithApi(jdText, currentBullets, finalKeywords);
+      const optimizedPayload = await optimizeBulletsWithApi(jdText, currentBullets, finalKeywords);
+      optimizedBullets = optimizedPayload.optimizedBullets;
+      const apiKeywords = Array.isArray(optimizedPayload.keywords) ? optimizedPayload.keywords : [];
+      currentKeywords = apiKeywords.length ? apiKeywords : finalKeywords;
     } catch (_apiErr) {
       optimizedBullets = optimizer.optimizeBulletsLocal(currentBullets);
     }
@@ -308,7 +324,8 @@ async function optimizeBulletsWithApi(jobDescription, bullets, keywords) {
     throw new Error("No optimized bullets returned.");
   }
 
-  return optimizedBullets;
+  const finalKeywords = Array.isArray(payload.keywords) ? payload.keywords : [];
+  return { optimizedBullets, keywords: finalKeywords };
 }
 
 function renderKeywordFeedback(score, included, missing) {

@@ -373,6 +373,24 @@ function extractKeywordsFromJobDescriptionLocal(jobDescription, limit = 18) {
     .map(([term]) => term);
 }
 
+function filterKeywordsForScoring(keywords) {
+  const bannedSingleWords = new Set([
+    "excel", "stocked", "mixing", "checking",
+    "processing", "managing", "providing",
+    "standing", "bartender", "serves", "prepares",
+  ]);
+
+  return (Array.isArray(keywords) ? keywords : [])
+    .map((kw) => String(kw || "").toLowerCase().trim())
+    .filter((kw) => {
+      if (kw.split(/\s+/).length < 2) return false;
+      if (bannedSingleWords.has(kw)) return false;
+      if (kw.length < 8) return false;
+      return true;
+    })
+    .slice(0, 8);
+}
+
 function optimizeBulletsLocal(bullets) {
   return (Array.isArray(bullets) ? bullets : [])
     .map((bullet) => String(bullet || "").trim())
@@ -413,6 +431,8 @@ app.post("/api/optimize-resume", async (req, res) => {
       keywords = extractKeywordsFromJobDescriptionLocal(jobDescription, 20);
     }
   }
+
+  keywords = filterKeywordsForScoring(keywords);
 
   try {
     const optimizedBullets = await optimizeResumeBullets(bullets, jobDescription);
