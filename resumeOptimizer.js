@@ -8,6 +8,13 @@
     "managing inventory": ["manage inventory", "stock supplies"],
   };
 
+  const REPLACEMENTS = {
+    "processing payments": "cash handling",
+    "mixing drinks": "drink preparation",
+    "checking ids": "id verification",
+    "managing inventory": "inventory management",
+  };
+
   const BANNED_SINGLE_WORDS = new Set([
     "excel",
     "stocked",
@@ -30,14 +37,29 @@
   }
 
   function filterKeywords(keywords) {
-    return (keywords || []).filter((kw) => {
-      const value = normalize(kw);
-      return (
-        value.split(" ").length >= 2 &&
-        !BANNED_SINGLE_WORDS.has(value) &&
-        value.length >= 8
-      );
-    });
+    const seen = new Set();
+
+    return (keywords || [])
+      .map((kw) => {
+        const normalized = normalize(kw);
+        return REPLACEMENTS[normalized] || normalized;
+      })
+      .filter((value) => {
+        const words = value.split(/\s+/).filter(Boolean);
+        if (words.length < 2 || words.length > 4) return false;
+        if (BANNED_SINGLE_WORDS.has(value)) return false;
+        if (value.length < 8) return false;
+        if (
+          value.includes("responsibilities") ||
+          value.includes("must") ||
+          value.includes("include") ||
+          value.includes("under pressure") ||
+          value.includes("long periods")
+        ) return false;
+        if (seen.has(value)) return false;
+        seen.add(value);
+        return true;
+      });
   }
 
   function getFinalKeywords(keywords) {

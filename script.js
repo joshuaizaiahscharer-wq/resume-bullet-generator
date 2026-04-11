@@ -53,15 +53,42 @@ let currentBullets = [];
 let currentKeywords = [];
 
 function fallbackFilterKeywords(keywords) {
+  const replacements = {
+    "processing payments": "cash handling",
+    "mixing drinks": "drink preparation",
+    "checking ids": "id verification",
+    "managing inventory": "inventory management",
+  };
+
   const bannedSingleWords = new Set([
     "excel", "stocked", "mixing", "checking",
     "processing", "managing", "providing",
     "standing", "bartender", "serves", "prepares",
   ]);
 
+  const seen = new Set();
+
   return (keywords || [])
-    .map((kw) => String(kw || "").toLowerCase().trim())
-    .filter((kw) => kw.split(/\s+/).length >= 2 && !bannedSingleWords.has(kw) && kw.length >= 8)
+    .map((kw) => {
+      const normalized = String(kw || "").toLowerCase().trim();
+      return replacements[normalized] || normalized;
+    })
+    .filter((kw) => {
+      const words = kw.split(/\s+/).filter(Boolean);
+      if (words.length < 2 || words.length > 4) return false;
+      if (bannedSingleWords.has(kw)) return false;
+      if (kw.length < 8) return false;
+      if (
+        kw.includes("responsibilities") ||
+        kw.includes("must") ||
+        kw.includes("include") ||
+        kw.includes("under pressure") ||
+        kw.includes("long periods")
+      ) return false;
+      if (seen.has(kw)) return false;
+      seen.add(kw);
+      return true;
+    })
     .slice(0, 8);
 }
 
