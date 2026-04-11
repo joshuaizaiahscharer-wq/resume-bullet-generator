@@ -14,6 +14,10 @@ const blogPosts = [
     category: "Resume Tips",
     tags: ["resume", "no experience", "entry level", "first job", "students"],
     featured: true,
+    internalLinks: [
+      "best-resume-templates-2026",
+      "top-resume-tips-to-land-more-interviews",
+    ],
     metaTitle: "How To Make A Resume With No Experience (2026 Guide)",
     metaDescription:
       "Learn exactly how to write a resume with no experience using proven structure, examples, and formatting tips that help you get interviews.",
@@ -91,6 +95,10 @@ const blogPosts = [
     category: "Resume Tips",
     tags: ["resume", "templates", "design", "ATS", "formatting"],
     featured: false,
+    internalLinks: [
+      "how-to-make-a-resume-with-no-experience",
+      "resume-mistakes-to-avoid",
+    ],
     metaTitle: "Best Resume Templates 2026: What Actually Works",
     metaDescription:
       "Discover the best resume templates for 2026, including ATS-friendly layouts, modern design choices, and how to pick the right format for your industry.",
@@ -160,6 +168,10 @@ const blogPosts = [
     category: "Resume Tips",
     tags: ["resume", "mistakes", "ATS", "formatting", "job search"],
     featured: false,
+    internalLinks: [
+      "top-resume-tips-to-land-more-interviews",
+      "best-resume-templates-2026",
+    ],
     metaTitle: "Resume Mistakes To Avoid: 12 Costly Errors (2026)",
     metaDescription:
       "Avoid the most common resume mistakes in 2026, including weak bullet points, poor formatting, ATS issues, and generic summaries that get ignored.",
@@ -237,6 +249,10 @@ const blogPosts = [
     category: "Resume Tips",
     tags: ["resume", "tips", "bullet points", "interviews", "job search"],
     featured: false,
+    internalLinks: [
+      "how-to-make-a-resume-with-no-experience",
+      "resume-mistakes-to-avoid",
+    ],
     metaTitle: "Top Resume Tips To Land More Interviews In 2026",
     metaDescription:
       "Discover the most effective resume tips for 2026. Learn how to write stronger bullet points, optimize formatting, and increase your interview callback rate.",
@@ -298,6 +314,10 @@ const blogPosts = [
     category: "Interviews",
     tags: ["interviews", "preparation", "STAR method", "follow up", "career"],
     featured: false,
+    internalLinks: [
+      "top-resume-tips-to-land-more-interviews",
+      "career-growth-strategies-for-professionals",
+    ],
     metaTitle: "Job Interview Tips: How To Prepare And Impress (2026 Guide)",
     metaDescription:
       "Master your next job interview with proven preparation strategies, common question frameworks, and follow-up tactics that get offers in 2026.",
@@ -367,6 +387,10 @@ const blogPosts = [
     category: "Career Advice",
     tags: ["career growth", "promotions", "skills", "networking", "leadership"],
     featured: false,
+    internalLinks: [
+      "job-interview-tips-how-to-prepare-and-impress",
+      "linkedin-optimization-tips-for-job-seekers",
+    ],
     metaTitle: "Career Growth Strategies That Actually Work In 2026",
     metaDescription:
       "Discover proven career growth strategies for 2026, including skill development, networking tactics, promotion positioning, and long-term career planning.",
@@ -428,6 +452,10 @@ const blogPosts = [
     category: "Career Advice",
     tags: ["LinkedIn", "profile optimization", "networking", "recruiters", "personal branding"],
     featured: false,
+    internalLinks: [
+      "career-growth-strategies-for-professionals",
+      "how-to-find-remote-jobs-in-2026",
+    ],
     metaTitle: "LinkedIn Optimization Tips For Job Seekers (2026 Guide)",
     metaDescription:
       "Optimize your LinkedIn profile for 2026 job searches. Learn how to write a compelling headline, summary, and experience section that attracts recruiters.",
@@ -489,6 +517,11 @@ const blogPosts = [
     category: "Job Search",
     tags: ["remote work", "job search", "work from home", "distributed teams", "career"],
     featured: false,
+    internalLinks: [
+      "how-to-write-a-cover-letter-that-gets-read",
+      "top-resume-tips-to-land-more-interviews",
+      "job-interview-tips-how-to-prepare-and-impress",
+    ],
     metaTitle: "How To Find Remote Jobs In 2026: A Complete Guide",
     metaDescription:
       "Find the best remote jobs in 2026 with this complete guide. Learn where to search, how to optimize your application, and what remote-first companies look for.",
@@ -550,6 +583,10 @@ const blogPosts = [
     category: "Job Search",
     tags: ["cover letter", "job application", "writing", "hiring managers", "job search"],
     featured: false,
+    internalLinks: [
+      "how-to-make-a-resume-with-no-experience",
+      "resume-mistakes-to-avoid",
+    ],
     metaTitle: "How To Write A Cover Letter That Gets Read (2026 Guide)",
     metaDescription:
       "Learn how to write a cover letter that hiring managers actually read in 2026. Includes structure tips, real examples, and common mistakes to avoid.",

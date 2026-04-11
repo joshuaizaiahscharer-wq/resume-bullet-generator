@@ -634,6 +634,14 @@ site-navbar {
 .related-card h4 { font-size: .95rem; font-weight: 600; margin-bottom: .35rem; line-height: 1.35; }
 .related-meta { font-size: .78rem; color: var(--blog-text-muted); }
 
+/* ─── Backlinks ──────────────────────────────────────────────────────── */
+.blog-backlinks { margin: 2rem 0; padding: 1.25rem 1.5rem; background: var(--blog-primary-light); border-left: 3px solid var(--blog-primary); border-radius: var(--blog-radius-sm); }
+.blog-backlinks-heading { font-size: 1rem; font-weight: 700; color: var(--blog-primary); margin-bottom: .75rem; }
+.blog-backlinks-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: .4rem; }
+.blog-backlinks-item::before { content: "\2190\00a0"; color: var(--blog-primary); font-weight: 600; }
+.blog-backlinks-link { color: var(--blog-primary); text-decoration: none; font-size: .9rem; font-weight: 500; }
+.blog-backlinks-link:hover { text-decoration: underline; }
+
 /* ─── Comments ───────────────────────────────────────────────────────── */
 .blog-comments { margin: 2.5rem 0 1rem; }
 .blog-comments-heading { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; }
