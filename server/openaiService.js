@@ -36,18 +36,40 @@ async function extractKeywords(jobDescription) {
 Extract ONLY high-value resume keywords from this job description.
 
 STRICT RULES:
-- IGNORE generic words like:
-  "work", "well", "able", "good", "create", "help", "team"
-- IGNORE soft filler phrases
-- ONLY return:
-  - Hard skills (e.g., POS systems, mixology)
-  - Tools (e.g., cash handling, inventory management)
-  - Industry terms (e.g., customer service, bartending)
-  - Measurable responsibilities
+- ONLY return meaningful resume concepts
+- Keywords must be:
+  - Skills (e.g., customer service, inventory management)
+  - Responsibilities (e.g., cash handling, drink preparation)
+  - Industry terms (e.g., bartending, POS systems)
 
-If the job description is simple or vague:
-- Return only 3-5 meaningful keywords max
-- DO NOT force 15 keywords
+DO NOT INCLUDE:
+- Single generic words (e.g., work, well, able, must, long)
+- Sentence fragments (e.g., "key responsibilities include")
+- Duplicate word variations (e.g., mixing, mixed, mix)
+- Irrelevant tools (e.g., Excel unless clearly required)
+
+FORMAT:
+- Return 5-10 keywords MAX
+- Use clean phrases (2-3 words preferred)
+
+GOOD OUTPUT:
+[
+  "customer service",
+  "drink preparation",
+  "cash handling",
+  "inventory management",
+  "ID verification",
+  "bar maintenance"
+]
+
+BAD OUTPUT:
+[
+  "work",
+  "must work quickly",
+  "mixing",
+  "checking",
+  "long periods"
+]
 
 Return ONLY a JSON array.
 
