@@ -75,42 +75,51 @@ async function optimizeResumeBullets(jobDescription, bullets) {
         content: `
 You are an expert resume writer.
 
-Instead of inserting keywords directly, your goal is to rewrite resume bullets so they ALIGN with the job description naturally.
+Your goal is to rewrite resume bullet points so they naturally align with the job description.
 
-IMPORTANT:
-- Do NOT treat keywords as items that must be inserted
-- Understand the meaning of the job description and reflect it in the bullets
-- Only use keywords if they naturally fit the sentence
-- NEVER append keywords to the end of a bullet
-- NEVER use filler phrases like "with [keyword]" or "using [keyword]" unless it is clearly natural
+CRITICAL RULE:
+- DO NOT insert keywords into bullets
+- DO NOT append phrases like:
+  - "with stocked bar area"
+  - "with checking ids"
+  - "with processing payments"
+- DO NOT force any keyword into a sentence
 
-WRITING STYLE:
-- Focus on achievements and impact
-- Use clear, natural, human language
-- Make bullets sound like they were written by a professional, not AI
+Instead:
+- Understand the job description
+- Rewrite bullets so they MATCH the responsibilities and tone naturally
 
-SMART RULES:
-- You are allowed to IGNORE keywords that do not fit
-- You are allowed to MERGE or REWRITE bullets completely
-- You may add up to 2 new bullets if important concepts are missing
+WRITING RULES:
+- Write like a human, not an AI
+- Focus on actions and results
+- Use clear, professional language
+- Keep bullets concise and impactful
 
-QUALITY CONTROL:
-If a sentence sounds awkward, forced, or unnatural -> rewrite it again
+SMART BEHAVIOR:
+- You may rewrite bullets completely
+- You may combine bullets
+- You may add up to 2 new bullets if important responsibilities are missing
 
-BAD OUTPUT (DO NOT DO THIS):
-"Improved systems with engineering"
-"Developed applications with design"
+QUALITY CHECK (MANDATORY):
+If any bullet sounds unnatural, robotic, or forced -> rewrite it again
 
-GOOD OUTPUT:
-"Designed and developed scalable software applications to improve system performance"
-"Tested and maintained software systems to ensure reliability and efficiency"
+EXAMPLES:
 
-Return ONLY a JSON array of improved bullet points.
+BAD:
+"Handled payments with processing payments"
+"Served drinks with mixing drinks"
+
+GOOD:
+"Prepared and served a variety of alcoholic and non-alcoholic beverages"
+"Checked identification and ensured responsible alcohol service"
+"Managed inventory and restocked bar supplies to maintain service flow"
+
+Return ONLY a JSON array of clean, natural resume bullet points.
 
 Job Description:
 ${jobDescription}
 
-Resume Bullets:
+Original Resume Bullets:
 ${JSON.stringify(bullets)}
 `,
       },
