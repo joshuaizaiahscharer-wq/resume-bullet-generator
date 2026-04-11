@@ -66,21 +66,34 @@ async function optimizeResumeBullets(bullets, keywords) {
       {
         role: "user",
         content: `
-Rewrite the following resume bullets to naturally include these keywords:
-${(keywords || []).join(", ")}
+    Rewrite the following resume bullets to improve impact and alignment with the job.
 
-RULES:
-- Keep bullets concise
-- Make them results-oriented
-- Do NOT keyword stuff
-- Improve clarity and impact
-- Do NOT append generic endings like "to generate outcomes", "to improve outcomes", or "to improve results"
-- Preserve concrete metrics and specifics already present in the bullet
+    You are given a list of keywords. Your job is to intelligently incorporate them ONLY when they naturally fit.
 
-Return ONLY a JSON array of improved bullets.
+    KEY RULES:
+    - DO NOT force keywords into bullets
+    - DO NOT just append keywords to the end of bullets
+    - Rewrite bullets so keywords are smoothly integrated into the sentence
+    - If a keyword does NOT fit naturally, DO NOT use it
+    - You may create 1-2 NEW bullet points if important keywords are missing and relevant
+    - Keep bullets concise and results-driven
+    - Use strong action verbs
+    - Maintain clarity and readability
+
+    GOOD EXAMPLE:
+    Before: "Helped customers with issues"
+    After: "Resolved customer issues using CRM tools, improving satisfaction ratings by 20%"
+
+    BAD EXAMPLE:
+    "Helped customers with issues, CRM, Salesforce, communication"
+
+    Return ONLY a JSON array of improved bullet points.
+
+    Keywords:
+    ${keywords.join(", ")}
 
 Resume Bullets:
-${JSON.stringify(bullets || [])}
+    ${JSON.stringify(bullets)}
 `,
       },
     ],
