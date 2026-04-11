@@ -66,34 +66,53 @@ async function optimizeResumeBullets(bullets, keywords) {
       {
         role: "user",
         content: `
-    Rewrite the following resume bullets to improve impact and alignment with the job.
+Rewrite the following resume bullets to improve impact and align with the job description.
 
-    You are given a list of keywords. Your job is to intelligently incorporate them ONLY when they naturally fit.
+You are given a list of keywords. Use them ONLY when they fit naturally within the context of the bullet.
 
-    KEY RULES:
-    - DO NOT force keywords into bullets
-    - DO NOT just append keywords to the end of bullets
-    - Rewrite bullets so keywords are smoothly integrated into the sentence
-    - If a keyword does NOT fit naturally, DO NOT use it
-    - You may create 1-2 NEW bullet points if important keywords are missing and relevant
-    - Keep bullets concise and results-driven
-    - Use strong action verbs
-    - Maintain clarity and readability
+STRICT RULES:
+- NEVER force a keyword into a sentence
+- NEVER add keywords using filler phrases like:
+  - "with [keyword]"
+  - "using [keyword]"
+  - "involving [keyword]"
+  UNLESS it clearly makes logical sense
+- If a keyword does not fit the meaning of the bullet, DO NOT use it
+- It is better to skip a keyword than to force it
 
-    GOOD EXAMPLE:
-    Before: "Helped customers with issues"
-    After: "Resolved customer issues using CRM tools, improving satisfaction ratings by 20%"
+NATURAL WRITING RULES:
+- Rewrite the entire bullet so the keyword fits organically
+- Keywords should feel like a natural part of the achievement, not an add-on
+- Focus on accomplishments, impact, and clarity
 
-    BAD EXAMPLE:
-    "Helped customers with issues, CRM, Salesforce, communication"
+SMART BEHAVIOR:
+- You may create up to 2 NEW bullet points if important keywords are missing AND relevant
+- Do NOT reuse the same keyword excessively
+- Prioritize the most relevant keywords only
 
-    Return ONLY a JSON array of improved bullet points.
+QUALITY CHECK (VERY IMPORTANT):
+Before returning the result, mentally check:
+- Does this sound like a real human wrote it?
+- Would a recruiter find this natural and impressive?
+- If anything sounds forced or awkward, rewrite it
 
-    Keywords:
-    ${keywords.join(", ")}
+BAD EXAMPLES (DO NOT DO THIS):
+- "Improved sales with CRM"
+- "Managed team using leadership"
+- "Handled tasks with communication"
+
+GOOD EXAMPLES:
+- "Used Salesforce to track and improve sales pipeline performance"
+- "Led a team of 5 to exceed monthly sales targets by 20%"
+- "Resolved customer issues, improving retention and satisfaction scores"
+
+Return ONLY a JSON array of improved bullet points.
+
+Keywords:
+${keywords.join(", ")}
 
 Resume Bullets:
-    ${JSON.stringify(bullets)}
+${JSON.stringify(bullets)}
 `,
       },
     ],
