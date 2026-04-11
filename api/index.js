@@ -339,6 +339,125 @@ function extractResponseText(response) {
   return parts.join("\n").trim();
 }
 
+const KEYWORD_STOPWORDS = new Set([
+  "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "as", "at",
+  "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can", "did", "do",
+  "does", "doing", "down", "during", "each", "few", "for", "from", "further", "had", "has", "have", "having",
+  "he", "her", "here", "hers", "herself", "him", "himself", "his", "how", "i", "if", "in", "into", "is", "it",
+  "its", "itself", "just", "me", "more", "most", "my", "myself", "no", "nor", "not", "now", "of", "off",
+  "on", "once", "only", "or", "other", "our", "ours", "ourselves", "out", "over", "own", "same", "she",
+  "should", "so", "some", "such", "than", "that", "the", "their", "theirs", "them", "themselves", "then", "there",
+  "these", "they", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "we",
+  "were", "what", "when", "where", "which", "while", "who", "whom", "why", "with", "would", "you", "your",
+  "yours", "yourself", "yourselves",
+]);
+
+function extractKeywordsFromJobDescription(jobDescription, limit = 18) {
+  const text = String(jobDescription || "").toLowerCase().replace(/\s+/g, " ").trim();
+  if (!text) return [];
+
+  const tokens = text.split(/[^a-z0-9+#.\-/]+/).filter(Boolean);
+  const counts = new Map();
+  for (const token of tokens) {
+    if (token.length < 3 || KEYWORD_STOPWORDS.has(token)) continue;
+    counts.set(token, (counts.get(token) || 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([term]) => term);
+}
+
+function optimizeBulletsLocal(bullets, keywords) {
+  const source = Array.isArray(bullets) ? bullets : [];
+  const missing = (keywords || []).filter(
+    (keyword) => !source.some((bullet) => String(bullet || "").toLowerCase().includes(String(keyword).toLowerCase()))
+  );
+
+  const optimized = [];
+  let cursor = 0;
+
+  for (const bullet of source) {
+    let text = String(bullet || "").trim();
+    if (!text) continue;
+
+    if (cursor < missing.length) {
+      const keyword = missing[cursor];
+      if (!text.toLowerCase().includes(keyword.toLowerCase())) {
+        if (/[.!?]$/.test(text)) text = text.slice(0, -1);
+        text = `${text}, using ${keyword} to improve results.`;
+      }
+      cursor += 1;
+    }
+
+    optimized.push(text);
+  }
+
+  return optimized;
+}
+
+app.post("/api/optimize-resume", async (req, res) => {
+  const jobDescription = String(req.body?.jobDescription || "").trim();
+  const bullets = Array.isArray(req.body?.bullets) ? req.body.bullets.map((b) => String(b || "").trim()).filter(Boolean) : [];
+  const providedKeywords = Array.isArray(req.body?.keywords)
+    ? req.body.keywords.map((k) => String(k || "").trim()).filter(Boolean)
+    : [];
+
+  if (!jobDescription) {
+    return res.status(400).json({ error: "jobDescription is required." });
+  }
+
+  if (!bullets.length) {
+    return res.status(400).json({ error: "bullets array is required." });
+  }
+
+  const keywords = providedKeywords.length ? providedKeywords.slice(0, 20) : extractKeywordsFromJobDescription(jobDescription, 20);
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: process.env.OPENAI_OPTIMIZER_MODEL || "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You optimize resume bullet points for ATS relevance. Keep bullets concise, natural, and results-oriented. Avoid keyword stuffing.",
+        },
+        {
+          role: "user",
+          content: [
+            "Optimize these resume bullets for the provided job description keywords.",
+            "Return strict JSON: {\"optimizedBullets\":[\"...\"]}",
+            "",
+            `Keywords: ${keywords.join(", ")}`,
+            "",
+            `Job Description:\n${jobDescription}`,
+            "",
+            `Bullets:\n${bullets.map((b, i) => `${i + 1}. ${b}`).join("\n")}`,
+          ].join("\n"),
+        },
+      ],
+      temperature: 0.4,
+      max_tokens: 900,
+    });
+
+    const text = completion.choices?.[0]?.message?.content || "";
+    const parsed = parseJsonPayload(text);
+    const optimizedBullets = Array.isArray(parsed?.optimizedBullets)
+      ? parsed.optimizedBullets.map((b) => String(b || "").trim()).filter(Boolean)
+      : [];
+
+    if (!optimizedBullets.length) {
+      throw new Error("AI returned no optimized bullets.");
+    }
+
+    return res.json({ keywords, optimizedBullets, source: "ai" });
+  } catch (err) {
+    const optimizedBullets = optimizeBulletsLocal(bullets, keywords);
+    return res.json({ keywords, optimizedBullets, source: "local" });
+  }
+});
+
 function buildBlogImagePrompt(topicOrTitle, customPrompt) {
   const base = String(customPrompt || "").trim() || String(topicOrTitle || "").trim();
   return [

@@ -1,6 +1,7 @@
 // ─── Configuration ──────────────────────────────────────────────────────────
 // The API key lives in .env on the server — nothing sensitive here.
 const API_URL = "/api/generate";
+const OPTIMIZE_API_URL = "/api/optimize-resume";
 
 // ─── Hero typing cycle ────────────────────────────────────────────────────────
 (function initHeroTyping() {
@@ -39,6 +40,17 @@ const chipsContainer = document.getElementById("chips");
 const supportForm    = document.getElementById("supportForm");
 const supportStatus  = document.getElementById("supportStatus");
 const supportBtn     = document.getElementById("supportSubmitBtn");
+const jobDescriptionInput = document.getElementById("jobDescriptionInput");
+const analyzeOptimizeBtn = document.getElementById("analyzeOptimizeBtn");
+const optimizerStatus = document.getElementById("optimizerStatus");
+const keywordFeedbackPanel = document.getElementById("keywordFeedbackPanel");
+const matchScoreValue = document.getElementById("matchScoreValue");
+const matchScoreFill = document.getElementById("matchScoreFill");
+const includedKeywordsEl = document.getElementById("includedKeywords");
+const missingKeywordsEl = document.getElementById("missingKeywords");
+
+let currentBullets = [];
+let currentKeywords = [];
 
 // ─── Event listeners ─────────────────────────────────────────────────────────
 if (generateBtn) {
@@ -66,6 +78,10 @@ if (copyBtn) {
 
 if (supportForm) {
   supportForm.addEventListener("submit", handleSupportSubmit);
+}
+
+if (analyzeOptimizeBtn) {
+  analyzeOptimizeBtn.addEventListener("click", handleAnalyzeOptimize);
 }
 
 // ─── Quick-pick chips ─────────────────────────────────────────────────────────
@@ -168,12 +184,28 @@ function inferPageType(pathname) {
 // ─── UI helpers ──────────────────────────────────────────────────────────────
 function displayBullets(bullets, jobTitle) {
   clearStatus();
+  currentBullets = bullets.slice();
+  currentKeywords = [];
+
+  if (keywordFeedbackPanel) keywordFeedbackPanel.classList.add("hidden");
+  showOptimizerStatus("", false);
 
   // Update heading with count and title
   const count = bullets.length;
   resultsHeading.textContent = `${count} Bullet Point${count !== 1 ? "s" : ""} — ${jobTitle}`;
 
-  // Clear previous results
+  renderBulletList(bullets, []);
+
+  resultsSection.classList.remove("hidden");
+
+  // Reset copy button label
+  copyBtn.textContent = "Copy All";
+  copyBtn.classList.remove("copied");
+
+  resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderBulletList(bullets, highlightKeywords = []) {
   bulletList.innerHTML = "";
 
   bullets.forEach((text) => {
@@ -181,7 +213,12 @@ function displayBullets(bullets, jobTitle) {
 
     const span = document.createElement("span");
     span.className = "bullet-text";
-    span.textContent = text;
+
+    if (window.ResumeOptimizer && highlightKeywords.length > 0) {
+      span.innerHTML = window.ResumeOptimizer.highlightKeywordsInText(text, highlightKeywords);
+    } else {
+      span.textContent = text;
+    }
     li.appendChild(span);
 
     const btn = document.createElement("button");
@@ -196,14 +233,145 @@ function displayBullets(bullets, jobTitle) {
 
     bulletList.appendChild(li);
   });
+}
 
-  resultsSection.classList.remove("hidden");
+async function handleAnalyzeOptimize() {
+  if (!jobDescriptionInput || !analyzeOptimizeBtn) return;
 
-  // Reset copy button label
-  copyBtn.textContent = "Copy All";
-  copyBtn.classList.remove("copied");
+  const jdText = String(jobDescriptionInput.value || "").trim();
+  if (!jdText) {
+    showOptimizerStatus("Paste a job description first.", true);
+    jobDescriptionInput.focus();
+    return;
+  }
 
-  resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  if (!currentBullets.length) {
+    showOptimizerStatus("Generate bullets first, then run optimization.", true);
+    return;
+  }
+
+  const extractor = window.KeywordExtractor;
+  const optimizer = window.ResumeOptimizer;
+  if (!extractor || !optimizer) {
+    showOptimizerStatus("Optimizer modules did not load. Refresh and try again.", true);
+    return;
+  }
+
+  analyzeOptimizeBtn.disabled = true;
+  showOptimizerStatus("Analyzing keywords and optimizing bullets...", false);
+
+  try {
+    const extracted = extractor.extractKeywords(jdText, 20);
+    const keywords = extracted.keywords || [];
+    currentKeywords = keywords;
+
+    let optimizedBullets = [];
+    try {
+      optimizedBullets = await optimizeBulletsWithApi(jdText, currentBullets, keywords);
+    } catch (_apiErr) {
+      optimizedBullets = optimizer.optimizeBulletsLocal(currentBullets, keywords);
+    }
+
+    currentBullets = optimizedBullets.slice();
+    renderBulletList(currentBullets, currentKeywords);
+    resultsSection.classList.remove("hidden");
+
+    const score = optimizer.computeMatchScore(currentBullets, currentKeywords);
+    const summary = optimizer.collectIncludedAndMissing(currentBullets, currentKeywords);
+    renderKeywordFeedback(score, summary.included, summary.missing);
+
+    showOptimizerStatus("Optimization complete. Bullets updated with job-relevant keywords.", false, true);
+  } catch (err) {
+    showOptimizerStatus(err.message || "Failed to optimize bullets.", true);
+  } finally {
+    analyzeOptimizeBtn.disabled = false;
+  }
+}
+
+async function optimizeBulletsWithApi(jobDescription, bullets, keywords) {
+  const response = await fetch(OPTIMIZE_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jobDescription, bullets, keywords }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || `Optimization failed (${response.status}).`);
+  }
+
+  const optimizedBullets = Array.isArray(payload.optimizedBullets) ? payload.optimizedBullets : [];
+  if (!optimizedBullets.length) {
+    throw new Error("No optimized bullets returned.");
+  }
+
+  return optimizedBullets;
+}
+
+function renderKeywordFeedback(score, included, missing) {
+  if (!keywordFeedbackPanel) return;
+
+  keywordFeedbackPanel.classList.remove("hidden");
+  if (matchScoreValue) matchScoreValue.textContent = `${score}%`;
+  if (matchScoreFill) matchScoreFill.style.width = `${score}%`;
+
+  const scoreBar = keywordFeedbackPanel.querySelector(".match-score-bar");
+  if (scoreBar) scoreBar.setAttribute("aria-valuenow", String(score));
+
+  renderKeywordChips(includedKeywordsEl, included, "included");
+  renderKeywordChips(missingKeywordsEl, missing, "missing");
+}
+
+function renderKeywordChips(container, keywords, type) {
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!keywords.length) {
+    const empty = document.createElement("span");
+    empty.className = "keyword-chip keyword-chip--empty";
+    empty.textContent = type === "included" ? "No matches yet" : "No missing keywords";
+    container.appendChild(empty);
+    return;
+  }
+
+  keywords.forEach((keyword) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = `keyword-chip keyword-chip--${type}`;
+    chip.textContent = keyword;
+
+    if (type === "missing") {
+      chip.title = "Click to insert into first bullet";
+      chip.addEventListener("click", () => insertKeywordIntoFirstBullet(keyword));
+    } else {
+      chip.disabled = true;
+    }
+
+    container.appendChild(chip);
+  });
+}
+
+function insertKeywordIntoFirstBullet(keyword) {
+  if (!currentBullets.length || !keyword) return;
+  if (String(currentBullets[0]).toLowerCase().includes(String(keyword).toLowerCase())) return;
+
+  currentBullets[0] = `${currentBullets[0].replace(/[.!?]$/, "")}, using ${keyword} to support role requirements.`;
+  renderBulletList(currentBullets, currentKeywords);
+
+  if (window.ResumeOptimizer) {
+    const score = window.ResumeOptimizer.computeMatchScore(currentBullets, currentKeywords);
+    const summary = window.ResumeOptimizer.collectIncludedAndMissing(currentBullets, currentKeywords);
+    renderKeywordFeedback(score, summary.included, summary.missing);
+  }
+}
+
+function showOptimizerStatus(message, isError, isSuccess = false) {
+  if (!optimizerStatus) return;
+  optimizerStatus.textContent = message || "";
+  optimizerStatus.classList.remove("hidden", "error", "success");
+  if (isError) optimizerStatus.classList.add("error");
+  if (isSuccess) optimizerStatus.classList.add("success");
+  if (!message) optimizerStatus.classList.add("hidden");
 }
 
 function copySingleBullet(btn, text) {
