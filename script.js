@@ -355,7 +355,7 @@ function insertKeywordIntoFirstBullet(keyword) {
   if (!currentBullets.length || !keyword) return;
   if (String(currentBullets[0]).toLowerCase().includes(String(keyword).toLowerCase())) return;
 
-  currentBullets[0] = `${currentBullets[0].replace(/[.!?]$/, "")}; ${keyword}.`;
+  currentBullets[0] = `${currentBullets[0].replace(/[.!?]$/, "")}, with ${keyword}.`;
   renderBulletList(currentBullets, currentKeywords);
 
   if (window.ResumeOptimizer) {

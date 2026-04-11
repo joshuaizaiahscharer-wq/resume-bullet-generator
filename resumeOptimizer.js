@@ -47,7 +47,7 @@
           if (/[.!?]$/.test(text)) {
             text = text.replace(/[.!?]$/, "");
           }
-          text = `${text}; ${keyword}.`;
+          text = `${text}, with ${keyword}.`;
         }
         cursor += 1;
       }

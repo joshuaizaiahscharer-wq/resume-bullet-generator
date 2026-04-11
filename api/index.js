@@ -390,7 +390,7 @@ function optimizeBulletsLocal(bullets, keywords) {
       const keyword = missing[cursor];
       if (!text.toLowerCase().includes(keyword.toLowerCase())) {
         if (/[.!?]$/.test(text)) text = text.slice(0, -1);
-        text = `${text}; ${keyword}.`;
+        text = `${text}, with ${keyword}.`;
       }
       cursor += 1;
     }
