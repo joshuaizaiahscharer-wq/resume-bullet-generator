@@ -1,0 +1,42 @@
+# MyResumeBullets — AI Resume Bullet Generator
+
+> A free, AI-powered tool that generates 10 professional, action-verb-led resume bullet points for any job title in seconds. No sign-up required.
+
+## About
+
+MyResumeBullets helps job seekers, students, career changers, and professionals write stronger resume bullet points using AI. The tool is built on the OpenAI API and is optimized to produce achievement-focused, ATS-friendly bullet points.
+
+- URL: https://www.myresumebullets.com
+- Free to use, no account required
+- Generates 10 unique resume bullet points per request
+- Supports any job title across every industry
+
+## Key Pages
+
+- [Home / Generator](https://www.myresumebullets.com/) — The main resume bullet generator tool
+- [All Job Pages](https://www.myresumebullets.com/jobs) — Pre-generated bullet points by job title
+- [Resume Template Builder](https://www.myresumebullets.com/resume-template-builder) — Build a resume template
+- [Blog](https://www.myresumebullets.com/blog) — Career tips and resume writing guides
+
+## What This Tool Does
+
+Given a job title, the AI generates 10 resume bullet points that:
+1. Start with a strong action verb
+2. Include quantified results or metrics where possible
+3. Use industry-relevant keywords for ATS optimization
+4. Focus on achievements and impact, not just duties
+
+## Target Audience
+
+- Students and recent graduates
+- Active job seekers
+- Career changers
+- Professionals updating their resume
+
+## Content Policy
+
+All generated bullet points are AI-produced starting points. Users are encouraged to personalize them with their own real numbers, specifics, and experiences before including them in a resume.
+
+## Contact
+
+For support or inquiries, visit: https://www.myresumebullets.com/#support
