@@ -68,24 +68,6 @@
     <!-- Card -->
     <main class="main">
       <div class="card">
-        <section class="jd-optimizer" aria-labelledby="jdOptimizerHeading">
-          <div class="jd-optimizer-header">
-            <p class="input-label">Optimize for a Job Description</p>
-            <h2 id="jdOptimizerHeading">Optimize for a Job Description</h2>
-          </div>
-          <label class="input-label" for="jobDescriptionInput">Paste Job Description</label>
-          <textarea
-            id="jobDescriptionInput"
-            class="jd-textarea"
-            placeholder="Paste the full job posting here to extract keywords and optimize your bullets..."
-            aria-label="Paste Job Description"
-          ></textarea>
-          <div class="jd-actions">
-            <button id="analyzeOptimizeBtn" class="jd-optimize-btn" type="button">Analyze &amp; Optimize</button>
-            <p id="optimizerStatus" class="optimizer-status hidden" aria-live="polite"></p>
-          </div>
-        </section>
-
         <label class="input-label" for="jobTitle">Job Title</label>
         <div class="input-group">
           <input
@@ -146,6 +128,24 @@
           </section>
 
           <ul id="bulletList"></ul>
+        </section>
+
+        <section class="jd-optimizer" aria-labelledby="jdOptimizerHeading">
+          <div class="jd-optimizer-header">
+            <p class="input-label">Optimize for a Job Description</p>
+            <h2 id="jdOptimizerHeading">Optimize for a Job Description</h2>
+          </div>
+          <label class="input-label" for="jobDescriptionInput">Paste Job Description</label>
+          <textarea
+            id="jobDescriptionInput"
+            class="jd-textarea"
+            placeholder="Paste the full job posting here to extract keywords and optimize your bullets..."
+            aria-label="Paste Job Description"
+          ></textarea>
+          <div class="jd-actions">
+            <button id="analyzeOptimizeBtn" class="jd-optimize-btn" type="button">Analyze &amp; Optimize</button>
+            <p id="optimizerStatus" class="optimizer-status hidden" aria-live="polite"></p>
+          </div>
         </section>
       </div>
     </main>
