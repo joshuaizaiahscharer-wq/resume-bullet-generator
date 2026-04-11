@@ -8,11 +8,18 @@
     "managing inventory": ["manage inventory", "stock supplies"],
   };
 
-  const BANNED_PHRASES = new Set([
-    "key responsibilities include",
-    "must work quickly",
-    "long periods",
-    "stocked bar area",
+  const BANNED_SINGLE_WORDS = new Set([
+    "excel",
+    "stocked",
+    "mixing",
+    "checking",
+    "processing",
+    "managing",
+    "providing",
+    "standing",
+    "bartender",
+    "serves",
+    "prepares",
   ]);
 
   function normalize(text) {
@@ -22,17 +29,19 @@
       .trim();
   }
 
-  function cleanKeywords(keywords) {
+  function filterKeywords(keywords) {
     return (keywords || []).filter((kw) => {
       const value = normalize(kw);
       return (
-        value.length > 4 &&
-        !BANNED_PHRASES.has(value) &&
-        !value.includes("responsibilities") &&
-        !value.includes("must") &&
-        !value.includes("include")
+        value.split(" ").length >= 2 &&
+        !BANNED_SINGLE_WORDS.has(value) &&
+        value.length >= 8
       );
     });
+  }
+
+  function getFinalKeywords(keywords) {
+    return filterKeywords(keywords).slice(0, 8);
   }
 
   function hasPartialOverlap(text, phrase) {
@@ -62,7 +71,7 @@
   }
 
   function calculateMatchScore(bullets, keywords) {
-    const cleanKw = cleanKeywords(keywords);
+    const cleanKw = getFinalKeywords(keywords);
     if (!cleanKw.length) return 0;
 
     const text = (bullets || []).join(" ");
@@ -78,7 +87,7 @@
   }
 
   function collectIncludedAndMissing(bullets, keywords) {
-    const cleanKw = cleanKeywords(keywords);
+    const cleanKw = getFinalKeywords(keywords);
     const included = [];
     const missing = [];
     const text = (bullets || []).join(" ");
@@ -132,7 +141,8 @@
 
   window.ResumeOptimizer = {
     normalize,
-    cleanKeywords,
+    filterKeywords,
+    getFinalKeywords,
     isMatch,
     calculateMatchScore,
     collectIncludedAndMissing,

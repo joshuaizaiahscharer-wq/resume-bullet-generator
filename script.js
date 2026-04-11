@@ -263,11 +263,14 @@ async function handleAnalyzeOptimize() {
   try {
     const extracted = extractor.extractKeywords(jdText, 20);
     const keywords = extracted.keywords || [];
-    currentKeywords = keywords;
+    const finalKeywords = optimizer.getFinalKeywords
+      ? optimizer.getFinalKeywords(keywords)
+      : keywords;
+    currentKeywords = finalKeywords;
 
     let optimizedBullets = [];
     try {
-      optimizedBullets = await optimizeBulletsWithApi(jdText, currentBullets, keywords);
+      optimizedBullets = await optimizeBulletsWithApi(jdText, currentBullets, finalKeywords);
     } catch (_apiErr) {
       optimizedBullets = optimizer.optimizeBulletsLocal(currentBullets);
     }
