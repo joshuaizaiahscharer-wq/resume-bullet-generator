@@ -33,16 +33,23 @@ async function extractKeywords(jobDescription) {
       {
         role: "user",
         content: `
-Extract the top 15-20 most relevant keywords from this job description.
-Focus on:
-- Skills
-- Tools
-- Certifications
-- Action verbs
-- Industry phrases
+Extract ONLY high-value resume keywords from this job description.
 
-Return ONLY a clean JSON array like:
-["CRM", "Salesforce", "customer retention"]
+STRICT RULES:
+- IGNORE generic words like:
+  "work", "well", "able", "good", "create", "help", "team"
+- IGNORE soft filler phrases
+- ONLY return:
+  - Hard skills (e.g., POS systems, mixology)
+  - Tools (e.g., cash handling, inventory management)
+  - Industry terms (e.g., customer service, bartending)
+  - Measurable responsibilities
+
+If the job description is simple or vague:
+- Return only 3-5 meaningful keywords max
+- DO NOT force 15 keywords
+
+Return ONLY a JSON array.
 
 Job Description:
 ${jobDescription}
