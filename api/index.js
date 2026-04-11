@@ -1414,7 +1414,7 @@ function escapeXml(str) {
     .replace(/'/g, "&apos;");
 }
 
-const PAGE_HEAD = (title, description) => `
+const PAGE_HEAD = (title, description, jsonLd = null) => `
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google-site-verification" content="VEIGdEbFNNwkV64kj97Igmt_5KO8trlNUXJtaIqVAw0" />
@@ -1430,7 +1430,8 @@ const PAGE_HEAD = (title, description) => `
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/style.css" />`;
+  <link rel="stylesheet" href="/style.css" />
+  ${jsonLd ? `<script type="application/ld+json">${jsonLd}<\/script>` : ""}`;
 
 function renderClusterPage(cluster, pageType) {
   const page = cluster.pages[pageType];
@@ -1447,6 +1448,35 @@ function renderClusterPage(cluster, pageType) {
       return `          <a href="/${escapeHtml(relatedPage.slug)}">${escapeHtml(cluster.jobTitle)} ${escapeHtml(label)}</a>`;
     })
     .join("\n");
+
+  const pageUrl = SITE_URL + "/" + page.slug;
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL + "/" },
+      { "@type": "ListItem", position: 2, name: "Jobs", item: SITE_URL + "/jobs" },
+      { "@type": "ListItem", position: 3, name: cluster.jobTitle, item: SITE_URL + "/resume-bullet-points-for-" + cluster.jobSlug },
+      { "@type": "ListItem", position: 4, name: page.pageTitle, item: pageUrl },
+    ],
+  };
+
+  const itemListSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: page.pageTitle,
+    description: page.metaDescription,
+    url: pageUrl,
+    numberOfItems: page.content.length,
+    itemListElement: page.content.map((item, idx) => ({
+      "@type": "ListItem",
+      position: idx + 1,
+      name: item,
+    })),
+  };
+
+  const jsonLd = JSON.stringify([breadcrumbSchema, itemListSchema]);
 
   const generatorSection =
     pageType === "bulletPoints" || pageType === "noExperienceBulletPoints"
@@ -1488,7 +1518,7 @@ function renderClusterPage(cluster, pageType) {
 
   return `<!DOCTYPE html>
 <html lang="en">
-  <head>${PAGE_HEAD(`${page.pageTitle} | BulletAI`, page.metaDescription)}
+  <head>${PAGE_HEAD(`${page.pageTitle} | BulletAI`, page.metaDescription, jsonLd)}
   </head>
   <body>
     <nav class="nav">
@@ -1557,11 +1587,35 @@ ${pageLinks}
     })
     .join("\n");
 
+  const jobsJsonLd = JSON.stringify([
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL + "/" },
+        { "@type": "ListItem", position: 2, name: "Job Resume Resources", item: SITE_URL + "/jobs" },
+      ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: "Resume Resource Clusters by Job Title | BulletAI",
+      description: "Browse resume bullet points, summaries, skills, cover letters, and no-experience examples grouped by job title.",
+      url: SITE_URL + "/jobs",
+      publisher: {
+        "@type": "Organization",
+        name: "BulletAI",
+        url: SITE_URL,
+      },
+    },
+  ]);
+
   return `<!DOCTYPE html>
 <html lang="en">
   <head>${PAGE_HEAD(
     "Resume Resource Clusters by Job Title | BulletAI",
-    "Browse resume bullet points, summaries, skills, cover letters, and no-experience examples grouped by job title."
+    "Browse resume bullet points, summaries, skills, cover letters, and no-experience examples grouped by job title.",
+    jobsJsonLd
   )}
   </head>
   <body>
