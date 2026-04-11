@@ -74,6 +74,8 @@ RULES:
 - Make them results-oriented
 - Do NOT keyword stuff
 - Improve clarity and impact
+- Do NOT append generic endings like "to generate outcomes", "to improve outcomes", or "to improve results"
+- Preserve concrete metrics and specifics already present in the bullet
 
 Return ONLY a JSON array of improved bullets.
 
