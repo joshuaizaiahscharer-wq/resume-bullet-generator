@@ -33,45 +33,59 @@ async function extractKeywords(jobDescription) {
       {
         role: "user",
         content: `
-Extract ONLY high-value resume keywords from this job description.
+Extract standardized resume keywords from this job description.
 
-STRICT RULES:
-- ONLY return meaningful resume concepts
-- Keywords must be:
-  - Skills (e.g., customer service, inventory management)
-  - Responsibilities (e.g., cash handling, drink preparation)
-  - Industry terms (e.g., bartending, POS systems)
+IMPORTANT:
+Do NOT copy phrases directly from the text.
 
-DO NOT INCLUDE:
-- Single generic words (e.g., work, well, able, must, long)
-- Sentence fragments (e.g., "key responsibilities include")
-- Duplicate word variations (e.g., mixing, mixed, mix)
-- Irrelevant tools (e.g., Excel unless clearly required)
+Instead:
+- Convert responsibilities into clean resume concepts
 
-FORMAT:
-- Return 5-10 keywords MAX
-- Use clean phrases (2-3 words preferred)
+RULES:
+- Keywords must be 2–3 words
+- Use common resume language
+- Simplify wording
+
+EXAMPLES:
+
+INPUT:
+"provides registered nursing services"
+OUTPUT:
+"patient care"
+
+INPUT:
+"independent nursing services"
+OUTPUT:
+"clinical care"
+
+INPUT:
+"performance of patient/resident care"
+OUTPUT:
+"patient care"
+
+INPUT:
+"regional health authority"
+OUTPUT:
+(IGNORE — not a skill)
 
 GOOD OUTPUT:
 [
-  "customer service",
-  "drink preparation",
-  "cash handling",
-  "inventory management",
-  "ID verification",
-  "bar maintenance"
+  "patient care",
+  "medication administration",
+  "health assessment",
+  "care coordination",
+  "patient education",
+  "clinical documentation"
 ]
 
 BAD OUTPUT:
 [
-  "work",
-  "must work quickly",
-  "mixing",
-  "checking",
-  "long periods"
+  "provides registered nursing",
+  "performance patient resident care",
+  "regional health authority"
 ]
 
-Return ONLY a JSON array.
+Return ONLY a JSON array (5–8 keywords max).
 
 Job Description:
 ${jobDescription}
