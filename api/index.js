@@ -657,25 +657,43 @@ function analyzeResumeText(resumeText) {
   let score = 70;
   const feedback = [];
 
-  const weakVerbs = ["helped", "worked", "did", "made", "handled"];
-  const hasWeakVerbs = weakVerbs.some((v) => text.includes(v));
-  if (hasWeakVerbs) {
-    score -= 20;
-    feedback.push("Avoid weak verbs like 'helped' or 'worked' - use stronger action verbs");
-  }
-
-  const hasMetrics = /\d+%|\d+\+|\$\d+/g.test(text);
-  if (!hasMetrics) {
+  const metricsMatches = text.match(/\d+%|\d+\+|\$\d+/g) || [];
+  if (metricsMatches.length >= 3) {
+    score += 20;
+  } else if (metricsMatches.length >= 1) {
+    score += 10;
+  } else {
     score -= 25;
     feedback.push("No measurable results - add numbers (%, $, quantities)");
+  }
+
+  const strongVerbs = [
+    "increased", "reduced", "improved",
+    "managed", "delivered", "trained",
+  ];
+  const strongCount = strongVerbs.filter((v) => text.includes(v)).length;
+  if (strongCount >= 4) {
+    score += 15;
+  } else if (strongCount < 2) {
+    score -= 15;
+    feedback.push("Use stronger action verbs to show impact");
   }
 
   const avgLength = bullets.length
     ? bullets.reduce((acc, b) => acc + b.split(/\s+/).filter(Boolean).length, 0) / bullets.length
     : 0;
-  if (avgLength < 10) {
+  if (avgLength < 7) {
+    score -= 15;
+    feedback.push("Bullets are too short - add more context");
+  }
+
+  const weakBullets = bullets.filter((b) => b.split(/\s+/).filter(Boolean).length < 6);
+  const hasImpactSignals = metricsMatches.length > 0 && strongCount > 0;
+  if (weakBullets.length > bullets.length / 2) {
     score -= 20;
-    feedback.push("Bullets lack detail - expand with impact and context");
+    if (!hasImpactSignals) {
+      feedback.push("Most bullets lack detail - expand with impact");
+    }
   }
 
   const genericPhrases = ["responsible for", "duties included", "worked on"];
@@ -709,8 +727,9 @@ function analyzeResumeText(resumeText) {
 
   let rating;
   if (score >= 80) rating = "Strong";
-  else if (score >= 60) rating = "Average";
-  else rating = "Needs Improvement";
+  else if (score >= 60) rating = "Good";
+  else if (score >= 40) rating = "Needs Improvement";
+  else rating = "Weak";
 
   return { score, rating, feedback };
 }

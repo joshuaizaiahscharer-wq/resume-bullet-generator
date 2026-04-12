@@ -63,19 +63,17 @@
     scoreProgressEl.style.width = `${safeScore}%`;
     scoreProgressEl.classList.remove("strong", "decent", "needs-work");
     scoreBadgeEl.classList.remove("strong", "decent", "needs-work");
+    scoreBadgeEl.textContent = safeRating || "Needs Improvement";
 
     if (safeScore >= 80) {
       scoreProgressEl.classList.add("strong");
       scoreBadgeEl.classList.add("strong");
-      scoreBadgeEl.textContent = "Strong";
     } else if (safeScore >= 60) {
       scoreProgressEl.classList.add("decent");
       scoreBadgeEl.classList.add("decent");
-      scoreBadgeEl.textContent = "Average";
     } else {
       scoreProgressEl.classList.add("needs-work");
       scoreBadgeEl.classList.add("needs-work");
-      scoreBadgeEl.textContent = "Needs Improvement";
     }
 
     feedbackListEl.innerHTML = "";
