@@ -648,90 +648,187 @@ function analyzeResume(bullets) {
 
 function analyzeResumeText(resumeText) {
   const raw = String(resumeText || "");
+
+  // ─── Validation ──────────────────────────────────────────────────────
+  if (!raw || raw.trim().length < 50) {
+    return {
+      score: 0,
+      rating: "Invalid",
+      feedback: ["Resume is too short to analyze. Please provide a complete resume."]
+    };
+  }
+
   const text = raw.toLowerCase();
   const bullets = raw
     .split(/\r?\n/)
     .map((line) => line.replace(/^[\s•\-–—*]+/, "").trim())
-    .filter(Boolean);
+    .filter((line) => line.length > 10);
 
-  let score = 70;
-  const feedback = [];
+  // ─── Score Category 1: IMPACT (35% weight) ──────────────────────────
+  // Measures presence of metrics, numbers, $ amounts, percentages
+  const metricsRegex = /(\d+%|\d+\+|\$\d+|[0-9]{1,3}(?:,\d{3})*(?:\.\d{2})?|\d+\s+(?:hours|days|weeks|months|years|projects|clients|users|employees|tasks))/gi;
+  const metricsMatches = raw.match(metricsRegex) || [];
+  const metricsPerBullet = bullets.length ? metricsMatches.length / bullets.length : 0;
 
-  const metricsMatches = text.match(/\d+%|\d+\+|\$\d+/g) || [];
-  if (metricsMatches.length >= 3) {
-    score += 20;
+  let impactScore = 0;
+  if (metricsMatches.length >= 6) {
+    impactScore = 90;
+  } else if (metricsMatches.length >= 3) {
+    impactScore = 70;
   } else if (metricsMatches.length >= 1) {
-    score += 10;
+    impactScore = 45;
   } else {
-    score -= 25;
-    feedback.push("No measurable results - add numbers (%, $, quantities)");
+    impactScore = 20; // Low but not zero - resume has structure but lacks quantification
   }
 
-  const strongVerbs = [
-    "increased", "reduced", "improved",
-    "managed", "delivered", "trained",
-  ];
-  const strongCount = strongVerbs.filter((v) => text.includes(v)).length;
-  if (strongCount >= 4) {
-    score += 15;
-  } else if (strongCount < 2) {
-    score -= 15;
-    feedback.push("Use stronger action verbs to show impact");
-  }
-
-  const avgLength = bullets.length
+  // ─── Score Category 2: CLARITY (25% weight) ──────────────────────────
+  // Measures readability, sentence structure, bullet length consistency
+  const avgBulletLength = bullets.length
     ? bullets.reduce((acc, b) => acc + b.split(/\s+/).filter(Boolean).length, 0) / bullets.length
     : 0;
-  if (avgLength < 7) {
-    score -= 15;
-    feedback.push("Bullets are too short - add more context");
+
+  let clarityScore = 0;
+  
+  // Award points for good bullet length (8-20 words is ideal)
+  if (avgBulletLength >= 8 && avgBulletLength <= 20) {
+    clarityScore = 85;
+  } else if (avgBulletLength >= 6 && avgBulletLength <= 25) {
+    clarityScore = 70;
+  } else if (avgBulletLength >= 4) {
+    clarityScore = 50;
+  } else {
+    clarityScore = 30;
   }
 
-  const weakBullets = bullets.filter((b) => b.split(/\s+/).filter(Boolean).length < 6);
-  const hasImpactSignals = metricsMatches.length > 0 && strongCount > 0;
-  if (weakBullets.length > bullets.length / 2) {
-    score -= 20;
-    if (!hasImpactSignals) {
-      feedback.push("Most bullets lack detail - expand with impact");
-    }
-  }
-
-  const genericPhrases = ["responsible for", "duties included", "worked on"];
-  if (genericPhrases.some((p) => text.includes(p))) {
-    score -= 15;
-    feedback.push("Avoid generic phrases like 'responsible for'");
-  }
-
+  // Penalize repetitive sentence starts
   const starts = bullets
     .map((b) => b.split(/\s+/).filter(Boolean)[0])
     .filter(Boolean)
     .map((w) => w.toLowerCase());
   const uniqueStarts = new Set(starts);
-  if (starts.length && uniqueStarts.size < starts.length / 2) {
-    score -= 15;
-    feedback.push("Too many bullets start the same way - vary sentence structure");
+  const startDiversity = starts.length ? uniqueStarts.size / starts.length : 0;
+  
+  if (startDiversity < 0.5) {
+    clarityScore -= 20; // Lots of repetition
+  } else if (startDiversity < 0.7) {
+    clarityScore -= 10; // Moderate repetition
   }
 
-  if (bullets.length < 5) {
-    score = Math.min(score, 40);
-    feedback.push("Not enough bullet points - resume looks incomplete");
+  clarityScore = Math.max(0, Math.min(100, clarityScore));
+
+  // ─── Score Category 3: STRUCTURE (20% weight) ──────────────────────
+  // Checks for key sections: Experience, Education, Skills, Summary, etc.
+  const structureKeywords = [
+    /experience/i,
+    /employment/i,
+    /education/i,
+    /skills?/i,
+    /certification/i,
+    /projects?/i,
+    /summary/i,
+    /objective/i
+  ];
+
+  const sectionCount = structureKeywords.filter((regex) => regex.test(text)).length;
+  let structureScore = 0;
+
+  if (sectionCount >= 5) {
+    structureScore = 95;
+  } else if (sectionCount >= 3) {
+    structureScore = 80;
+  } else if (sectionCount >= 2) {
+    structureScore = 60;
+  } else {
+    structureScore = 40; // Some organization but minimal
   }
 
-  if (raw.length < 200) {
-    score = Math.min(score, 35);
-    feedback.push("Resume is too short - lacks substance");
+  // ─── Score Category 4: ATS KEYWORDS (20% weight) ──────────────────
+  // Checks for strong action verbs and relevant job keywords
+  const strongVerbs = [
+    "achieved", "accelerated", "accomplished", "analyzed", "built", "completed",
+    "conducted", "coordinated", "created", "decreased", "delivered", "demonstrated",
+    "designed", "developed", "directed", "discovered", "doubled", "drove", "earned",
+    "enabled", "engineered", "enhanced", "established", "exceeded", "executed",
+    "expanded", "fostered", "generated", "grew", "guided", "identified", "implemented",
+    "improved", "increased", "initiated", "innovated", "designed", "led", "managed",
+    "optimized", "organized", "pioneered", "produced", "reduced", "resolved",
+    "saved", "scaled", "solved", "spearheaded", "streamlined", "strengthened",
+    "succeeded", "supervised", "surpassed", "transformed", "tripled", "validated"
+  ];
+
+  const verbCount = strongVerbs.filter((v) => text.includes(v)).length;
+  const relevantKeywords = [
+    "project management", "team leadership", "budget", "roi", "process improvement",
+    "customer service", "data analysis", "sales", "marketing", "software", "coding",
+    "analysis", "strategy", "communication", "collaboration"
+  ];
+
+  const keywordCount = relevantKeywords.filter((k) => text.includes(k)).length;
+
+  let atsScore = 0;
+  atsScore += Math.min(40, verbCount * 5); // Up to 40 points for strong verbs
+  atsScore += Math.min(35, keywordCount * 5); // Up to 35 points for keywords
+  atsScore += Math.min(25, bullets.length > 8 ? 25 : bullets.length * 3); // Up to 25 for quantity
+
+  atsScore = Math.max(0, Math.min(100, atsScore));
+
+  // ─── Calculate Final Weighted Score ───────────────────────────────
+  const rawFinalScore =
+    impactScore * 0.35 +
+    clarityScore * 0.25 +
+    structureScore * 0.20 +
+    atsScore * 0.20;
+
+  // Clamp to 35-95 for valid resumes (with 35 as minimum baseline)
+  let finalScore = Math.round(Math.max(35, Math.min(95, rawFinalScore)));
+
+  // ─── Generate Feedback ──────────────────────────────────────────────
+  const feedback = [];
+
+  if (metricsMatches.length === 0) {
+    feedback.push("Add measurable results: percentages (%), dollar amounts ($), or quantities to show impact");
+  } else if (metricsMatches.length < 3) {
+    feedback.push("Include more metrics and numbers - recruiters want to see quantifiable results");
   }
 
-  if (score > 90) score = 90;
-  if (score < 0) score = 0;
+  if (verbCount < 3) {
+    feedback.push("Use stronger action verbs (e.g., 'achieved', 'delivered', 'engineered') instead of 'responsible for' or 'worked on'");
+  }
 
+  if (avgBulletLength < 6) {
+    feedback.push("Expand your bullet points - they should be 8-20 words for better clarity and impact");
+  } else if (avgBulletLength > 25) {
+    feedback.push("Some bullets are too long - condense to 15-20 words maximum for better readability");
+  }
+
+  if (startDiversity < 0.6) {
+    feedback.push("Vary your sentence starters - too many bullets begin the same way");
+  }
+
+  if (sectionCount < 3) {
+    feedback.push("Organize your resume with clear sections: Experience, Education, Skills, etc.");
+  }
+
+  if (bullets.length < 8) {
+    feedback.push("Add more accomplishment bullets to your experience section - aim for 3-5 per role");
+  }
+
+  // Limit feedback to 4-5 most impactful messages
+  feedback.splice(4);
+
+  // ─── Generate Rating Label ───────────────────────────────────────────
   let rating;
-  if (score >= 80) rating = "Strong";
-  else if (score >= 60) rating = "Good";
-  else if (score >= 40) rating = "Needs Improvement";
-  else rating = "Weak";
+  if (finalScore >= 85) {
+    rating = "Excellent";
+  } else if (finalScore >= 70) {
+    rating = "Strong";
+  } else if (finalScore >= 50) {
+    rating = "Decent";
+  } else {
+    rating = "Needs Improvement";
+  }
 
-  return { score, rating, feedback };
+  return { score: finalScore, rating, feedback };
 }
 
 function buildClusterFromJob(job) {
