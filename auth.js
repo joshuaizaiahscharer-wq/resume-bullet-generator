@@ -268,10 +268,15 @@
           console.log('Google login clicked');
           var currentPath = window.location.pathname + window.location.search;
           var callbackUrl = window.location.origin + '/auth/callback?next=' + encodeURIComponent(currentPath);
-          await client.auth.signInWithOAuth({
+          var oauthResult = await client.auth.signInWithOAuth({
             provider: 'google',
             options: { redirectTo: callbackUrl },
           });
+
+          var oauthUrl = oauthResult && oauthResult.data && oauthResult.data.url;
+          if (oauthUrl) {
+            window.location.assign(oauthUrl);
+          }
         } catch (err) {
           var message = String((err && err.message) || '').toLowerCase();
           if (statusEl) {

@@ -1096,10 +1096,15 @@ function initAuthModal() {
       stashResumeBeforeAuthRedirect();
       const currentPath = window.location.pathname + window.location.search;
       const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(currentPath)}`;
-      await resumeAuthClient.auth.signInWithOAuth({
+      const oauthResult = await resumeAuthClient.auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: callbackUrl },
       });
+
+      const oauthUrl = oauthResult?.data?.url;
+      if (oauthUrl) {
+        window.location.assign(oauthUrl);
+      }
     } catch (err) {
       const message = String(err?.message || "").toLowerCase();
       if (statusEl) {
