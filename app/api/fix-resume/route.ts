@@ -22,10 +22,16 @@ Rewrite and fully optimize the resume.
 
 GOALS:
 - Improve clarity, structure, and professionalism
-- Add strong bullet points per role
-- Keep content realistic and truthful
+- Add strong bullet points for each role
+- Keep everything realistic and truthful
+- DO NOT invent fake experience or fake metrics
+
+RULES:
 - Use role-specific language
-- DO NOT add fake metrics
+- Use strong action verbs
+- Add 2-4 bullet points per role
+- Only include numbers when realistic
+- Avoid generic phrases like "responsible for"
 
 FORMAT:
 
@@ -35,8 +41,8 @@ CONTACT INFO
 PROFESSIONAL SUMMARY (rewritten)
 
 EXPERIENCE
-Each job:
-- Title | Company | Dates
+Each role:
+- Job Title | Company | Dates
 - 2-4 strong bullet points
 
 EDUCATION
@@ -51,7 +57,7 @@ ${resumeText}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.35,
+      temperature: 0.3,
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -64,11 +70,6 @@ ${resumeText}`;
     return NextResponse.json({ fixedResume }, { status: 200 });
   } catch (error) {
     console.error("fix-resume error", error);
-    return NextResponse.json(
-      {
-        error: "Failed to optimize resume.",
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to optimize resume." }, { status: 500 });
   }
 }

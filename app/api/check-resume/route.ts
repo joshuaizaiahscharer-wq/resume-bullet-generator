@@ -2,12 +2,14 @@ import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
 type Breakdown = {
-  impact: number;
-  clarity: number;
   structure: number;
-  relevance: number;
+  flow: number;
+  organization: number;
   grammar: number;
-  professionalism: number;
+  bulletUsage: number;
+  bulletStrength: number;
+  impact: number;
+  relevance: number;
 };
 
 type AnalysisResult = {
@@ -45,24 +47,28 @@ function scoreToLabel(score: number): "Weak" | "Decent" | "Strong" {
 }
 
 function sanitizeAnalysis(payload: Partial<AnalysisResult>, isEmptyResume: boolean): AnalysisResult {
-  const rawBreakdown = payload.breakdown || ({} as Breakdown);
+  const raw = (payload.breakdown || {}) as Partial<Breakdown>;
 
   const breakdown: Breakdown = {
-    impact: clamp(toInt(rawBreakdown.impact, 55), 0, 100),
-    clarity: clamp(toInt(rawBreakdown.clarity, 55), 0, 100),
-    structure: clamp(toInt(rawBreakdown.structure, 55), 0, 100),
-    relevance: clamp(toInt(rawBreakdown.relevance, 55), 0, 100),
-    grammar: clamp(toInt(rawBreakdown.grammar, 55), 0, 100),
-    professionalism: clamp(toInt(rawBreakdown.professionalism, 55), 0, 100),
+    structure: clamp(toInt(raw.structure, 55), 0, 100),
+    flow: clamp(toInt(raw.flow, 55), 0, 100),
+    organization: clamp(toInt(raw.organization, 55), 0, 100),
+    grammar: clamp(toInt(raw.grammar, 55), 0, 100),
+    bulletUsage: clamp(toInt(raw.bulletUsage, 55), 0, 100),
+    bulletStrength: clamp(toInt(raw.bulletStrength, 55), 0, 100),
+    impact: clamp(toInt(raw.impact, 55), 0, 100),
+    relevance: clamp(toInt(raw.relevance, 55), 0, 100),
   };
 
   const weighted = Math.round(
-    breakdown.impact * 0.25 +
-      breakdown.clarity * 0.2 +
-      breakdown.structure * 0.2 +
-      breakdown.relevance * 0.15 +
+    breakdown.structure * 0.15 +
+      breakdown.flow * 0.15 +
+      breakdown.organization * 0.1 +
       breakdown.grammar * 0.1 +
-      breakdown.professionalism * 0.1,
+      breakdown.bulletUsage * 0.1 +
+      breakdown.bulletStrength * 0.15 +
+      breakdown.impact * 0.15 +
+      breakdown.relevance * 0.1,
   );
 
   const score = isEmptyResume ? clamp(weighted, 0, 39) : clamp(weighted, 40, 100);
@@ -72,9 +78,9 @@ function sanitizeAnalysis(payload: Partial<AnalysisResult>, isEmptyResume: boole
     : [];
 
   const fallbackImprovements = [
-    "Rewrite your experience bullets to emphasize outcomes, responsibilities, and business impact.",
-    "Improve readability with concise language and a consistent section structure across roles.",
-    "Align your wording and skills to the target role so recruiters can quickly match your fit.",
+    "Refine each experience section so bullets emphasize outcomes and impact instead of only responsibilities.",
+    "Improve readability by tightening sentence length and keeping formatting consistent across all sections.",
+    "Align your summary and skills with the exact role target so relevance is obvious within the first scan.",
   ];
 
   return {
@@ -86,10 +92,6 @@ function sanitizeAnalysis(payload: Partial<AnalysisResult>, isEmptyResume: boole
 }
 
 export async function POST(req: Request) {
-  return Response.json({
-    result: "NEW SYSTEM ACTIVE",
-  });
-
   try {
     const body = await req.json().catch(() => ({}));
     const resumeText = String(body?.resumeText || "").trim();
@@ -105,79 +107,97 @@ export async function POST(req: Request) {
           score: 25,
           label: "Weak",
           breakdown: {
-            impact: 20,
-            clarity: 25,
             structure: 20,
-            relevance: 20,
+            flow: 25,
+            organization: 20,
             grammar: 35,
-            professionalism: 30,
+            bulletUsage: 20,
+            bulletStrength: 20,
+            impact: 20,
+            relevance: 25,
           },
           improvements: [
-            "Paste your full resume so the reviewer can evaluate each section accurately.",
+            "Paste your complete resume so the reviewer can evaluate each section accurately.",
             "Add an experience section with role titles, dates, and achievement-focused bullets.",
-            "Include a concise skills section tailored to the jobs you are targeting.",
+            "Include a focused skills section aligned to your target role.",
           ],
         },
         { status: 200 },
       );
     }
 
-    const prompt = `You are an expert resume reviewer and career coach.
+    const prompt = `You are a professional resume reviewer.
 
-Evaluate this resume across:
-- Impact (25%)
-- Clarity (20%)
-- Structure (20%)
-- Relevance (15%)
-- Grammar & Spelling (10%)
-- Professionalism (10%)
+You must evaluate the resume step-by-step across these categories:
 
-RULES:
+1. Structure
+2. Flow & Readability
+3. Organization
+4. Grammar & Spelling
+5. Bullet Point Usage
+6. Bullet Point Strength
+7. Impact
+8. Relevance
+
+STEP-BY-STEP ANALYSIS:
+- Analyze structure
+- Then flow/readability
+- Then bullet usage/strength
+- Then impact
+- Then grammar/professionalism
+- Then relevance
+
+SCORING RULES:
 - Score each category 0-100
-- Final score must be fair (never below 40 unless resume is empty)
-- Do NOT base score only on metrics
-- Be realistic and professional
+- Be realistic and fair
+- NEVER give a score below 40 unless resume is empty
+- Do NOT over-penalize missing metrics
 
-OUTPUT ONLY JSON:
+OUTPUT JSON ONLY:
+
 {
   "score": number,
   "label": "Weak | Decent | Strong",
   "breakdown": {
-    "impact": number,
-    "clarity": number,
     "structure": number,
-    "relevance": number,
+    "flow": number,
+    "organization": number,
     "grammar": number,
-    "professionalism": number
+    "bulletUsage": number,
+    "bulletStrength": number,
+    "impact": number,
+    "relevance": number
   },
   "improvements": [
-    "specific improvement based on the resume",
-    "specific improvement",
-    "specific improvement"
+    "Specific improvement based on the resume",
+    "Second different improvement",
+    "Third improvement targeting another area"
   ]
 }
+
+IMPROVEMENT RULES:
+- Must be personalized to THIS resume
+- Must be actionable
+- Must not be generic
+- Must not repeat
+- Must not all focus on metrics
 
 Resume:
 ${resumeText}`;
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.2,
+      temperature: 0.3,
       messages: [{ role: "user", content: prompt }],
     });
 
     const content = completion.choices[0]?.message?.content || "";
     const parsed = JSON.parse(extractJsonObject(content)) as Partial<AnalysisResult>;
-    const safeResult = sanitizeAnalysis(parsed, false);
+    const safeResult = sanitizeAnalysis(parsed, isEmptyResume);
 
     return NextResponse.json(safeResult, { status: 200 });
   } catch (error) {
     console.error("check-resume error", error);
-    return NextResponse.json(
-      {
-        error: "Failed to analyze resume.",
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Failed to analyze resume." }, { status: 500 });
   }
 }
