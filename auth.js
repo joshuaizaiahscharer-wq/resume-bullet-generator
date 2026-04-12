@@ -215,6 +215,10 @@
 
   window.BulletAuth = BulletAuth;
 
+  function getAuthClient() {
+    return BulletAuth._supabase || window.__bulletSupabaseClient || null;
+  }
+
   /* ── Modal injection (non-builder pages only) ── */
   function injectModal() {
     if (document.getElementById('authModal')) return false;
@@ -223,7 +227,10 @@
   }
 
   /* ── Modal form bindings (only when auth.js owns the modal) ── */
-  function bindModalForm(client) {
+  function bindModalForm() {
+    if (window.__bulletModalFormBound) return;
+    window.__bulletModalFormBound = true;
+
     var emailInput = document.getElementById('authModalEmailInput');
     var emailBtn = document.getElementById('authModalEmailBtn');
     var statusEl = document.getElementById('authModalStatus');
@@ -235,9 +242,14 @@
       });
 
       emailBtn.addEventListener('click', async function () {
+        var client = getAuthClient();
         var email = normalizeEmail(emailInput.value || '');
         if (!email || !email.includes('@')) {
           if (statusEl) statusEl.textContent = 'Please enter a valid email address.';
+          return;
+        }
+        if (!client) {
+          if (statusEl) statusEl.textContent = 'Sign-in is still loading. Please try again in a moment.';
           return;
         }
         emailBtn.disabled = true;
@@ -265,6 +277,14 @@
     if (googleBtn) {
       googleBtn.addEventListener('click', async function () {
         try {
+          var client = getAuthClient();
+          if (!client) {
+            if (statusEl) {
+              statusEl.className = 'auth-modal-status';
+              statusEl.textContent = 'Sign-in is still loading. Please try again in a moment.';
+            }
+            return;
+          }
           console.log('Google login clicked');
           var currentPath = window.location.pathname + window.location.search;
           var callbackUrl = window.location.origin + '/auth/callback?next=' + encodeURIComponent(currentPath);
@@ -315,9 +335,16 @@
 
   /* ── Nav auth button click handler ── */
   function setupNavBtn() {
-    var btn = document.getElementById('navAuthBtn');
-    if (!btn) return;
-    btn.addEventListener('click', async function () {
+    if (window.__bulletNavBtnBound) return;
+    window.__bulletNavBtnBound = true;
+
+    document.addEventListener('click', async function (event) {
+      var target = event.target;
+      if (!target || !target.closest) return;
+      var btn = target.closest('#navAuthBtn');
+      if (!btn) return;
+
+      event.preventDefault();
       if (BulletAuth.isSignedIn()) {
         await BulletAuth.signOut();
       } else {
@@ -357,7 +384,7 @@
       }
 
       if (ownsModal) {
-        bindModalForm(BulletAuth._supabase);
+        bindModalForm();
       }
 
       BulletAuth._supabase.auth.onAuthStateChange(async function (event, session) {
@@ -392,6 +419,9 @@
   function run() {
     var onBuilder = isBuilderPage();
     var ownsModal = !onBuilder && injectModal();
+    if (!onBuilder && (ownsModal || document.getElementById('authModal'))) {
+      bindModalForm();
+    }
     setupModalDismiss();
     setupNavBtn();
     initSupabase(ownsModal);
