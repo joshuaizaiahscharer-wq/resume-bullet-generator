@@ -38,6 +38,12 @@ const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || "";
+const STRIPE_RESUME_BUILDER_PRODUCT_ID =
+  process.env.STRIPE_RESUME_BUILDER_PRODUCT_ID || "prod_UJ4Tmx8IUQ7RbM";
+const STRIPE_RESUME_BUILDER_PRICE_ID =
+  process.env.STRIPE_RESUME_BUILDER_PRICE_ID ||
+  process.env.STRIPE_PRICE_ID ||
+  "price_1TKSK812xoyNnQNyp8AhmWhP";
 const STRIPE_CHECK_MY_RESUME_PRODUCT_ID =
   process.env.STRIPE_CHECK_MY_RESUME_PRODUCT_ID || "prod_UKBRUZb1LrPcpV";
 const STRIPE_CHECK_MY_RESUME_PRICE_ID =
@@ -2158,9 +2164,9 @@ app.post("/api/resume-builder/create-checkout-session", async (req, res) => {
       });
     }
 
-    if (!STRIPE_PRICE_ID) {
+    if (!STRIPE_RESUME_BUILDER_PRICE_ID) {
       return res.status(500).json({
-        error: "STRIPE_PRICE_ID is not configured.",
+        error: "STRIPE_RESUME_BUILDER_PRICE_ID is not configured.",
       });
     }
 
@@ -2186,12 +2192,13 @@ app.post("/api/resume-builder/create-checkout-session", async (req, res) => {
       // Apple Pay is surfaced by Stripe Checkout as a card wallet when enabled in
       // Stripe Dashboard and the customer is on a supported device/browser.
       payment_method_types: ["card"],
-      line_items: [{ price: STRIPE_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: STRIPE_RESUME_BUILDER_PRICE_ID, quantity: 1 }],
       billing_address_collection: "auto",
       success_url: `${normalizedReturnUrl}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${normalizedReturnUrl}?payment=cancelled`,
       metadata: {
         product: "resume_template_builder",
+        product_id: STRIPE_RESUME_BUILDER_PRODUCT_ID,
       },
     });
 
