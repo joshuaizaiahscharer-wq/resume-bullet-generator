@@ -165,6 +165,7 @@
 
   function generateImprovementPairs(feedback, resumeText) {
     const experienceData = extractExperienceData(resumeText);
+    const roleType = detectPrimaryRoleType(experienceData.roles, resumeText);
     const experienceBullets = experienceData.bullets;
     const weakBullets = identifyWeakBullets(experienceBullets);
     const fallbackBullets = getFallbackBullets(experienceBullets, weakBullets);
@@ -180,7 +181,7 @@
 
     const rewrittenPairs = candidates
       .map((bullet) => {
-        const improved = improveBullet(bullet);
+        const improved = improveBullet(bullet, roleType);
         if (!improved) return null;
         return { before: bullet, after: improved };
       })
@@ -341,21 +342,21 @@
   }
 
   function generateSampleBulletsForRole(role) {
-    const title = String(role || "").toLowerCase();
+    const roleType = getRoleType(role);
 
-    if (/server|waiter|waitress|bartender|barista/.test(title)) {
+    if (roleType === "server_bartender") {
       return [
-        "Delivered high-quality guest service to 120+ customers per shift, improving repeat visit rate by 18%.",
-        "Upsold featured menu items to increase average ticket value by 14% while maintaining fast service times.",
-        "Coordinated front-of-house workflow during peak hours, reducing order delays by 22%."
+        "Served 60-100 guests per shift while maintaining order accuracy and a high-quality dining experience.",
+        "Handled $1,500-$2,800 in food and beverage transactions per shift using POS and cash controls.",
+        "Coordinated with kitchen and bar staff to keep average ticket times within 10-14 minutes during peak hours."
       ];
     }
 
-    if (/registered nurse|nurse|rn|lpn|cna/.test(title)) {
+    if (roleType === "nurse") {
       return [
-        "Managed care for 18+ patients per shift while maintaining 98% medication administration accuracy.",
-        "Collaborated with interdisciplinary teams to reduce discharge delays by 20% and improve care transitions.",
-        "Implemented patient education plans that increased treatment compliance scores by 16%."
+        "Provided direct care for 20-40 patients per shift, prioritizing timely treatment and patient safety.",
+        "Documented assessments, medication records, and care updates for 25+ patients per shift in the EMR.",
+        "Collaborated with physicians, CNAs, and case managers during handoffs to support continuity of care."
       ];
     }
 
@@ -367,42 +368,42 @@
       ];
     }
 
-    if (/sales|account executive|business development|retail/.test(title)) {
+    if (/sales|account executive|business development|retail/.test(String(role || "").toLowerCase())) {
       return [
-        "Exceeded monthly sales targets by 21% through consultative selling and proactive follow-up.",
-        "Expanded customer pipeline by 30+ qualified prospects per month, improving close rates by 13%.",
-        "Retained key accounts worth $120K+ annually by delivering responsive and personalized support."
+        "Managed a pipeline of 30-50 qualified prospects each month through consultative outreach and follow-up.",
+        "Closed $40K-$80K in monthly sales by aligning product recommendations with customer needs.",
+        "Maintained relationships with key accounts valued at $100K+ annually through proactive service."
       ];
     }
 
-    if (/software|developer|engineer|programmer|it|technician/.test(title)) {
+    if (/software|developer|engineer|programmer|it|technician/.test(String(role || "").toLowerCase())) {
       return [
-        "Built and deployed core features that improved application performance by 28% for 50K+ users.",
-        "Resolved production issues and reduced critical incident response time by 35%.",
-        "Automated recurring workflows, saving 12+ team hours per week and improving release reliability."
+        "Built and shipped features used by 10K-50K users while maintaining stable application performance.",
+        "Resolved production incidents and support tickets within defined SLA windows for critical systems.",
+        "Automated recurring operational tasks, saving 8-15 team hours per week across deployments and reporting."
       ];
     }
 
-    if (/customer service|support|call center|representative/.test(title)) {
+    if (/customer service|support|call center|representative/.test(String(role || "").toLowerCase())) {
       return [
-        "Resolved 60+ customer inquiries daily while maintaining a 95% satisfaction rating.",
-        "Reduced average handling time by 18% through improved troubleshooting workflows.",
-        "Documented recurring issues and recommended fixes that lowered ticket volume by 14%."
+        "Resolved 50-80 customer inquiries daily across phone, chat, and email support channels.",
+        "Troubleshot account and service issues while meeting response-time and first-contact resolution targets.",
+        "Documented recurring problems and escalations to help product teams prioritize fixes."
       ];
     }
 
-    if (/receptionist|front desk|administrative assistant|office assistant/.test(title)) {
+    if (roleType === "receptionist_clinic") {
       return [
-        "Managed front-desk operations for 80+ daily visitors while maintaining 99% scheduling accuracy.",
-        "Coordinated calendars, calls, and records to reduce appointment conflicts by 24%.",
-        "Streamlined intake and document workflows, cutting check-in time by 20%."
+        "Scheduled and confirmed 35-60 appointments per day while coordinating provider availability.",
+        "Managed front-desk check-ins for 50-90 patients or visitors daily to keep intake flow organized.",
+        "Maintained patient and administrative records with consistent data-entry accuracy and timely updates."
       ];
     }
 
     return [
-      "Led daily responsibilities for the role, improving process efficiency by 16% across core tasks.",
-      "Collaborated with team members to complete high-priority deliverables, increasing output by 19%.",
-      "Implemented workflow improvements that reduced errors by 13% and improved service quality."
+      "Managed core responsibilities for the role while maintaining quality and service standards.",
+      "Coordinated with team members to complete high-priority tasks and maintain daily operations.",
+      "Handled recurring workflow and documentation duties with strong attention to accuracy and timeliness."
     ];
   }
 
@@ -432,13 +433,12 @@
     return allBullets.filter((line) => !weakSet.has(line) && countWords(line) > 6);
   }
 
-  function improveBullet(bullet) {
+  function improveBullet(bullet, roleHint) {
     const clean = String(bullet || "").replace(/^[-•*–—]\s+/, "").trim();
     if (!clean || countWords(clean) < 6 || isSkippableLine(clean)) {
       return null;
     }
 
-    const lower = clean.toLowerCase();
     const core = clean
       .replace(/^(responsible for|worked on|helped with|demonstrated|assisted with|assisted|participated in|was involved in)\s+/i, "")
       .replace(/\.$/, "")
@@ -448,62 +448,79 @@
       return null;
     }
 
-    const templates = [
-      {
-        test: /inventory|stock|warehouse|supply chain|fulfillment/i,
-        verb: "Optimized",
-        tail: "reducing waste by 15% and improving stock accuracy by 22%"
-      },
-      {
-        test: /customer|client|support|service|ticket/i,
-        verb: "Improved",
-        tail: "raising customer satisfaction to 96% while cutting response time by 28%"
-      },
-      {
-        test: /sales|revenue|pipeline|account/i,
-        verb: "Increased",
-        tail: "driving 18% revenue growth and expanding qualified pipeline by 30%"
-      },
-      {
-        test: /social|marketing|campaign|content|brand/i,
-        verb: "Scaled",
-        tail: "boosting engagement by 34% and improving campaign conversion by 19%"
-      },
-      {
-        test: /process|workflow|operations|efficiency|procedure/i,
-        verb: "Streamlined",
-        tail: "reducing cycle time by 21% and increasing team throughput by 17%"
-      },
-      {
-        test: /team|staff|training|mentor|lead/i,
-        verb: "Led",
-        tail: "improving team productivity by 20% across 10+ contributors"
-      },
-      {
-        test: /project|implementation|delivery|launch/i,
-        verb: "Delivered",
-        tail: "completing 12+ key milestones on time and reducing delivery risk by 25%"
-      }
-    ];
-
-    const selected = templates.find((item) => item.test.test(lower)) || {
-      verb: "Improved",
-      tail: "increasing output quality by 16% and reducing rework by 14%"
-    };
-
     const objectPhrase = normalizeObjectPhrase(core);
     if (!objectPhrase) {
       return null;
     }
 
-    const rewritten = `${selected.verb} ${objectPhrase}, ${selected.tail}.`;
-    const hasMetric = /(\d+%|\$\d|\d+\+)/.test(rewritten);
-    const startsWithStrongVerb = /^(Improved|Increased|Streamlined|Led|Delivered|Scaled|Optimized)\b/.test(rewritten);
-    if (!hasMetric || !startsWithStrongVerb) {
+    const effectiveRoleType = roleHint || getRoleType(core);
+    const rewritten = buildRoleAwareRewrite(objectPhrase, effectiveRoleType, core);
+    if (!rewritten) {
+      return null;
+    }
+
+    const startsWithStrongVerb = /^(Managed|Served|Handled|Processed|Coordinated|Documented|Administered|Supported|Led|Resolved|Maintained|Delivered|Organized|Oversaw|Completed)\b/.test(rewritten);
+    if (!startsWithStrongVerb) {
       return null;
     }
 
     return highlightMetrics(rewritten);
+  }
+
+  function detectPrimaryRoleType(roles, resumeText) {
+    if (Array.isArray(roles) && roles.length) {
+      const detected = getRoleType(roles[0]);
+      if (detected !== "general") return detected;
+    }
+    return getRoleType(resumeText);
+  }
+
+  function getRoleType(text) {
+    const value = String(text || "").toLowerCase();
+    if (/server|waiter|waitress|bartender|barista/.test(value)) return "server_bartender";
+    if (/registered nurse|\bnurse\b|\brn\b|\blpn\b|\bcna\b/.test(value)) return "nurse";
+    if (/receptionist|front desk|clinic|medical office|patient access/.test(value)) return "receptionist_clinic";
+    return "general";
+  }
+
+  function buildRoleAwareRewrite(objectPhrase, roleType, seedText) {
+    const phrase = objectPhrase.charAt(0).toLowerCase() + objectPhrase.slice(1);
+    const templatesByRole = {
+      server_bartender: [
+        `Served ${phrase} for 60-100 guests per shift while keeping order accuracy and service quality consistent.`,
+        `Handled ${phrase} during high-volume service windows, processing $1,500-$2,500 in transactions per shift.`,
+        `Coordinated ${phrase} with kitchen and bar staff to maintain 10-14 minute ticket times.`
+      ],
+      nurse: [
+        `Managed ${phrase} for 20-40 patients per shift while following clinical safety protocols.`,
+        `Documented ${phrase} in the EMR for 25+ patients each shift to support accurate care decisions.`,
+        `Collaborated on ${phrase} with physicians and nursing staff during handoffs to improve continuity of care.`
+      ],
+      receptionist_clinic: [
+        `Coordinated ${phrase} while scheduling and confirming 35-60 appointments per day.`,
+        `Managed ${phrase} at the front desk for 50-90 daily patient or visitor check-ins.`,
+        `Maintained ${phrase} across records, referrals, and insurance entries with reliable data accuracy.`
+      ],
+      general: [
+        `Managed ${phrase} as part of daily operations while maintaining service and quality standards.`,
+        `Coordinated ${phrase} with team members to complete high-priority tasks on schedule.`,
+        `Handled ${phrase} consistently, supporting accurate documentation and dependable output.`
+      ]
+    };
+
+    const templates = templatesByRole[roleType] || templatesByRole.general;
+    const index = getDeterministicIndex(seedText, templates.length);
+    return templates[index] || null;
+  }
+
+  function getDeterministicIndex(seedText, modulo) {
+    const text = String(seedText || "");
+    if (!text || modulo <= 0) return 0;
+    let sum = 0;
+    for (let i = 0; i < text.length; i += 1) {
+      sum += text.charCodeAt(i);
+    }
+    return sum % modulo;
   }
 
   function normalizeObjectPhrase(text) {
@@ -521,7 +538,7 @@
 
   function highlightMetrics(text) {
     const escaped = escapeHtml(text);
-    return escaped.replace(/(\$\d[\d,.]*|\d+%|\d+\+)/g, "<span class='improvement-highlight'>$1</span>");
+    return escaped.replace(/(\$\d[\d,.]*|\d+%|\d+\+|\d+-\d+|\d+\s*(minutes|patients|customers|appointments|guests))/gi, "<span class='improvement-highlight'>$1</span>");
   }
 
   function escapeHtml(value) {
