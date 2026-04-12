@@ -153,28 +153,48 @@
   }
 
   function generateImprovementPairs(feedback, resumeText) {
-    const experienceBullets = extractExperienceBullets(resumeText);
+    const experienceData = extractExperienceData(resumeText);
+    const experienceBullets = experienceData.bullets;
     const weakBullets = identifyWeakBullets(experienceBullets);
     const fallbackBullets = getFallbackBullets(experienceBullets, weakBullets);
     const candidates = [...weakBullets, ...fallbackBullets].slice(0, 6);
 
-    return candidates
+    // If the resume has job titles in Experience but no bullets, generate role-based samples.
+    if (!experienceBullets.length && experienceData.roles.length) {
+      return experienceData.roles.slice(0, 3).map((role) => buildRoleOnlyImprovement(role));
+    }
+
+    const rewrittenPairs = candidates
       .map((bullet) => {
         const improved = improveBullet(bullet);
         if (!improved) return null;
         return { before: bullet, after: improved };
       })
       .filter(Boolean);
+
+    // If bullets exist but couldn't be rewritten confidently, still provide role-based value.
+    if (!rewrittenPairs.length && experienceData.roles.length) {
+      return experienceData.roles.slice(0, 3).map((role) => buildRoleOnlyImprovement(role));
+    }
+
+    return rewrittenPairs;
   }
 
   function extractExperienceBullets(resumeText) {
-    if (!resumeText) return [];
+    return extractExperienceData(resumeText).bullets;
+  }
+
+  function extractExperienceData(resumeText) {
+    if (!resumeText) {
+      return { bullets: [], roles: [] };
+    }
 
     const lines = String(resumeText)
       .split(/\r?\n/)
       .map((line) => line.trim());
 
     const bullets = [];
+    const roles = [];
     let activeSection = "other";
     let underJobRole = false;
 
@@ -201,6 +221,7 @@
 
       if (isLikelyJobRoleLine(line)) {
         underJobRole = true;
+        roles.push(line);
         return;
       }
 
@@ -219,7 +240,10 @@
       }
     });
 
-    return dedupeList(bullets);
+    return {
+      bullets: dedupeList(bullets),
+      roles: dedupeList(roles)
+    };
   }
 
   function detectSection(line) {
@@ -247,9 +271,94 @@
     if (!text) return false;
     if (text.includes("@") || /(https?:\/\/|www\.|linkedin\.com)/i.test(text)) return false;
     if (/\b(education|experience|summary|objective|skills?)\b/i.test(text)) return false;
+    if (/^[-•*–—]\s+/.test(text)) return false;
+    if (countWords(text) > 12) return false;
     if (/\b(19|20)\d{2}\b/.test(text)) return true;
     if (/\b(manager|engineer|analyst|assistant|specialist|coordinator|associate|director|intern)\b/i.test(text)) return true;
+    if (/\b(server|nurse|cashier|barista|receptionist|teacher|driver|cook|chef|technician|developer|accountant|consultant|supervisor)\b/i.test(text)) return true;
     return false;
+  }
+
+  function buildRoleOnlyImprovement(roleLine) {
+    const role = normalizeRoleTitle(roleLine);
+    const generatedBullets = generateSampleBulletsForRole(role);
+    const after = generatedBullets
+      .map((line) => `• ${highlightMetrics(line)}`)
+      .join("<br>");
+
+    return {
+      before: `${role} - Job Title Only`,
+      after
+    };
+  }
+
+  function normalizeRoleTitle(roleLine) {
+    const clean = String(roleLine || "")
+      .replace(/\(.*?\)/g, "")
+      .replace(/\b(19|20)\d{2}\b(?:\s*[-–]\s*\b(19|20)?\d{2}|\s*[-–]\s*present)?/gi, "")
+      .replace(/\s{2,}/g, " ")
+      .trim();
+
+    if (!clean) return "Professional Role";
+    return clean;
+  }
+
+  function generateSampleBulletsForRole(role) {
+    const title = String(role || "").toLowerCase();
+
+    if (/server|waiter|waitress|bartender|barista/.test(title)) {
+      return [
+        "Delivered high-quality guest service to 120+ customers per shift, improving repeat visit rate by 18%.",
+        "Upsold featured menu items to increase average ticket value by 14% while maintaining fast service times.",
+        "Coordinated front-of-house workflow during peak hours, reducing order delays by 22%."
+      ];
+    }
+
+    if (/registered nurse|nurse|rn|lpn|cna/.test(title)) {
+      return [
+        "Managed care for 18+ patients per shift while maintaining 98% medication administration accuracy.",
+        "Collaborated with interdisciplinary teams to reduce discharge delays by 20% and improve care transitions.",
+        "Implemented patient education plans that increased treatment compliance scores by 16%."
+      ];
+    }
+
+    if (/teacher|instructor|educator|professor/.test(title)) {
+      return [
+        "Designed lesson plans for 90+ students, increasing assessment performance by 17% across core subjects.",
+        "Implemented classroom engagement strategies that improved attendance consistency by 12%.",
+        "Tracked student progress data weekly to identify learning gaps and raise pass rates by 15%."
+      ];
+    }
+
+    if (/sales|account executive|business development|retail/.test(title)) {
+      return [
+        "Exceeded monthly sales targets by 21% through consultative selling and proactive follow-up.",
+        "Expanded customer pipeline by 30+ qualified prospects per month, improving close rates by 13%.",
+        "Retained key accounts worth $120K+ annually by delivering responsive and personalized support."
+      ];
+    }
+
+    if (/software|developer|engineer|programmer|it|technician/.test(title)) {
+      return [
+        "Built and deployed core features that improved application performance by 28% for 50K+ users.",
+        "Resolved production issues and reduced critical incident response time by 35%.",
+        "Automated recurring workflows, saving 12+ team hours per week and improving release reliability."
+      ];
+    }
+
+    if (/customer service|support|call center|representative/.test(title)) {
+      return [
+        "Resolved 60+ customer inquiries daily while maintaining a 95% satisfaction rating.",
+        "Reduced average handling time by 18% through improved troubleshooting workflows.",
+        "Documented recurring issues and recommended fixes that lowered ticket volume by 14%."
+      ];
+    }
+
+    return [
+      "Led daily responsibilities for the role, improving process efficiency by 16% across core tasks.",
+      "Collaborated with team members to complete high-priority deliverables, increasing output by 19%.",
+      "Implemented workflow improvements that reduced errors by 13% and improved service quality."
+    ];
   }
 
   function identifyWeakBullets(bullets) {
