@@ -219,12 +219,38 @@
     return BulletAuth._supabase || window.__bulletSupabaseClient || null;
   }
 
+  function ensureSupabaseLibrary() {
+    if (window.supabase && window.supabase.createClient) {
+      return Promise.resolve(true);
+    }
+
+    if (window.__bulletSupabaseScriptPromise) {
+      return window.__bulletSupabaseScriptPromise;
+    }
+
+    window.__bulletSupabaseScriptPromise = new Promise(function (resolve) {
+      var script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js';
+      script.async = true;
+      script.onload = function () {
+        resolve(Boolean(window.supabase && window.supabase.createClient));
+      };
+      script.onerror = function () {
+        resolve(false);
+      };
+      document.head.appendChild(script);
+    });
+
+    return window.__bulletSupabaseScriptPromise;
+  }
+
   async function ensureAuthClient() {
     var existing = getAuthClient();
     if (existing) return existing;
 
     try {
-      if (!window.supabase || !window.supabase.createClient) return null;
+      var sdkReady = await ensureSupabaseLibrary();
+      if (!sdkReady || !window.supabase || !window.supabase.createClient) return null;
 
       var resp = await fetch('/api/public-auth-config');
       if (!resp.ok) return null;
@@ -389,7 +415,8 @@
   /* ── Supabase initialisation ── */
   async function initSupabase(ownsModal) {
     try {
-      if (!window.supabase || !window.supabase.createClient) return;
+      var sdkReady = await ensureSupabaseLibrary();
+      if (!sdkReady || !window.supabase || !window.supabase.createClient) return;
 
       var resp = await fetch('/api/public-auth-config');
       if (!resp.ok) return;
