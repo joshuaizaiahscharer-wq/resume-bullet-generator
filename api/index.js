@@ -38,7 +38,10 @@ const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || "";
-const STRIPE_CHECK_MY_RESUME_PRICE_ID = process.env.STRIPE_CHECK_MY_RESUME_PRICE_ID || "";
+const STRIPE_CHECK_MY_RESUME_PRODUCT_ID =
+  process.env.STRIPE_CHECK_MY_RESUME_PRODUCT_ID || "prod_UKBRUZb1LrPcpV";
+const STRIPE_CHECK_MY_RESUME_PRICE_ID =
+  process.env.STRIPE_CHECK_MY_RESUME_PRICE_ID || "price_1TLX4E12xoyNnQNyqanmPF7z";
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
 const PAYMENT_STATE_SECRET =
@@ -1169,6 +1172,10 @@ app.get("/resume-template-builder", (req, res) => {
   res.sendFile(path.join(process.cwd(), "resume-template-builder.html"));
 });
 
+app.get("/auth/callback", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "auth-callback.html"));
+});
+
 app.get("/admin-dashboard", (req, res) => {
   return res.redirect(302, "/admin");
 });
@@ -1977,6 +1984,10 @@ app.post("/api/stripe/checkout", async (req, res) => {
           quantity: 1,
         },
       ],
+      metadata: {
+        product: "check_my_resume",
+        product_id: STRIPE_CHECK_MY_RESUME_PRODUCT_ID,
+      },
       success_url: `${baseUrl}/check-my-resume?paid=true`,
       cancel_url: `${baseUrl}/check-my-resume`,
     });

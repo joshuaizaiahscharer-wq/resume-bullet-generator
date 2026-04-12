@@ -265,9 +265,12 @@
     if (googleBtn) {
       googleBtn.addEventListener('click', async function () {
         try {
+          console.log('Google login clicked');
+          var currentPath = window.location.pathname + window.location.search;
+          var callbackUrl = window.location.origin + '/auth/callback?next=' + encodeURIComponent(currentPath);
           await client.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.origin + window.location.pathname },
+            options: { redirectTo: callbackUrl },
           });
         } catch (err) {
           var message = String((err && err.message) || '').toLowerCase();

@@ -2,6 +2,7 @@
   "version": 2,
   "rewrites": [
     { "source": "/check-my-resume", "destination": "/api/index.js" },
+    { "source": "/auth/callback", "destination": "/api/index.js" },
     { "source": "/api/check-resume", "destination": "/api/index.js" },
     { "source": "/api/fix-resume", "destination": "/api/index.js" },
     { "source": "/api/extract-resume-text", "destination": "/api/index.js" },

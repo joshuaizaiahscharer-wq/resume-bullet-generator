@@ -1092,10 +1092,13 @@ function initAuthModal() {
   document.getElementById("authModalGoogleBtn")?.addEventListener("click", async () => {
     if (!resumeAuthClient) return;
     try {
+      console.log("Google login clicked");
       stashResumeBeforeAuthRedirect();
+      const currentPath = window.location.pathname + window.location.search;
+      const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(currentPath)}`;
       await resumeAuthClient.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: getAuthReturnUrl() },
+        options: { redirectTo: callbackUrl },
       });
     } catch (err) {
       const message = String(err?.message || "").toLowerCase();

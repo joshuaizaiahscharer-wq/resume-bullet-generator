@@ -7,7 +7,8 @@ export async function POST() {
     return Response.json({ error: "STRIPE_SECRET_KEY is not configured." }, { status: 500 });
   }
 
-  const priceId = process.env.STRIPE_CHECK_MY_RESUME_PRICE_ID;
+  const priceId =
+    process.env.STRIPE_CHECK_MY_RESUME_PRICE_ID || "price_1TLX4E12xoyNnQNyqanmPF7z";
   if (!priceId) {
     return Response.json(
       { error: "STRIPE_CHECK_MY_RESUME_PRICE_ID is not configured." },
