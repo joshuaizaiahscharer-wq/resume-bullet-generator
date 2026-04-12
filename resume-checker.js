@@ -58,7 +58,7 @@
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          resumeText: resumeText.trim(),
+          resume: resumeText.trim(),
         }),
       });
 
@@ -343,6 +343,7 @@
 
   function generateSampleBulletsForRole(role) {
     const roleType = getRoleType(role);
+    const roleText = String(role || "").toLowerCase();
 
     if (roleType === "server_bartender") {
       return [
@@ -360,7 +361,7 @@
       ];
     }
 
-    if (/teacher|instructor|educator|professor/.test(title)) {
+    if (/teacher|instructor|educator|professor/.test(roleText)) {
       return [
         "Designed lesson plans for 90+ students, increasing assessment performance by 17% across core subjects.",
         "Implemented classroom engagement strategies that improved attendance consistency by 12%.",

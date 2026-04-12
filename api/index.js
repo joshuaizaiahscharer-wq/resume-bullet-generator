@@ -1350,15 +1350,19 @@ app.get("/resume-checker", (req, res) => {
 });
 
 app.post("/api/analyze-resume", (req, res) => {
-  const resumeText = String(req.body?.resumeText || "");
+  const resume = String(req.body?.resume || "").trim();
 
-  if (!resumeText || resumeText.trim().length < 50) {
+  if (!resume) {
+    return res.status(400).json({ error: "Resume is required" });
+  }
+
+  if (resume.length < 50) {
     return res.status(400).json({
       error: "Please paste a full resume",
     });
   }
 
-  const analysis = analyzeResumeText(resumeText);
+  const analysis = analyzeResumeText(resume);
   return res.json({
     score: analysis.score,
     rating: analysis.rating,
