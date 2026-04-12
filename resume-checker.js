@@ -13,6 +13,7 @@
   const moreImprovementsEl = document.getElementById("moreImprovementsText");
   const improvementsBlurEl = document.getElementById("improvementsBlurmask");
   const ctaBtn = document.getElementById("rewriteCtaBtn");
+  const ctaSubtextEl = document.getElementById("ctaSubtext");
   const paywallModal = document.getElementById("paywallModal");
   const paywallCloseBtn = document.getElementById("paywallCloseBtn");
   const checkoutBtn = document.getElementById("checkoutBtn");
@@ -101,13 +102,15 @@
 
     latestFeedback = safeFeedback;
 
+    const personalizedFeedback = buildPersonalizedInsights(resumeText, safeFeedback);
+
     // Render before/after improvement cards (show 2-3, blur the rest)
     renderImprovements(safeFeedback, resumeText);
 
     // Render detailed feedback
     feedbackListEl.innerHTML = "";
-    const items = safeFeedback.length
-      ? safeFeedback
+    const items = personalizedFeedback.length
+      ? personalizedFeedback
       : ["Great baseline. Add quantified impact and role-specific wins to improve further."];
 
     items.forEach((item) => {
@@ -121,7 +124,7 @@
   }
 
   function renderImprovements(feedback, resumeText) {
-    const maxVisible = 2; // Show 2-3 improvements fully
+    const maxVisible = 3; // Always show 2-3 improvements before paywall
     const improvements = generateImprovementPairs(feedback, resumeText);
 
     improvementsListEl.innerHTML = "";
@@ -131,6 +134,14 @@
       const card = createImprovementCard(improvement);
       improvementsListEl.appendChild(card);
     });
+
+    // Never show CTA before showing value.
+    const visibleCount = Math.min(maxVisible, improvements.length);
+    const shouldShowCta = visibleCount >= 2;
+    ctaBtn.classList.toggle("hidden", !shouldShowCta);
+    if (ctaSubtextEl) {
+      ctaSubtextEl.classList.toggle("hidden", !shouldShowCta);
+    }
 
     // Show blur overlay if there are more improvements (locked by paywall)
     if (improvements.length > maxVisible) {
@@ -143,8 +154,8 @@
         });
         improvementsBlurEl.classList.add("hidden");
       } else {
-        // If locked, show blur with locked message
-        moreImprovementsEl.textContent = `🔒 ${remaining} more ${remaining === 1 ? "improvement" : "improvements"} locked`;
+        // If locked, show count in required format.
+        moreImprovementsEl.textContent = `+ ${remaining} more ${remaining === 1 ? "improvement" : "improvements"} available`;
         improvementsBlurEl.classList.remove("hidden");
       }
     } else {
@@ -161,7 +172,10 @@
 
     // If the resume has job titles in Experience but no bullets, generate role-based samples.
     if (!experienceBullets.length && experienceData.roles.length) {
-      return experienceData.roles.slice(0, 3).map((role) => buildRoleOnlyImprovement(role));
+      return ensureMinimumImprovements(
+        experienceData.roles.slice(0, 3).map((role) => buildRoleOnlyImprovement(role)),
+        experienceData
+      );
     }
 
     const rewrittenPairs = candidates
@@ -174,10 +188,33 @@
 
     // If bullets exist but couldn't be rewritten confidently, still provide role-based value.
     if (!rewrittenPairs.length && experienceData.roles.length) {
-      return experienceData.roles.slice(0, 3).map((role) => buildRoleOnlyImprovement(role));
+      return ensureMinimumImprovements(
+        experienceData.roles.slice(0, 3).map((role) => buildRoleOnlyImprovement(role)),
+        experienceData
+      );
     }
 
-    return rewrittenPairs;
+    return ensureMinimumImprovements(rewrittenPairs, experienceData);
+  }
+
+  function ensureMinimumImprovements(pairs, experienceData) {
+    const output = Array.isArray(pairs) ? [...pairs] : [];
+    const roles = Array.isArray(experienceData?.roles) ? experienceData.roles : [];
+
+    if (output.length >= 3) {
+      return output;
+    }
+
+    const roleQueue = roles.length ? [...roles] : ["Professional Role"];
+    let idx = 0;
+    while (output.length < 3) {
+      const role = roleQueue[idx % roleQueue.length] || "Professional Role";
+      output.push(buildRoleOnlyImprovement(role));
+      idx += 1;
+      if (idx > 6) break;
+    }
+
+    return output;
   }
 
   function extractExperienceBullets(resumeText) {
@@ -287,7 +324,7 @@
       .join("<br>");
 
     return {
-      before: `${role} - Job Title Only`,
+      before: `${role} (Job Title Only)`,
       after
     };
   }
@@ -351,6 +388,14 @@
         "Resolved 60+ customer inquiries daily while maintaining a 95% satisfaction rating.",
         "Reduced average handling time by 18% through improved troubleshooting workflows.",
         "Documented recurring issues and recommended fixes that lowered ticket volume by 14%."
+      ];
+    }
+
+    if (/receptionist|front desk|administrative assistant|office assistant/.test(title)) {
+      return [
+        "Managed front-desk operations for 80+ daily visitors while maintaining 99% scheduling accuracy.",
+        "Coordinated calendars, calls, and records to reduce appointment conflicts by 24%.",
+        "Streamlined intake and document workflows, cutting check-in time by 20%."
       ];
     }
 
@@ -494,6 +539,28 @@
 
   function dedupeList(items) {
     return [...new Set(items.map((item) => item.trim()).filter(Boolean))];
+  }
+
+  function buildPersonalizedInsights(resumeText, apiFeedback) {
+    const experienceData = extractExperienceData(resumeText);
+    const insights = [];
+
+    if (experienceData.roles.length > 0 && experienceData.bullets.length === 0) {
+      insights.push("Your experience section is missing bullet points");
+    }
+
+    const metricsRegex = /(\d+%|\$\d|\d+\+|\d+\s+(patients|customers|clients|users|projects|tickets|hours|days|weeks|months|years))/i;
+    if (!metricsRegex.test(String(resumeText || ""))) {
+      insights.push("Your resume lacks measurable impact");
+    }
+
+    apiFeedback.forEach((item) => {
+      if (!insights.includes(item)) {
+        insights.push(item);
+      }
+    });
+
+    return insights.slice(0, 4);
   }
 
   function createImprovementCard(improvement) {
