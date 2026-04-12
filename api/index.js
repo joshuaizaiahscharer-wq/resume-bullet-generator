@@ -799,6 +799,8 @@ const allClusterPages = allClusters.flatMap((cluster) =>
 );
 
 // ─── POST /api/generate ───────────────────────────────────────────────────────
+const MAX_JOB_DESCRIPTION_LENGTH = 3000;
+
 app.post("/api/generate", async (req, res) => {
   const { jobTitle, jobDescription, pagePath, pageType, userId: bodyUserId } = req.body;
 
@@ -807,7 +809,7 @@ app.post("/api/generate", async (req, res) => {
   }
 
   const sanitizedTitle = jobTitle.trim().slice(0, 100);
-  const sanitizedJD = typeof jobDescription === "string" ? jobDescription.trim().slice(0, 3000) : "";
+  const sanitizedJD = typeof jobDescription === "string" ? jobDescription.trim().slice(0, MAX_JOB_DESCRIPTION_LENGTH) : "";
 
   const userPrompt = sanitizedJD
     ? `Create 10 professional resume bullet points for a ${sanitizedTitle} that are specifically tailored to the following job description. Each bullet should begin with an action verb and highlight skills and responsibilities relevant to the role.\n\nJob Description:\n${sanitizedJD}`
