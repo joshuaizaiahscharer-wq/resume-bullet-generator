@@ -3,6 +3,7 @@
   const resumeFileInput = document.getElementById("resume-file");
   const analyzeBtn = document.getElementById("analyze-btn");
   const fixBtn = document.getElementById("fix-btn");
+  const finalizeBtn = document.getElementById("finalize-btn");
   const copyBtn = document.getElementById("copy-btn");
   const downloadBtn = document.getElementById("download-btn");
 
@@ -10,11 +11,13 @@
   const analysisSection = document.getElementById("analysis-section");
   const improvementsSection = document.getElementById("improvements-section");
   const paywallSection = document.getElementById("paywall-section");
+  const previewSection = document.getElementById("preview-section");
   const optimizedSection = document.getElementById("optimized-section");
 
   const scorePill = document.getElementById("score-pill");
   const breakdownGrid = document.getElementById("breakdown-grid");
   const improvementsGrid = document.getElementById("improvements-grid");
+  const changePreviewList = document.getElementById("change-preview-list");
   const optimizedOutput = document.getElementById("optimized-output");
   const optimizedStatus = document.getElementById("optimized-status");
   const pdfDisclaimer = document.getElementById("pdf-disclaimer");
@@ -33,6 +36,12 @@
   let isLoading = false;
   let isPaid = false;
   let fixedResume = "";
+  let originalResumeText = "";
+  let improvedResumeText = "";
+  let finalResumeText = "";
+  let resumeChanges = [];
+  let acceptedChanges = [];
+  let rejectedChanges = [];
   let extractedResumeText = "";
   let inputFileType = "";
   let optimizedSections = null;
@@ -71,6 +80,12 @@
     analysisSection.classList.remove("hidden");
     improvementsSection.classList.remove("hidden");
     paywallSection.classList.remove("hidden");
+    previewSection.classList.add("hidden");
+    optimizedSection.classList.add("hidden");
+  }
+
+  function showPreviewSection() {
+    previewSection.classList.remove("hidden");
     optimizedSection.classList.add("hidden");
   }
 
@@ -78,7 +93,96 @@
     analysisSection.classList.add("hidden");
     improvementsSection.classList.add("hidden");
     paywallSection.classList.add("hidden");
+    previewSection.classList.add("hidden");
     optimizedSection.classList.remove("hidden");
+  }
+
+  function renderResumeChangePreview() {
+    changePreviewList.innerHTML = "";
+
+    if (!Array.isArray(resumeChanges) || resumeChanges.length === 0) {
+      const emptyState = document.createElement("p");
+      emptyState.className = "preview-subtext";
+      emptyState.textContent = "No line-by-line changes were extracted. You can still build your final resume.";
+      changePreviewList.appendChild(emptyState);
+      return;
+    }
+
+    resumeChanges.forEach(function (change, index) {
+      const card = document.createElement("article");
+      card.className = "change-card";
+
+      const title = document.createElement("p");
+      title.innerHTML = "<strong>Change " + (index + 1) + "</strong>";
+
+      const original = document.createElement("div");
+      original.className = "change-original";
+      original.textContent = "Original: " + String(change.original || "");
+
+      const improved = document.createElement("div");
+      improved.className = "change-improved";
+      improved.textContent = "Improved: " + String(change.improved || "");
+
+      const reason = document.createElement("p");
+      reason.className = "change-reason";
+      reason.textContent = "Reason: " + String(change.reason || "Improved for clarity and competitiveness.");
+
+      const actions = document.createElement("div");
+      actions.className = "change-actions";
+
+      const acceptBtn = document.createElement("button");
+      acceptBtn.type = "button";
+      acceptBtn.className = "choice-btn";
+      acceptBtn.textContent = "Accept Change";
+
+      const rejectBtn = document.createElement("button");
+      rejectBtn.type = "button";
+      rejectBtn.className = "choice-btn";
+      rejectBtn.textContent = "Keep Original";
+
+      const isAccepted = acceptedChanges.indexOf(index) !== -1;
+      const isRejected = rejectedChanges.indexOf(index) !== -1;
+      if (isAccepted) acceptBtn.classList.add("active", "accept");
+      if (isRejected) rejectBtn.classList.add("active", "reject");
+
+      acceptBtn.addEventListener("click", function () {
+        if (acceptedChanges.indexOf(index) === -1) acceptedChanges.push(index);
+        rejectedChanges = rejectedChanges.filter(function (item) {
+          return item !== index;
+        });
+        renderResumeChangePreview();
+      });
+
+      rejectBtn.addEventListener("click", function () {
+        if (rejectedChanges.indexOf(index) === -1) rejectedChanges.push(index);
+        acceptedChanges = acceptedChanges.filter(function (item) {
+          return item !== index;
+        });
+        renderResumeChangePreview();
+      });
+
+      actions.appendChild(acceptBtn);
+      actions.appendChild(rejectBtn);
+
+      card.appendChild(title);
+      card.appendChild(original);
+      card.appendChild(improved);
+      card.appendChild(reason);
+      card.appendChild(actions);
+      changePreviewList.appendChild(card);
+    });
+  }
+
+  function buildFinalResumeFromDecisions() {
+    let output = String(improvedResumeText || "");
+
+    rejectedChanges.forEach(function (index) {
+      const change = resumeChanges[index];
+      if (!change || !change.improved || !change.original) return;
+      output = output.replace(change.improved, change.original);
+    });
+
+    return output.trim();
   }
 
   async function extractTextFromSelectedFile() {
@@ -159,6 +263,12 @@
     setError("");
     isPaid = false;
     fixedResume = "";
+    originalResumeText = "";
+    improvedResumeText = "";
+    finalResumeText = "";
+    resumeChanges = [];
+    acceptedChanges = [];
+    rejectedChanges = [];
     setLoading(true, "analyze");
 
     try {
@@ -222,16 +332,27 @@
         throw new Error(data.error || "Resume optimization failed.");
       }
 
-      fixedResume = String(data.fixedResume || "").trim();
+      originalResumeText = String(data.original || resumeText || "").trim();
+      improvedResumeText = String(data.improved || data.fixedResume || "").trim();
+      resumeChanges = Array.isArray(data.changes)
+        ? data.changes.filter(function (change) {
+            return change && change.original && change.improved;
+          })
+        : [];
+
+      acceptedChanges = resumeChanges.map(function (_item, index) {
+        return index;
+      });
+      rejectedChanges = [];
+
+      fixedResume = improvedResumeText;
       optimizedSections = data.sections || null;
-      if (!fixedResume) {
+      if (!improvedResumeText) {
         throw new Error("Resume optimization failed.");
       }
 
-      isPaid = true;
-      optimizedOutput.textContent = fixedResume;
-      optimizedStatus.textContent = "Your resume has been professionally optimized.";
-      showOptimizedSection();
+      renderResumeChangePreview();
+      showPreviewSection();
     } catch (error) {
       setError(error && error.message ? error.message : "Unable to optimize resume.");
     } finally {
@@ -240,9 +361,9 @@
   }
 
   async function copyResume() {
-    if (!fixedResume) return;
+    if (!finalResumeText) return;
     try {
-      await navigator.clipboard.writeText(fixedResume);
+      await navigator.clipboard.writeText(finalResumeText);
       copyBtn.textContent = "Copied!";
       setTimeout(function () {
         copyBtn.textContent = "Copy";
@@ -253,8 +374,8 @@
   }
 
   async function downloadResume() {
-    if (!optimizedSections) {
-      setError("No optimized resume is available to download yet.");
+    if (!finalResumeText) {
+      setError("No final resume is available to download yet.");
       return;
     }
 
@@ -264,6 +385,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          finalResumeText: finalResumeText,
           sections: optimizedSections,
           outputFormat,
         }),
@@ -294,6 +416,19 @@
       setError(error && error.message ? error.message : "Unable to download optimized resume.");
     }
   }
+
+  finalizeBtn.addEventListener("click", function () {
+    finalResumeText = buildFinalResumeFromDecisions();
+    if (!finalResumeText) {
+      finalResumeText = improvedResumeText || originalResumeText;
+    }
+
+    fixedResume = finalResumeText;
+    isPaid = true;
+    optimizedOutput.textContent = finalResumeText;
+    optimizedStatus.textContent = "Your Final Resume";
+    showOptimizedSection();
+  });
 
   resumeFileInput.addEventListener("change", function () {
     const selectedFile = resumeFileInput.files && resumeFileInput.files[0];

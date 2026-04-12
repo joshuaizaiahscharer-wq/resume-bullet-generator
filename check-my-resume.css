@@ -158,6 +158,80 @@ button:disabled {
   font-weight: 600;
 }
 
+.preview-subtext {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+.change-preview-list {
+  margin-top: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.change-card {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(2, 6, 23, 0.7);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.change-card:hover {
+  border-color: #334155;
+  transform: translateY(-1px);
+}
+
+.change-original {
+  margin-top: 8px;
+  background: #1f2937;
+  color: #cbd5e1;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.88rem;
+}
+
+.change-improved {
+  margin-top: 8px;
+  background: #052e1f;
+  color: #bbf7d0;
+  border: 1px solid #166534;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.92rem;
+}
+
+.change-reason {
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: #cbd5e1;
+}
+
+.change-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.choice-btn {
+  background: #164e63;
+  color: #e0f2fe;
+  border: 1px solid #155e75;
+}
+
+.choice-btn.active.accept {
+  background: #166534;
+  color: #dcfce7;
+  border-color: #22c55e;
+}
+
+.choice-btn.active.reject {
+  background: #334155;
+  color: #e2e8f0;
+  border-color: #64748b;
+}
+
 .hidden {
   display: none;
 }

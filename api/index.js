@@ -1457,6 +1457,87 @@ function toSafeFileStem(nameValue) {
   return cleaned || fallback;
 }
 
+function parseResumeTextToSections(resumeText) {
+  const rawLines = String(resumeText || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim());
+
+  const lines = rawLines.filter((line) => Boolean(line));
+  if (lines.length === 0) {
+    return normalizeSections({});
+  }
+
+  const sections = {
+    name: lines[0] || "",
+    contactInfo: lines[1] || "",
+    summary: "",
+    experience: [],
+    education: [],
+    skills: [],
+  };
+
+  let mode = "";
+  let currentRole = null;
+
+  lines.slice(2).forEach((line) => {
+    const upper = line.toUpperCase();
+    if (upper === "PROFESSIONAL SUMMARY") {
+      mode = "summary";
+      currentRole = null;
+      return;
+    }
+    if (upper === "EXPERIENCE") {
+      mode = "experience";
+      currentRole = null;
+      return;
+    }
+    if (upper === "EDUCATION") {
+      mode = "education";
+      currentRole = null;
+      return;
+    }
+    if (upper === "SKILLS") {
+      mode = "skills";
+      currentRole = null;
+      return;
+    }
+
+    if (mode === "summary") {
+      sections.summary = sections.summary ? `${sections.summary} ${line}` : line;
+      return;
+    }
+
+    if (mode === "experience") {
+      if (/^[-*•]/.test(line)) {
+        if (!currentRole) {
+          currentRole = { role: "Experience", bullets: [] };
+          sections.experience.push(currentRole);
+        }
+        currentRole.bullets.push(line.replace(/^[-*•]\s*/, ""));
+        return;
+      }
+      currentRole = { role: line, bullets: [] };
+      sections.experience.push(currentRole);
+      return;
+    }
+
+    if (mode === "education") {
+      sections.education.push(line.replace(/^[-*•]\s*/, ""));
+      return;
+    }
+
+    if (mode === "skills") {
+      line
+        .split(/\s*[|•,]\s*/)
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .forEach((item) => sections.skills.push(item));
+    }
+  });
+
+  return normalizeSections(sections);
+}
+
 async function buildPdfBufferFromSections(sections) {
   return new Promise((resolve, reject) => {
     try {
@@ -1766,6 +1847,15 @@ The final resume should feel more competitive, more specific, more impactful, an
 OUTPUT:
 JSON only. Use this exact shape:
 {
+  "original": "original resume text",
+  "improved": "full upgraded resume text",
+  "changes": [
+    {
+      "original": "old sentence",
+      "improved": "new sentence",
+      "reason": "why it was improved"
+    }
+  ],
   "sections": {
     "name": "string",
     "contactInfo": "string",
@@ -1792,14 +1882,38 @@ ${resumeText}`;
 
     const content = String(completion.choices[0]?.message?.content || "");
     const parsed = JSON.parse(parseFirstJsonObject(content));
-    const sections = normalizeSections(parsed?.sections || parsed);
-    const fixedResume = renderSectionsToPlainText(sections);
+    const original = String(parsed?.original || resumeText || "").trim();
+    const improvedFromModel = String(parsed?.improved || "").trim();
+    const sections = normalizeSections(parsed?.sections || {});
+    const improved = improvedFromModel || renderSectionsToPlainText(sections);
+    const hydratedSections = sections.summary || sections.experience.length > 0
+      ? sections
+      : parseResumeTextToSections(improved);
 
-    if (!fixedResume || (!sections.summary && sections.experience.length === 0)) {
+    const changes = Array.isArray(parsed?.changes)
+      ? parsed.changes
+          .map((item) => ({
+            original: String(item?.original || "").trim(),
+            improved: String(item?.improved || "").trim(),
+            reason: String(item?.reason || "").trim(),
+          }))
+          .filter((item) => item.original && item.improved && item.original !== item.improved)
+          .slice(0, 30)
+      : [];
+
+    const fixedResume = String(improved || "").trim();
+
+    if (!fixedResume || (!hydratedSections.summary && hydratedSections.experience.length === 0)) {
       return res.status(500).json({ error: "Resume optimization failed." });
     }
 
-    return res.status(200).json({ fixedResume, sections });
+    return res.status(200).json({
+      original,
+      improved: fixedResume,
+      changes,
+      fixedResume,
+      sections: hydratedSections,
+    });
   } catch (error) {
     console.error("/api/fix-resume error", error);
     return res.status(500).json({ error: "Failed to optimize resume." });
@@ -1809,7 +1923,11 @@ ${resumeText}`;
 app.post("/api/download-optimized-resume", async (req, res) => {
   try {
     const format = String(req.body?.outputFormat || "docx").toLowerCase();
-    const sections = normalizeSections(req.body?.sections || {});
+    const finalResumeText = String(req.body?.finalResumeText || "").trim();
+    const incomingSections = normalizeSections(req.body?.sections || {});
+    const sections = incomingSections.summary || incomingSections.experience.length > 0
+      ? incomingSections
+      : parseResumeTextToSections(finalResumeText);
     const fileStem = toSafeFileStem(sections.name);
 
     if (!sections.summary && sections.experience.length === 0) {
