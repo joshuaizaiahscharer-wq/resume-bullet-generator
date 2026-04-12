@@ -17,6 +17,7 @@
   const improvementsGrid = document.getElementById("improvements-grid");
   const optimizedOutput = document.getElementById("optimized-output");
   const optimizedStatus = document.getElementById("optimized-status");
+  const pdfDisclaimer = document.getElementById("pdf-disclaimer");
 
   const categories = [
     { key: "structure", label: "Structure" },
@@ -295,6 +296,17 @@
   }
 
   resumeFileInput.addEventListener("change", function () {
+    const selectedFile = resumeFileInput.files && resumeFileInput.files[0];
+    const isPdf = Boolean(
+      selectedFile &&
+        (selectedFile.type === "application/pdf" ||
+          String(selectedFile.name || "").toLowerCase().endsWith(".pdf"))
+    );
+
+    if (pdfDisclaimer) {
+      pdfDisclaimer.classList.toggle("hidden", !isPdf);
+    }
+
     extractedResumeText = "";
     inputFileType = "";
     optimizedSections = null;

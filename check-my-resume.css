@@ -91,6 +91,23 @@ input[type="file"]::file-selector-button {
   cursor: pointer;
 }
 
+.upload-helper {
+  margin-top: 8px;
+  color: #94a3b8;
+  font-size: 0.85rem;
+}
+
+.pdf-disclaimer {
+  margin-top: 10px;
+  border: 1px solid #fcd34d;
+  background: #fefce8;
+  color: #92400e;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 textarea:focus {
   outline: none;
   border-color: var(--accent);

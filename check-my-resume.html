@@ -17,6 +17,10 @@
 
         <label class="field-label" for="resume-file">Or Upload Resume (.pdf or .docx)</label>
         <input id="resume-file" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        <p class="upload-helper">Best results: Upload a .docx file</p>
+        <div id="pdf-disclaimer" class="pdf-disclaimer hidden" role="status" aria-live="polite">
+          <strong>Note on PDF uploads:</strong> PDF files may not retain exact formatting after optimization. For best results, upload your resume as a .docx file to preserve layout and styling.
+        </div>
 
         <div class="row">
           <button id="analyze-btn">Analyze Resume</button>
