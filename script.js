@@ -36,10 +36,6 @@ const bulletList     = document.getElementById("bulletList");
 const copyBtn        = document.getElementById("copyBtn");
 const regenerateBtn  = document.getElementById("regenerateBtn");
 const chipsContainer = document.getElementById("chips");
-const resumeScorePanel = document.getElementById("resumeScorePanel");
-const resumeScoreValue = document.getElementById("resumeScoreValue");
-const resumeScoreFill = document.getElementById("resumeScoreFill");
-const resumeFeedbackList = document.getElementById("resumeFeedbackList");
 const supportForm    = document.getElementById("supportForm");
 const supportStatus  = document.getElementById("supportStatus");
 const supportBtn     = document.getElementById("supportSubmitBtn");
@@ -47,17 +43,6 @@ const jobDescriptionInput = document.getElementById("jobDescriptionInput");
 const tailorHint = document.getElementById("tailorHint");
 
 let currentBullets = [];
-let currentScore = null;
-let currentFeedback = [];
-
-function setScore(value) {
-  const parsed = Number(value);
-  currentScore = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0;
-}
-
-function setFeedback(items) {
-  currentFeedback = Array.isArray(items) ? items : [];
-}
 
 // ─── Event listeners ─────────────────────────────────────────────────────────
 if (generateBtn) {
@@ -131,9 +116,7 @@ async function handleGenerate() {
   try {
     const jdText = String(jobDescriptionInput?.value || "").trim();
     const result = await fetchBullets(jobTitle, jdText);
-    setScore(result.score);
-    setFeedback(result.feedback);
-    displayBullets(result.bullets, jobTitle, currentScore, currentFeedback);
+    displayBullets(result.bullets, jobTitle);
     showTailorHint(jdText.length > 10);
   } catch (err) {
     showError(err.message || "Something went wrong. Please try again.");
@@ -172,8 +155,6 @@ async function fetchBullets(jobTitle, jobDescription = "") {
 
   return {
     bullets: data.bullets,
-    score: Number.isFinite(Number(data.score)) ? Number(data.score) : 0,
-    feedback: Array.isArray(data.feedback) ? data.feedback : [],
   };
 }
 
@@ -204,7 +185,7 @@ function inferPageType(pathname) {
 }
 
 // ─── UI helpers ──────────────────────────────────────────────────────────────
-function displayBullets(bullets, jobTitle, score = 0, feedback = []) {
+function displayBullets(bullets, jobTitle) {
   clearStatus();
   currentBullets = bullets.slice();
 
@@ -213,7 +194,6 @@ function displayBullets(bullets, jobTitle, score = 0, feedback = []) {
   resultsHeading.textContent = `${count} Bullet Point${count !== 1 ? "s" : ""} — ${jobTitle}`;
 
   renderBulletList(bullets);
-  renderResumeAnalysis(score, feedback);
 
   resultsSection.classList.remove("hidden");
 
@@ -223,38 +203,6 @@ function displayBullets(bullets, jobTitle, score = 0, feedback = []) {
 
   resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
-
-function renderResumeAnalysis(score, feedback) {
-  if (!resumeScorePanel || !resumeScoreValue || !resumeScoreFill || !resumeFeedbackList) return;
-
-  const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
-  console.log("Rendering resume analysis:", { score: safeScore, feedback });
-  resumeScorePanel.classList.remove("hidden");
-  resumeScoreValue.textContent = `${safeScore}%`;
-  resumeScoreFill.style.width = `${safeScore}%`;
-  resumeScoreFill.classList.remove("score-strong", "score-decent", "score-needs-work");
-
-  if (safeScore >= 80) {
-    resumeScoreFill.classList.add("score-strong");
-  } else if (safeScore >= 60) {
-    resumeScoreFill.classList.add("score-decent");
-  } else {
-    resumeScoreFill.classList.add("score-needs-work");
-  }
-
-  resumeScorePanel
-    .querySelector(".resume-score-bar")
-    ?.setAttribute("aria-valuenow", String(safeScore));
-
-  resumeFeedbackList.innerHTML = "";
-  const items = feedback.length ? feedback : ["Great foundation. Add role-specific impact metrics for an even stronger profile."];
-  items.forEach((item) => {
-    const li = document.createElement("li");
-    li.textContent = item;
-    resumeFeedbackList.appendChild(li);
-  });
-}
-
 function renderBulletList(bullets) {
   bulletList.innerHTML = "";
 
@@ -269,7 +217,7 @@ function renderBulletList(bullets) {
 
     const btn = document.createElement("button");
     btn.className = "bullet-copy";
-    btn.textContent = "Copy";
+    btn.innerHTML = '<span class="bullet-copy-icon">[]</span><span class="bullet-copy-label">Copy</span>';
     btn.setAttribute("aria-label", "Copy this bullet point");
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -294,11 +242,15 @@ function showTailorHint(hasJobDescription) {
 }
 
 function copySingleBullet(btn, text) {
+  const setButtonLabel = (labelText) => {
+    btn.innerHTML = `<span class="bullet-copy-icon">[]</span><span class="bullet-copy-label">${labelText}</span>`;
+  };
+
   const write = () => {
-    btn.textContent = "Copied!";
+    setButtonLabel("Copied!");
     btn.classList.add("copied");
     setTimeout(() => {
-      btn.textContent = "Copy";
+      setButtonLabel("Copy");
       btn.classList.remove("copied");
     }, 1800);
   };

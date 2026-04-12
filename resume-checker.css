@@ -6,28 +6,46 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
-  background: #0b0f1a;
-  color: #e2e8f0;
-  background-image: radial-gradient(ellipse 70% 40% at 50% -10%, rgba(14, 165, 233, 0.14) 0%, transparent 70%);
+  background: #0f172a;
+  color: #e5e7eb;
+  background-image: radial-gradient(ellipse 78% 44% at 50% -10%, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+  animation: checkerFadeIn 0.45s ease;
+}
+
+@keyframes checkerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .checker-main {
   width: 100%;
-  max-width: 860px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 120px 20px 80px;
+  padding: 124px 24px 80px;
 }
 
 .checker-card {
-  background: #131929;
-  border: 1px solid #1e293b;
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  background: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 16px;
+  padding: 34px;
+  box-shadow: 0 18px 48px rgba(2, 6, 23, 0.4);
+  transition: transform 0.24s ease, box-shadow 0.24s ease;
+}
+
+.checker-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 24px 56px rgba(2, 6, 23, 0.46);
 }
 
 .checker-eyebrow {
-  color: #38bdf8;
+  color: #93c5fd;
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -36,14 +54,16 @@ body {
 
 h1 {
   margin: 0;
-  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  font-size: clamp(2rem, 4.6vw, 2.9rem);
   color: #f8fafc;
+  letter-spacing: -0.02em;
 }
 
 .checker-sub {
-  margin: 12px 0 20px;
-  color: #94a3b8;
+  margin: 12px 0 22px;
+  color: #9ca3af;
   line-height: 1.6;
+  max-width: 760px;
 }
 
 .checker-label {
@@ -58,22 +78,27 @@ h1 {
 
 .checker-textarea {
   width: 100%;
-  min-height: 260px;
+  min-height: 320px;
   resize: vertical;
-  background: #0b0f1a;
-  border: 1.5px solid #1e293b;
-  border-radius: 12px;
-  color: #e2e8f0;
-  padding: 14px;
+  background: #0b1220;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  color: #e5e7eb;
+  padding: 16px;
   line-height: 1.55;
-  font-size: 0.94rem;
+  font-size: 0.98rem;
   font-family: inherit;
   outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.checker-textarea::placeholder {
+  color: #64748b;
 }
 
 .checker-textarea:focus {
-  border-color: #38bdf8;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.24);
 }
 
 .checker-actions {
@@ -86,12 +111,20 @@ h1 {
 
 .checker-btn {
   border: 0;
-  border-radius: 10px;
-  padding: 11px 18px;
+  border-radius: 12px;
+  padding: 13px 18px;
   font-weight: 700;
   cursor: pointer;
   color: #f8fafc;
-  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  width: 100%;
+  transition: transform 0.18s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 8px 22px rgba(59, 130, 246, 0.28);
+}
+
+.checker-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.42);
 }
 
 .checker-btn:disabled {
@@ -124,12 +157,12 @@ h1 {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 #scoreTitle {
   margin: 0;
-  font-size: 1.3rem;
+  font-size: clamp(1.35rem, 3vw, 1.9rem);
 }
 
 .score-badge {
@@ -160,9 +193,9 @@ h1 {
 
 .progress-bar {
   width: 100%;
-  height: 12px;
-  background: #111827;
-  border: 1px solid #1e293b;
+  height: 14px;
+  background: #0b1220;
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 999px;
   overflow: hidden;
   margin-bottom: 14px;
@@ -172,6 +205,7 @@ h1 {
   height: 100%;
   width: 0;
   transition: width 0.3s ease;
+  box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.2);
 }
 
 .progress-fill.strong {
@@ -191,15 +225,15 @@ h1 {
   padding: 0;
   list-style: none;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
 
 .feedback-list li {
-  color: #fecaca;
-  background: rgba(127, 29, 29, 0.25);
+  color: #fca5a5;
+  background: rgba(127, 29, 29, 0.22);
   border: 1px solid rgba(239, 68, 68, 0.24);
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: 10px;
+  padding: 10px 12px;
   line-height: 1.4;
 }
 
@@ -209,4 +243,18 @@ h1 {
 
 .hidden {
   display: none !important;
+}
+
+@media (max-width: 720px) {
+  .checker-main {
+    padding: 108px 16px 44px;
+  }
+
+  .checker-card {
+    padding: 22px;
+  }
+
+  .checker-textarea {
+    min-height: 260px;
+  }
 }

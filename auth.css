@@ -14,10 +14,10 @@
   align-items: center;
   gap: 6px;
   padding: 6px 16px;
-  border: 1px solid rgba(99, 102, 241, 0.55);
+  border: 1px solid rgba(59, 130, 246, 0.58);
   border-radius: 999px;
-  background: rgba(99, 102, 241, 0.12);
-  color: #a5b4fc;
+  background: rgba(59, 130, 246, 0.14);
+  color: #bfdbfe;
   font-family: inherit;
   font-size: 0.8125rem;
   font-weight: 600;
@@ -31,10 +31,10 @@
 }
 
 #navAuthBtn:hover {
-  background: rgba(99, 102, 241, 0.22);
-  border-color: rgba(99, 102, 241, 0.85);
-  color: #c7d2fe;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background: rgba(59, 130, 246, 0.24);
+  border-color: rgba(59, 130, 246, 0.9);
+  color: #dbeafe;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.17);
 }
 
 #navAuthBtn[data-state="signed-in"] {
@@ -71,8 +71,8 @@
 
 .auth-modal {
   position: relative;
-  background: #1a2236;
-  border: 1px solid rgba(99, 102, 241, 0.25);
+  background: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.28);
   border-radius: 16px;
   padding: 36px 32px 28px;
   width: 100%;
@@ -102,13 +102,13 @@
 .auth-modal-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #dbe4f3;
+  color: #e5e7eb;
   margin: 0 0 8px;
 }
 
 .auth-modal-subtitle {
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: #9ca3af;
   margin: 0 0 24px;
   line-height: 1.5;
 }
@@ -122,12 +122,12 @@
 .auth-modal-email-input {
   width: 100%;
   box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 8px;
+  background: #0b1220;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
   padding: 11px 14px;
   font-size: 0.9375rem;
-  color: #dbe4f3;
+  color: #e5e7eb;
   outline: none;
   transition: border-color 0.18s;
 }
@@ -137,15 +137,16 @@
 }
 
 .auth-modal-email-input:focus {
-  border-color: #6366f1;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
 .auth-modal-submit-btn {
   width: 100%;
   padding: 11px;
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   color: #fff;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -210,7 +211,7 @@
   margin: 14px 0 0;
   font-size: 0.8125rem;
   text-align: center;
-  color: #94a3b8;
+  color: #9ca3af;
   min-height: 1.25em;
 }
 
