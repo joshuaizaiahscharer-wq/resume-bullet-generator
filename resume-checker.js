@@ -99,7 +99,7 @@
     }
 
     // Render before/after improvement cards (show 2-3, blur the rest)
-    renderImprovements(safeFeedback);
+    renderImprovements(safeFeedback, resumeText);
 
     // Render detailed feedback
     feedbackListEl.innerHTML = "";
@@ -117,9 +117,9 @@
     resultEl.querySelector(".progress-bar")?.setAttribute("aria-valuenow", String(safeScore));
   }
 
-  function renderImprovements(feedback) {
+  function renderImprovements(feedback, resumeText) {
     const maxVisible = 2; // Show 2-3 improvements fully
-    const improvements = generateImprovementPairs(feedback);
+    const improvements = generateImprovementPairs(feedback, resumeText);
 
     improvementsListEl.innerHTML = "";
 
@@ -149,56 +149,148 @@
     }
   }
 
-  function generateImprovementPairs(feedback) {
-    // Generate before/after pairs from feedback
-    // In a real scenario, this would come from the API
+  function generateImprovementPairs(feedback, resumeText) {
+    // First, try to extract weak bullets from the user's resume
+    const userBullets = extractBulletsFromResume(resumeText);
+    const weakBullets = identifyWeakBullets(userBullets);
+
     const pairs = [];
 
-    // Example improvement templates based on common feedback
-    const beforeAfterMaps = [
-      {
-        before: "Responsible for managing social media accounts",
-        after: "Increased social media engagement by 45% through strategic content planning and audience targeting"
-      },
-      {
-        before: "Worked on various marketing projects",
-        after: "Led 12+ cross-functional marketing campaigns, generating $2.3M in attributed revenue"
-      },
-      {
-        before: "Improved team productivity",
-        after: "Implemented new workflow system that <span class='improvement-highlight'>reduced processing time by 35%</span> and improved team productivity"
-      },
-      {
-        before: "Handled customer support tickets",
-        after: "Resolved 95% of customer support tickets with <span class='improvement-highlight'>4.8/5 satisfaction rating</span>, reducing resolution time"
-      },
-      {
-        before: "Developed software features",
-        after: "Developed 8+ full-stack features used by 50K+ monthly active users, improving system efficiency"
-      },
-      {
-        before: "Assisted with project management",
-        after: "Coordinated project delivery for 15+ initiatives on time and under budget, managing teams and stakeholders"
-      }
-    ];
-
-    // Create pairs from feedback or use templates
-    if (feedback && feedback.length > 0) {
-      feedback.slice(0, 6).forEach((fb, idx) => {
-        if (idx < beforeAfterMaps.length) {
-          pairs.push(beforeAfterMaps[idx]);
-        } else {
-          pairs.push({
-            before: "Generic bullet point",
-            after: fb
-          });
-        }
+    // If we found weak bullets, improve them
+    if (weakBullets.length > 0) {
+      weakBullets.slice(0, 6).forEach((bullet) => {
+        const improved = improveBullet(bullet);
+        pairs.push({
+          before: bullet,
+          after: improved
+        });
       });
-    } else {
-      pairs.push(...beforeAfterMaps.slice(0, 4));
+    }
+
+    // Fallback: use generic examples if not enough real improvements found
+    if (pairs.length < 2) {
+      const genericFallback = [
+        {
+          before: "Responsible for managing social media accounts",
+          after: "Increased social media engagement by <span class='improvement-highlight'>45%</span> through strategic content planning and audience targeting"
+        },
+        {
+          before: "Worked on various marketing projects",
+          after: "Led <span class='improvement-highlight'>12+ cross-functional marketing campaigns</span>, generating <span class='improvement-highlight'>$2.3M</span> in attributed revenue"
+        },
+        {
+          before: "Improved team productivity",
+          after: "Implemented new workflow system that <span class='improvement-highlight'>reduced processing time by 35%</span> and improved team productivity"
+        },
+        {
+          before: "Handled customer support tickets",
+          after: "Resolved <span class='improvement-highlight'>95% of support tickets</span> with <span class='improvement-highlight'>4.8/5 satisfaction rating</span>"
+        }
+      ];
+
+      pairs.push(...genericFallback.slice(0, 6 - pairs.length));
     }
 
     return pairs;
+  }
+
+  function extractBulletsFromResume(resumeText) {
+    if (!resumeText) return [];
+
+    // Split by lines and filter for potential bullet points
+    const lines = resumeText.split("\n").map((line) => line.trim()).filter((line) => line.length > 10);
+
+    // Look for lines that likely contain job duties (bullet points)
+    return lines.filter((line) => {
+      const startsWithBulletChar = /^[-•*→]\s/.test(line);
+      const looksLikeBullet = line.length > 20 && line.length < 300;
+      const notAHeading = !/^[A-Z\s]+$/.test(line);
+      return (startsWithBulletChar || looksLikeBullet) && notAHeading;
+    }).map((line) => line.replace(/^[-•*→]\s/, "").trim()); // Remove bullet characters
+  }
+
+  function identifyWeakBullets(bullets) {
+    const weakIndicators = [
+      "responsible for",
+      "worked on",
+      "helped with",
+      "demonstrated",
+      "assisted",
+      "participated in",
+      "was involved in",
+      "managed",
+      "handled",
+      "was able to",
+      "helped",
+      "performed"
+    ];
+
+    const metricsRegex = /(\d+%|\$\d+|[0-9]+\+?(?:\s+(?:hours|days|weeks|months|years|projects|clients|users|employees|departments|teams)))/i;
+
+    return bullets.filter((bullet) => {
+      const lowerBullet = bullet.toLowerCase();
+      const hasWeakPhrase = weakIndicators.some((phrase) => lowerBullet.includes(phrase));
+      const lacksMetrics = !metricsRegex.test(bullet);
+      return hasWeakPhrase || lacksMetrics;
+    });
+  }
+
+  function improveBullet(bullet) {
+    // Strong action verbs for replacements
+    const verbReplacements = {
+      "responsible for": "Drove",
+      "worked on": "Engineered",
+      "helped with": "Accelerated",
+      "demonstrated": "Delivered",
+      "assisted": "Enabled",
+      "participated in": "Spearheaded",
+      "was involved in": "Orchestrated",
+      "managed": "Led",
+      "handled": "Resolved",
+      "was able to": "Successfully",
+      "helped": "Contributed to",
+      "performed": "Executed",
+      "did": "Accomplished"
+    };
+
+    let improved = bullet;
+
+    // Replace weak verbs with strong ones
+    for (const [weak, strong] of Object.entries(verbReplacements)) {
+      const regex = new RegExp(`\\b${weak}\\b`, "i");
+      if (regex.test(improved)) {
+        improved = improved.replace(regex, strong);
+        break;
+      }
+    }
+
+    // Check if metrics exist; if not, add placeholder metrics
+    const metricsRegex = /(\d+%|\$\d+|[0-9]+\+?(?:\s+(?:hours|days|weeks|months|years|projects|clients|users|employees|departments|teams)))/i;
+    if (!metricsRegex.test(improved)) {
+      // Add contextual metrics based on bullet content
+      if (improved.toLowerCase().includes("revenue") || improved.toLowerCase().includes("sales")) {
+        improved = improved + " <span class='improvement-highlight'>increasing revenue by 25%+</span>";
+      } else if (
+        improved.toLowerCase().includes("time") ||
+        improved.toLowerCase().includes("process") ||
+        improved.toLowerCase().includes("efficiency")
+      ) {
+        improved = improved + " by <span class='improvement-highlight'>30%</span>";
+      } else if (improved.toLowerCase().includes("team") || improved.toLowerCase().includes("people")) {
+        improved = improved + " for <span class='improvement-highlight'>12+ team members</span>";
+      } else if (improved.toLowerCase().includes("user") || improved.toLowerCase().includes("customer")) {
+        improved = improved + " for <span class='improvement-highlight'>1000+ users/customers</span>";
+      } else if (improved.toLowerCase().includes("project") || improved.toLowerCase().includes("initiative")) {
+        improved = improved + ", delivering <span class='improvement-highlight'>$500K+</span> in value";
+      } else {
+        improved = improved + " with <span class='improvement-highlight'>measurable impact</span>";
+      }
+    } else {
+      // Highlight existing metrics
+      improved = improved.replace(metricsRegex, "<span class='improvement-highlight'>$1</span>");
+    }
+
+    return improved;
   }
 
   function createImprovementCard(improvement) {
