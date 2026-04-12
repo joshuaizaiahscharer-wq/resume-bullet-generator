@@ -47,6 +47,17 @@ const jobDescriptionInput = document.getElementById("jobDescriptionInput");
 const tailorHint = document.getElementById("tailorHint");
 
 let currentBullets = [];
+let currentScore = null;
+let currentFeedback = [];
+
+function setScore(value) {
+  const parsed = Number(value);
+  currentScore = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 0;
+}
+
+function setFeedback(items) {
+  currentFeedback = Array.isArray(items) ? items : [];
+}
 
 // ─── Event listeners ─────────────────────────────────────────────────────────
 if (generateBtn) {
@@ -120,7 +131,9 @@ async function handleGenerate() {
   try {
     const jdText = String(jobDescriptionInput?.value || "").trim();
     const result = await fetchBullets(jobTitle, jdText);
-    displayBullets(result.bullets, jobTitle, result.score, result.feedback);
+    setScore(result.score);
+    setFeedback(result.feedback);
+    displayBullets(result.bullets, jobTitle, currentScore, currentFeedback);
     showTailorHint(jdText.length > 10);
   } catch (err) {
     showError(err.message || "Something went wrong. Please try again.");
@@ -147,6 +160,7 @@ async function fetchBullets(jobTitle, jobDescription = "") {
   });
 
   const data = await response.json();
+  console.log("Generate API response:", data);
 
   if (!response.ok) {
     throw new Error(data.error || `Server error ${response.status}`);
@@ -214,6 +228,7 @@ function renderResumeAnalysis(score, feedback) {
   if (!resumeScorePanel || !resumeScoreValue || !resumeScoreFill || !resumeFeedbackList) return;
 
   const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
+  console.log("Rendering resume analysis:", { score: safeScore, feedback });
   resumeScorePanel.classList.remove("hidden");
   resumeScoreValue.textContent = `${safeScore}%`;
   resumeScoreFill.style.width = `${safeScore}%`;

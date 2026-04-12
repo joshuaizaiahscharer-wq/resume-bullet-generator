@@ -781,6 +781,8 @@ Generate 10 strong resume bullet points for a ${sanitizedTitle}.
       .map((line) => line.replace(/^[\s•\-–—*]+/, "").trim())
       .filter((line) => line.length > 0);
     const analysis = analyzeResume(bullets);
+    console.log("Score:", analysis.score);
+    console.log("Feedback:", analysis.feedback);
 
     // Record usage after successful generation.
     // Wrapped in its own try/catch so tracking issues never affect users.
