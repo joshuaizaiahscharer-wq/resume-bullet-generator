@@ -38,6 +38,7 @@ const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || "";
+const STRIPE_CHECK_MY_RESUME_PRICE_ID = process.env.STRIPE_CHECK_MY_RESUME_PRICE_ID || "";
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
 const PAYMENT_STATE_SECRET =
@@ -1956,8 +1957,10 @@ app.post("/api/download-optimized-resume", async (req, res) => {
 
 app.post("/api/stripe/checkout", async (req, res) => {
   try {
-    if (!STRIPE_PRICE_ID) {
-      return res.status(500).json({ error: "STRIPE_PRICE_ID is not configured." });
+    if (!STRIPE_CHECK_MY_RESUME_PRICE_ID) {
+      return res.status(500).json({
+        error: "STRIPE_CHECK_MY_RESUME_PRICE_ID is not configured.",
+      });
     }
 
     const stripe = getStripeClient();
@@ -1970,7 +1973,7 @@ app.post("/api/stripe/checkout", async (req, res) => {
       mode: "payment",
       line_items: [
         {
-          price: STRIPE_PRICE_ID,
+          price: STRIPE_CHECK_MY_RESUME_PRICE_ID,
           quantity: 1,
         },
       ],
