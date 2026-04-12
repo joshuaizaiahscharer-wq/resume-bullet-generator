@@ -2163,24 +2163,11 @@ app.post("/api/resume-builder/save-cloud", async (req, res) => {
   }
 
   const savedAtIso = new Date().toISOString();
-
-  const mergedMetadata = {
-    ...(user.user_metadata || {}),
-    resume_builder_save: payload,
-    resume_builder_saved_at: savedAtIso,
-  };
-
-  const { error } = await supabase.auth.admin.updateUserById(user.id, {
-    user_metadata: mergedMetadata,
-  });
-
-  if (error) {
-    console.error("[/api/resume-builder/save-cloud] Supabase error:", error.message);
-    return res.status(500).json({ error: "Failed to save resume." });
-  }
+  let usersSaveSucceeded = false;
+  let metadataSaveSucceeded = false;
 
   try {
-    const { error: profileError } = await supabase
+    const { error: updateError } = await supabase
       .from("users")
       .update({
         resume_builder_save: payload,
@@ -2189,14 +2176,54 @@ app.post("/api/resume-builder/save-cloud", async (req, res) => {
       })
       .eq("id", user.id);
 
-    if (profileError) {
-      const missingColumn = getMissingColumnName(profileError);
-      if (missingColumn !== "resume_builder_save" && missingColumn !== "resume_builder_saved_at") {
-        console.error("[/api/resume-builder/save-cloud] users update error:", profileError.message);
+    if (!updateError) {
+      usersSaveSucceeded = true;
+    } else {
+      const { error: upsertError } = await supabase
+        .from("users")
+        .upsert(
+          {
+            id: user.id,
+            email: String(user.email || user.user_metadata?.email || "").trim().toLowerCase(),
+            resume_builder_save: payload,
+            resume_builder_saved_at: savedAtIso,
+            last_active: savedAtIso,
+          },
+          { onConflict: "id" }
+        );
+
+      if (!upsertError) {
+        usersSaveSucceeded = true;
+      } else {
+        console.error("[/api/resume-builder/save-cloud] users upsert error:", upsertError.message);
       }
     }
   } catch (err) {
-    console.error("[/api/resume-builder/save-cloud] unexpected users update error:", err?.message);
+    console.error("[/api/resume-builder/save-cloud] unexpected users save error:", err?.message);
+  }
+
+  const mergedMetadata = {
+    ...(user.user_metadata || {}),
+    resume_builder_save: payload,
+    resume_builder_saved_at: savedAtIso,
+  };
+
+  try {
+    const { error: metadataError } = await supabase.auth.admin.updateUserById(user.id, {
+      user_metadata: mergedMetadata,
+    });
+
+    if (!metadataError) {
+      metadataSaveSucceeded = true;
+    } else {
+      console.error("[/api/resume-builder/save-cloud] metadata update error:", metadataError.message);
+    }
+  } catch (err) {
+    console.error("[/api/resume-builder/save-cloud] unexpected metadata save error:", err?.message);
+  }
+
+  if (!usersSaveSucceeded && !metadataSaveSucceeded) {
+    return res.status(500).json({ error: "Failed to save resume." });
   }
 
   return res.json({ ok: true });
