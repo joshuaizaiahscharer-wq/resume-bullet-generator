@@ -22,56 +22,57 @@ function parseJsonArray(raw) {
   return parsed.map((item) => String(item || "").trim()).filter(Boolean);
 }
 
-async function extractKeywords(jobDescription) {
+function parseJsonObject(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return {};
+
+  const normalized = text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  const parsed = JSON.parse(normalized);
+  if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
+    throw new Error("Expected a JSON object from OpenAI.");
+  }
+
+  return parsed;
+}
+
+async function optimizeJobDescription(jobDescription) {
   const response = await client.chat.completions.create({
     model: process.env.OPENAI_OPTIMIZER_MODEL || "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content: "You extract the most important resume keywords from job descriptions.",
+        content: "You are an expert recruiter and return structured JSON only.",
       },
       {
         role: "user",
         content: `
-Extract ONLY high-value resume keywords from this job description.
+You are an expert recruiter.
 
-STRICT RULES:
-- ONLY return meaningful resume concepts
-- Keywords must be:
-  - Skills (e.g., customer service, inventory management)
-  - Responsibilities (e.g., cash handling, drink preparation)
-  - Industry terms (e.g., bartending, POS systems)
+Rewrite this job description into a clean, structured summary optimized for resume targeting.
 
-DO NOT INCLUDE:
-- Single generic words (e.g., work, well, able, must, long)
-- Sentence fragments (e.g., "key responsibilities include")
-- Duplicate word variations (e.g., mixing, mixed, mix)
-- Irrelevant tools (e.g., Excel unless clearly required)
+OUTPUT FORMAT:
 
-FORMAT:
-- Return 5-10 keywords MAX
-- Use clean phrases (2-3 words preferred)
+1. Core Responsibilities (5-7 bullet points)
+2. Key Skills (5-7 items)
+3. Important Action Verbs (5-7 verbs)
 
-GOOD OUTPUT:
-[
-  "customer service",
-  "drink preparation",
-  "cash handling",
-  "inventory management",
-  "ID verification",
-  "bar maintenance"
-]
+RULES:
+- Simplify wording
+- Remove fluff
+- Focus on what actually matters for a resume
+- Use clear, professional language
 
-BAD OUTPUT:
-[
-  "work",
-  "must work quickly",
-  "mixing",
-  "checking",
-  "long periods"
-]
-
-Return ONLY a JSON array.
+Return ONLY a JSON object in this shape:
+{
+  "coreResponsibilities": ["..."],
+  "keySkills": ["..."],
+  "actionVerbs": ["..."]
+}
 
 Job Description:
 ${jobDescription}
@@ -81,51 +82,47 @@ ${jobDescription}
     temperature: 0.3,
   });
 
-  return parseJsonArray(response.choices?.[0]?.message?.content);
+  const payload = parseJsonObject(response.choices?.[0]?.message?.content);
+  return {
+    coreResponsibilities: Array.isArray(payload.coreResponsibilities)
+      ? payload.coreResponsibilities.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 7)
+      : [],
+    keySkills: Array.isArray(payload.keySkills)
+      ? payload.keySkills.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 7)
+      : [],
+    actionVerbs: Array.isArray(payload.actionVerbs)
+      ? payload.actionVerbs.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 7)
+      : [],
+  };
 }
 
-async function optimizeResumeBullets(bullets, jobDescription) {
+async function generateResumeBullets(optimizedJD) {
   const response = await client.chat.completions.create({
     model: process.env.OPENAI_OPTIMIZER_MODEL || "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content: "You are an expert resume writer who optimizes bullets for ATS systems.",
+        content: "You are an expert resume writer.",
       },
       {
         role: "user",
         content: `
 You are an expert resume writer.
 
-Rewrite the following resume bullet points so they naturally align with the job description.
+Using the structured job description below, generate 10 high-quality resume bullet points.
 
-CRITICAL RULES:
-- DO NOT insert keywords manually
-- DO NOT append phrases like:
-  "with stocked bar area"
-  "with mixing drinks"
-  "with checking ids"
-- DO NOT force any wording from the job description
+RULES:
+- Use strong action verbs
+- Make bullets sound natural and professional
+- Focus on impact and responsibilities
+- Do NOT force keywords
+- Do NOT repeat phrases
+- Make bullets ready to paste into a resume
 
-Instead:
-- Understand the meaning of the job description
-- Rewrite bullets to match responsibilities naturally
+Return ONLY a JSON array of bullets.
 
-STYLE:
-- Clear, professional, human tone
-- Focus on actions and impact
-- Keep bullets concise
-
-QUALITY CHECK:
-If any bullet sounds unnatural or forced, rewrite it again
-
-Return ONLY a JSON array of improved bullets.
-
-Job Description:
-${jobDescription}
-
-Original Resume Bullets:
-${JSON.stringify(bullets)}
+Structured Job Description:
+${JSON.stringify(optimizedJD)}
 `,
       },
     ],
@@ -136,6 +133,6 @@ ${JSON.stringify(bullets)}
 }
 
 module.exports = {
-  extractKeywords,
-  optimizeResumeBullets,
+  optimizeJobDescription,
+  generateResumeBullets,
 };

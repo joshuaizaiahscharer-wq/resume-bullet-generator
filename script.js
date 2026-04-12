@@ -1,7 +1,8 @@
 // ─── Configuration ──────────────────────────────────────────────────────────
 // The API key lives in .env on the server — nothing sensitive here.
 const API_URL = "/api/generate";
-const OPTIMIZE_API_URL = "/api/optimize-resume";
+const OPTIMIZE_JD_API_URL = "/api/optimize-job-description";
+const GENERATE_BULLETS_API_URL = "/api/generate-resume-bullets";
 
 // ─── Hero typing cycle ────────────────────────────────────────────────────────
 (function initHeroTyping() {
@@ -42,55 +43,15 @@ const supportStatus  = document.getElementById("supportStatus");
 const supportBtn     = document.getElementById("supportSubmitBtn");
 const jobDescriptionInput = document.getElementById("jobDescriptionInput");
 const analyzeOptimizeBtn = document.getElementById("analyzeOptimizeBtn");
+const generateFromOptimizedBtn = document.getElementById("generateFromOptimizedBtn");
 const optimizerStatus = document.getElementById("optimizerStatus");
-const keywordFeedbackPanel = document.getElementById("keywordFeedbackPanel");
-const matchScoreValue = document.getElementById("matchScoreValue");
-const matchScoreFill = document.getElementById("matchScoreFill");
-const includedKeywordsEl = document.getElementById("includedKeywords");
-const missingKeywordsEl = document.getElementById("missingKeywords");
+const optimizedJDPanel = document.getElementById("optimizedJDPanel");
+const optimizedResponsibilities = document.getElementById("optimizedResponsibilities");
+const optimizedSkills = document.getElementById("optimizedSkills");
+const optimizedVerbs = document.getElementById("optimizedVerbs");
 
 let currentBullets = [];
-let currentKeywords = [];
-
-function fallbackFilterKeywords(keywords) {
-  const replacements = {
-    "processing payments": "cash handling",
-    "mixing drinks": "drink preparation",
-    "checking ids": "id verification",
-    "managing inventory": "inventory management",
-  };
-
-  const bannedSingleWords = new Set([
-    "excel", "stocked", "mixing", "checking",
-    "processing", "managing", "providing",
-    "standing", "bartender", "serves", "prepares",
-  ]);
-
-  const seen = new Set();
-
-  return (keywords || [])
-    .map((kw) => {
-      const normalized = String(kw || "").toLowerCase().trim();
-      return replacements[normalized] || normalized;
-    })
-    .filter((kw) => {
-      const words = kw.split(/\s+/).filter(Boolean);
-      if (words.length < 2 || words.length > 4) return false;
-      if (bannedSingleWords.has(kw)) return false;
-      if (kw.length < 8) return false;
-      if (
-        kw.includes("responsibilities") ||
-        kw.includes("must") ||
-        kw.includes("include") ||
-        kw.includes("under pressure") ||
-        kw.includes("long periods")
-      ) return false;
-      if (seen.has(kw)) return false;
-      seen.add(kw);
-      return true;
-    })
-    .slice(0, 8);
-}
+let optimizedJD = null;
 
 // ─── Event listeners ─────────────────────────────────────────────────────────
 if (generateBtn) {
@@ -112,6 +73,14 @@ if (jobTitleInput) {
   });
 }
 
+if (jobDescriptionInput) {
+  jobDescriptionInput.addEventListener("input", () => {
+    optimizedJD = null;
+    if (generateFromOptimizedBtn) generateFromOptimizedBtn.disabled = true;
+    if (optimizedJDPanel) optimizedJDPanel.classList.add("hidden");
+  });
+}
+
 if (copyBtn) {
   copyBtn.addEventListener("click", handleCopy);
 }
@@ -122,6 +91,10 @@ if (supportForm) {
 
 if (analyzeOptimizeBtn) {
   analyzeOptimizeBtn.addEventListener("click", handleAnalyzeOptimize);
+}
+
+if (generateFromOptimizedBtn) {
+  generateFromOptimizedBtn.addEventListener("click", handleGenerateFromOptimized);
 }
 
 // ─── Quick-pick chips ─────────────────────────────────────────────────────────
@@ -225,16 +198,13 @@ function inferPageType(pathname) {
 function displayBullets(bullets, jobTitle) {
   clearStatus();
   currentBullets = bullets.slice();
-  currentKeywords = [];
-
-  if (keywordFeedbackPanel) keywordFeedbackPanel.classList.add("hidden");
   showOptimizerStatus("", false);
 
   // Update heading with count and title
   const count = bullets.length;
   resultsHeading.textContent = `${count} Bullet Point${count !== 1 ? "s" : ""} — ${jobTitle}`;
 
-  renderBulletList(bullets, []);
+  renderBulletList(bullets);
 
   resultsSection.classList.remove("hidden");
 
@@ -245,7 +215,7 @@ function displayBullets(bullets, jobTitle) {
   resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function renderBulletList(bullets, highlightKeywords = []) {
+function renderBulletList(bullets) {
   bulletList.innerHTML = "";
 
   bullets.forEach((text) => {
@@ -254,11 +224,7 @@ function renderBulletList(bullets, highlightKeywords = []) {
     const span = document.createElement("span");
     span.className = "bullet-text";
 
-    if (window.ResumeOptimizer && highlightKeywords.length > 0) {
-      span.innerHTML = window.ResumeOptimizer.highlightKeywordsInText(text, highlightKeywords);
-    } else {
-      span.textContent = text;
-    }
+    span.textContent = text;
     li.appendChild(span);
 
     const btn = document.createElement("button");
@@ -285,112 +251,100 @@ async function handleAnalyzeOptimize() {
     return;
   }
 
-  if (!currentBullets.length) {
-    showOptimizerStatus("Generate bullets first, then run optimization.", true);
-    return;
-  }
-
-  const extractor = window.KeywordExtractor;
-  const optimizer = window.ResumeOptimizer;
-  if (!extractor || !optimizer) {
-    showOptimizerStatus("Optimizer modules did not load. Refresh and try again.", true);
-    return;
-  }
-
   analyzeOptimizeBtn.disabled = true;
-  showOptimizerStatus("Analyzing keywords and optimizing bullets...", false);
+  showOptimizerStatus("Optimizing job description...", false);
 
   try {
-    const extracted = extractor.extractKeywords(jdText, 20);
-    const keywords = extracted.keywords || [];
-    const finalKeywords = optimizer.getFinalKeywords
-      ? optimizer.getFinalKeywords(keywords)
-      : fallbackFilterKeywords(keywords);
-    currentKeywords = finalKeywords;
-
-    let optimizedBullets = [];
-    try {
-      const optimizedPayload = await optimizeBulletsWithApi(jdText, currentBullets, finalKeywords);
-      optimizedBullets = optimizedPayload.optimizedBullets;
-      const apiKeywords = Array.isArray(optimizedPayload.keywords) ? optimizedPayload.keywords : [];
-      currentKeywords = apiKeywords.length ? apiKeywords : finalKeywords;
-    } catch (_apiErr) {
-      optimizedBullets = optimizer.optimizeBulletsLocal(currentBullets);
-    }
-
-    currentBullets = optimizedBullets.slice();
-    renderBulletList(currentBullets, currentKeywords);
-    resultsSection.classList.remove("hidden");
-
-    const score = optimizer.computeMatchScore(currentBullets, currentKeywords);
-    const summary = optimizer.collectIncludedAndMissing(currentBullets, currentKeywords);
-    renderKeywordFeedback(score, summary.included, summary.missing);
-
-    showOptimizerStatus("Optimization complete. Bullets updated with job-relevant keywords.", false, true);
+    optimizedJD = await requestOptimizedJobDescription(jdText);
+    renderOptimizedJD(optimizedJD);
+    if (generateFromOptimizedBtn) generateFromOptimizedBtn.disabled = false;
+    showOptimizerStatus("Job description optimized. Generate bullets when ready.", false, true);
   } catch (err) {
-    showOptimizerStatus(err.message || "Failed to optimize bullets.", true);
+    showOptimizerStatus(err.message || "Failed to optimize job description.", true);
   } finally {
     analyzeOptimizeBtn.disabled = false;
   }
 }
 
-async function optimizeBulletsWithApi(jobDescription, bullets, keywords) {
-  const response = await fetch(OPTIMIZE_API_URL, {
+async function requestOptimizedJobDescription(jobDescription) {
+  const response = await fetch(OPTIMIZE_JD_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jobDescription, bullets, keywords }),
+    body: JSON.stringify({ jobDescription }),
   });
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || `Optimization failed (${response.status}).`);
+    throw new Error(payload.error || `Job description optimization failed (${response.status}).`);
   }
 
-  const optimizedBullets = Array.isArray(payload.optimizedBullets) ? payload.optimizedBullets : [];
-  if (!optimizedBullets.length) {
-    throw new Error("No optimized bullets returned.");
+  if (!payload.optimizedJD || typeof payload.optimizedJD !== "object") {
+    throw new Error("No optimized job description returned.");
   }
 
-  const finalKeywords = Array.isArray(payload.keywords) ? payload.keywords : [];
-  return { optimizedBullets, keywords: finalKeywords };
+  return payload.optimizedJD;
 }
 
-function renderKeywordFeedback(score, included, missing) {
-  if (!keywordFeedbackPanel) return;
-
-  keywordFeedbackPanel.classList.remove("hidden");
-  if (matchScoreValue) matchScoreValue.textContent = `${score}%`;
-  if (matchScoreFill) matchScoreFill.style.width = `${score}%`;
-
-  const scoreBar = keywordFeedbackPanel.querySelector(".match-score-bar");
-  if (scoreBar) scoreBar.setAttribute("aria-valuenow", String(score));
-
-  renderKeywordChips(includedKeywordsEl, included, "included");
-  renderKeywordChips(missingKeywordsEl, missing, "missing");
+function renderOptimizedJD(data) {
+  if (!optimizedJDPanel) return;
+  setOptimizedList(optimizedResponsibilities, data.coreResponsibilities || []);
+  setOptimizedList(optimizedSkills, data.keySkills || []);
+  setOptimizedList(optimizedVerbs, data.actionVerbs || []);
+  optimizedJDPanel.classList.remove("hidden");
 }
 
-function renderKeywordChips(container, keywords, type) {
+function setOptimizedList(container, items) {
   if (!container) return;
   container.innerHTML = "";
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    container.appendChild(li);
+  });
+}
 
-  if (!keywords.length) {
-    const empty = document.createElement("span");
-    empty.className = "keyword-chip keyword-chip--empty";
-    empty.textContent = type === "included" ? "No matches yet" : "No missing keywords";
-    container.appendChild(empty);
+async function handleGenerateFromOptimized() {
+  if (!generateFromOptimizedBtn) return;
+  if (!optimizedJD) {
+    showOptimizerStatus("Optimize the job description first.", true);
     return;
   }
 
-  keywords.forEach((keyword) => {
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = `keyword-chip keyword-chip--${type}`;
-    chip.textContent = keyword;
+  generateFromOptimizedBtn.disabled = true;
+  showOptimizerStatus("Generating resume bullets from optimized job description...", false);
 
-    chip.disabled = true;
+  try {
+    const bullets = await requestBulletsFromOptimized(optimizedJD);
+    currentBullets = bullets.slice();
+    resultsHeading.textContent = `${bullets.length} Bullet Points — Optimized Job Description`;
+    renderBulletList(currentBullets);
+    resultsSection.classList.remove("hidden");
+    showOptimizerStatus("Bullet generation complete.", false, true);
+  } catch (err) {
+    showOptimizerStatus(err.message || "Failed to generate bullets.", true);
+  } finally {
+    generateFromOptimizedBtn.disabled = false;
+  }
+}
 
-    container.appendChild(chip);
+async function requestBulletsFromOptimized(optimizedJDData) {
+  const response = await fetch(GENERATE_BULLETS_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ optimizedJD: optimizedJDData }),
   });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || `Bullet generation failed (${response.status}).`);
+  }
+
+  const bullets = Array.isArray(payload.bullets) ? payload.bullets : [];
+  if (!bullets.length) {
+    throw new Error("No bullets returned.");
+  }
+
+  return bullets;
 }
 
 function showOptimizerStatus(message, isError, isSuccess = false) {

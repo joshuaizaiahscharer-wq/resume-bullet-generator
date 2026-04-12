@@ -106,27 +106,6 @@
             </div>
           </div>
 
-          <section id="keywordFeedbackPanel" class="keyword-feedback hidden" aria-label="Keyword optimization feedback">
-            <div class="match-score-row">
-              <h3>Resume Match Score</h3>
-              <span id="matchScoreValue" class="match-score-value">0%</span>
-            </div>
-            <div class="match-score-bar" role="progressbar" aria-label="Resume match score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <div id="matchScoreFill" class="match-score-fill" style="width:0%"></div>
-            </div>
-
-            <div class="keyword-columns">
-              <div class="keyword-col">
-                <h4>✅ Keywords Included</h4>
-                <div id="includedKeywords" class="keyword-chip-list"></div>
-              </div>
-              <div class="keyword-col">
-                <h4>❌ Missing Keywords</h4>
-                <div id="missingKeywords" class="keyword-chip-list"></div>
-              </div>
-            </div>
-          </section>
-
           <ul id="bulletList"></ul>
         </section>
 
@@ -139,11 +118,28 @@
           <textarea
             id="jobDescriptionInput"
             class="jd-textarea"
-            placeholder="Paste the full job posting here to extract keywords and optimize your bullets..."
+            placeholder="Paste the full job posting here to optimize and generate bullets..."
             aria-label="Paste Job Description"
           ></textarea>
+          <section id="optimizedJDPanel" class="optimized-jd hidden" aria-label="Optimized job description summary">
+            <div class="optimized-grid">
+              <div class="optimized-col">
+                <h3>Core Responsibilities</h3>
+                <ul id="optimizedResponsibilities"></ul>
+              </div>
+              <div class="optimized-col">
+                <h3>Key Skills</h3>
+                <ul id="optimizedSkills"></ul>
+              </div>
+              <div class="optimized-col">
+                <h3>Action Verbs</h3>
+                <ul id="optimizedVerbs"></ul>
+              </div>
+            </div>
+          </section>
           <div class="jd-actions">
-            <button id="analyzeOptimizeBtn" class="jd-optimize-btn" type="button">Analyze &amp; Optimize</button>
+            <button id="analyzeOptimizeBtn" class="jd-optimize-btn" type="button">Optimize Job Description</button>
+            <button id="generateFromOptimizedBtn" class="jd-optimize-btn jd-generate-btn" type="button" disabled>Generate Resume Bullets</button>
             <p id="optimizerStatus" class="optimizer-status hidden" aria-live="polite"></p>
           </div>
         </section>
@@ -347,8 +343,6 @@
     <script src="/shared-navbar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="/auth.js"></script>
-    <script src="/keywordExtractor.js"></script>
-    <script src="/resumeOptimizer.js"></script>
     <script src="script.js"></script>
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
