@@ -106,45 +106,41 @@
             </div>
           </div>
 
-          <section id="keywordFeedbackPanel" class="keyword-feedback hidden" aria-label="Keyword optimization feedback">
-            <div class="match-score-row">
-              <h3>Resume Match Score</h3>
-              <span id="matchScoreValue" class="match-score-value">0%</span>
-            </div>
-            <div class="match-score-bar" role="progressbar" aria-label="Resume match score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <div id="matchScoreFill" class="match-score-fill" style="width:0%"></div>
-            </div>
-
-            <div class="keyword-columns">
-              <div class="keyword-col">
-                <h4>✅ Keywords Included</h4>
-                <div id="includedKeywords" class="keyword-chip-list"></div>
-              </div>
-              <div class="keyword-col">
-                <h4>❌ Missing Keywords</h4>
-                <div id="missingKeywords" class="keyword-chip-list"></div>
-              </div>
-            </div>
-          </section>
-
           <ul id="bulletList"></ul>
         </section>
 
         <section class="jd-optimizer" aria-labelledby="jdOptimizerHeading">
           <div class="jd-optimizer-header">
-            <p class="input-label">Optimize for a Job Description</p>
             <h2 id="jdOptimizerHeading">Optimize for a Job Description</h2>
           </div>
           <label class="input-label" for="jobDescriptionInput">Paste Job Description</label>
           <textarea
             id="jobDescriptionInput"
             class="jd-textarea"
-            placeholder="Paste the full job posting here to extract keywords and optimize your bullets..."
+            placeholder="Paste the full job posting here to generate targeted resume bullets..."
             aria-label="Paste Job Description"
           ></textarea>
           <div class="jd-actions">
-            <button id="analyzeOptimizeBtn" class="jd-optimize-btn" type="button">Analyze &amp; Optimize</button>
+            <button id="optimizeJdBtn" class="jd-optimize-btn" type="button">Optimize Job Description</button>
             <p id="optimizerStatus" class="optimizer-status hidden" aria-live="polite"></p>
+          </div>
+
+          <div id="optimizedJdPanel" class="optimized-jd-panel hidden" aria-label="Optimized job description">
+            <div class="optimized-jd-section">
+              <h4 class="optimized-jd-label">📋 Core Responsibilities</h4>
+              <ul id="jdResponsibilities" class="optimized-jd-list"></ul>
+            </div>
+            <div class="optimized-jd-section">
+              <h4 class="optimized-jd-label">🛠 Key Skills</h4>
+              <div id="jdSkills" class="optimized-jd-chips"></div>
+            </div>
+            <div class="optimized-jd-section">
+              <h4 class="optimized-jd-label">⚡ Action Verbs</h4>
+              <div id="jdVerbs" class="optimized-jd-chips"></div>
+            </div>
+            <div class="jd-generate-actions">
+              <button id="generateFromJdBtn" class="jd-generate-btn" type="button">Generate Resume Bullets</button>
+            </div>
           </div>
         </section>
       </div>
@@ -347,8 +343,6 @@
     <script src="/shared-navbar.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
     <script src="/auth.js"></script>
-    <script src="/keywordExtractor.js"></script>
-    <script src="/resumeOptimizer.js"></script>
     <script src="script.js"></script>
     <script>
       window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };

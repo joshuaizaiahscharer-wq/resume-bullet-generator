@@ -16,8 +16,8 @@ const OpenAI = require("openai");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 const {
-  extractKeywords: extractKeywordsWithOpenAI,
-  optimizeResumeBullets,
+  optimizeJobDescription,
+  generateBulletsFromOptimizedJD,
 } = require("../server/openaiService");
 const {
   blogPosts: staticBlogPosts,
@@ -343,133 +343,38 @@ function extractResponseText(response) {
   return parts.join("\n").trim();
 }
 
-const KEYWORD_STOPWORDS = new Set([
-  "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are", "as", "at",
-  "be", "because", "been", "before", "being", "below", "between", "both", "but", "by", "can", "did", "do",
-  "does", "doing", "down", "during", "each", "few", "for", "from", "further", "had", "has", "have", "having",
-  "he", "her", "here", "hers", "herself", "him", "himself", "his", "how", "i", "if", "in", "into", "is", "it",
-  "its", "itself", "just", "me", "more", "most", "my", "myself", "no", "nor", "not", "now", "of", "off",
-  "on", "once", "only", "or", "other", "our", "ours", "ourselves", "out", "over", "own", "same", "she",
-  "should", "so", "some", "such", "than", "that", "the", "their", "theirs", "them", "themselves", "then", "there",
-  "these", "they", "this", "those", "through", "to", "too", "under", "until", "up", "very", "was", "we",
-  "were", "what", "when", "where", "which", "while", "who", "whom", "why", "with", "would", "you", "your",
-  "yours", "yourself", "yourselves",
-]);
-
-function extractKeywordsFromJobDescriptionLocal(jobDescription, limit = 18) {
-  const text = String(jobDescription || "").toLowerCase().replace(/\s+/g, " ").trim();
-  if (!text) return [];
-
-  const tokens = text.split(/[^a-z0-9+#.\-/]+/).filter(Boolean);
-  const counts = new Map();
-  for (const token of tokens) {
-    if (token.length < 3 || KEYWORD_STOPWORDS.has(token)) continue;
-    counts.set(token, (counts.get(token) || 0) + 1);
-  }
-
-  return [...counts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([term]) => term);
-}
-
-function filterKeywordsForScoring(keywords) {
-  const replacements = {
-    "processing payments": "cash handling",
-    "mixing drinks": "drink preparation",
-    "checking ids": "id verification",
-    "managing inventory": "inventory management",
-  };
-
-  const bannedSingleWords = new Set([
-    "excel", "stocked", "mixing", "checking",
-    "processing", "managing", "providing",
-    "standing", "bartender", "serves", "prepares",
-  ]);
-
-  const seen = new Set();
-
-  return (Array.isArray(keywords) ? keywords : [])
-    .map((kw) => {
-      const normalized = String(kw || "").toLowerCase().trim();
-      return replacements[normalized] || normalized;
-    })
-    .filter((kw) => {
-      const words = kw.split(/\s+/).filter(Boolean);
-      if (words.length < 2) return false;
-      if (words.length > 4) return false;
-      if (bannedSingleWords.has(kw)) return false;
-      if (kw.length < 8) return false;
-      if (
-        kw.includes("responsibilities") ||
-        kw.includes("must") ||
-        kw.includes("include") ||
-        kw.includes("under pressure") ||
-        kw.includes("long periods")
-      ) return false;
-      if (seen.has(kw)) return false;
-      seen.add(kw);
-      return true;
-    })
-    .slice(0, 8);
-}
-
-function optimizeBulletsLocal(bullets) {
-  return (Array.isArray(bullets) ? bullets : [])
-    .map((bullet) => String(bullet || "").trim())
-    .filter(Boolean);
-}
-
-function cleanBullets(bullets) {
-  return bullets.map(bullet => {
-    return bullet
-      .replace(/,\s*with\s+[^.]+/gi, "")
-      .replace(/">.*$/gi, "")
-      .replace(/\.\./g, ".")
-      .trim();
-  });
-}
-
-app.post("/api/optimize-resume", async (req, res) => {
+app.post("/api/optimize-job-description", async (req, res) => {
   const jobDescription = String(req.body?.jobDescription || "").trim();
-  const bullets = Array.isArray(req.body?.bullets) ? req.body.bullets.map((b) => String(b || "").trim()).filter(Boolean) : [];
-  const providedKeywords = Array.isArray(req.body?.keywords)
-    ? req.body.keywords.map((k) => String(k || "").trim()).filter(Boolean)
-    : [];
 
   if (!jobDescription) {
     return res.status(400).json({ error: "jobDescription is required." });
   }
 
-  if (!bullets.length) {
-    return res.status(400).json({ error: "bullets array is required." });
+  try {
+    const optimized = await optimizeJobDescription(jobDescription);
+    return res.json(optimized);
+  } catch (err) {
+    console.error("[optimize-job-description]", err.message);
+    return res.status(500).json({ error: "Failed to optimize job description." });
   }
+});
 
-  let keywords = providedKeywords.length ? providedKeywords.slice(0, 20) : [];
+app.post("/api/generate-bullets-from-jd", async (req, res) => {
+  const optimizedJD = req.body?.optimizedJD;
 
-  if (!keywords.length) {
-    try {
-      keywords = (await extractKeywordsWithOpenAI(jobDescription)).slice(0, 20);
-    } catch (_err) {
-      keywords = extractKeywordsFromJobDescriptionLocal(jobDescription, 20);
-    }
+  if (!optimizedJD || typeof optimizedJD !== "object") {
+    return res.status(400).json({ error: "optimizedJD object is required." });
   }
-
-  keywords = filterKeywordsForScoring(keywords);
 
   try {
-    const optimizedBullets = await optimizeResumeBullets(bullets, jobDescription);
-    const cleanedBullets = cleanBullets(optimizedBullets);
-
-    if (!cleanedBullets.length) {
-      throw new Error("AI returned no optimized bullets.");
+    const bullets = await generateBulletsFromOptimizedJD(optimizedJD);
+    if (!bullets.length) {
+      throw new Error("AI returned no bullets.");
     }
-
-    return res.json({ keywords, optimizedBullets: cleanedBullets, source: "ai" });
+    return res.json({ bullets });
   } catch (err) {
-    const optimizedBullets = optimizeBulletsLocal(bullets);
-    const cleanedBullets = cleanBullets(optimizedBullets);
-    return res.json({ keywords, optimizedBullets: cleanedBullets, source: "local" });
+    console.error("[generate-bullets-from-jd]", err.message);
+    return res.status(500).json({ error: "Failed to generate bullets." });
   }
 });
 
