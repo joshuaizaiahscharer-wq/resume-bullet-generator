@@ -16,7 +16,7 @@ const OpenAI = require("openai");
 const multer = require("multer");
 const mammoth = require("mammoth");
 const PDFDocument = require("pdfkit");
-const { Document, HeadingLevel, Packer, Paragraph, TextRun } = require("docx");
+const { AlignmentType, Document, Packer, Paragraph, TextRun } = require("docx");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 const {
@@ -1299,30 +1299,107 @@ function renderSectionsToPlainText(sections) {
 }
 
 async function buildDocxBufferFromSections(sections) {
+  function parseRoleParts(roleValue) {
+    const parts = String(roleValue || "")
+      .split("|")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    return {
+      title: parts[0] || "",
+      company: parts[1] || "",
+      dates: parts.slice(2).join(" | ") || "",
+    };
+  }
+
+  function sectionHeader(text) {
+    return new Paragraph({
+      spacing: { before: 300, after: 100 },
+      border: {
+        bottom: {
+          color: "999999",
+          size: 6,
+        },
+      },
+      children: [
+        new TextRun({
+          text,
+          bold: true,
+          size: 24,
+        }),
+      ],
+    });
+  }
+
+  function paragraphText(text) {
+    return new Paragraph({
+      spacing: { after: 200 },
+      children: [
+        new TextRun({
+          text: String(text || ""),
+          size: 20,
+        }),
+      ],
+    });
+  }
+
   const children = [];
 
   if (sections.name) {
     children.push(
       new Paragraph({
-        heading: HeadingLevel.TITLE,
-        children: [new TextRun({ text: sections.name, bold: true })],
+        alignment: AlignmentType.CENTER,
+        children: [
+          new TextRun({
+            text: sections.name,
+            bold: true,
+            size: 36,
+          }),
+        ],
       })
     );
   }
-  if (sections.contactInfo) children.push(new Paragraph(sections.contactInfo));
+  if (sections.contactInfo) {
+    children.push(
+      new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 200 },
+        children: [
+          new TextRun({
+            text: sections.contactInfo,
+            size: 20,
+          }),
+        ],
+      })
+    );
+  }
 
   if (sections.summary) {
-    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "PROFESSIONAL SUMMARY" }));
-    children.push(new Paragraph(sections.summary));
+    children.push(sectionHeader("PROFESSIONAL SUMMARY"));
+    children.push(paragraphText(sections.summary));
   }
 
   if (sections.experience.length > 0) {
-    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "EXPERIENCE" }));
+    children.push(sectionHeader("EXPERIENCE"));
     sections.experience.forEach((role) => {
+      const parsedRole = parseRoleParts(role.role);
+      const roleTitle = [parsedRole.title, parsedRole.company].filter(Boolean).join(" | ");
       if (role.role) {
         children.push(
           new Paragraph({
-            children: [new TextRun({ text: role.role, bold: true })],
+            spacing: { before: 200 },
+            children: [
+              new TextRun({
+                text: roleTitle || role.role,
+                bold: true,
+                size: 22,
+              }),
+              new TextRun({
+                text: parsedRole.dates ? `   ${parsedRole.dates}` : "",
+                italics: true,
+                size: 20,
+              }),
+            ],
           })
         );
       }
@@ -1331,6 +1408,7 @@ async function buildDocxBufferFromSections(sections) {
           new Paragraph({
             text: bullet,
             bullet: { level: 0 },
+            spacing: { after: 100 },
           })
         );
       });
@@ -1338,27 +1416,22 @@ async function buildDocxBufferFromSections(sections) {
   }
 
   if (sections.education.length > 0) {
-    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "EDUCATION" }));
-    sections.education.forEach((item) => {
-      children.push(
-        new Paragraph({
-          text: item,
-          bullet: { level: 0 },
-        })
-      );
-    });
+    children.push(sectionHeader("EDUCATION"));
+    children.push(paragraphText(sections.education.join("\n")));
   }
 
   if (sections.skills.length > 0) {
-    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "SKILLS" }));
-    sections.skills.forEach((item) => {
-      children.push(
-        new Paragraph({
-          text: item,
-          bullet: { level: 0 },
-        })
-      );
-    });
+    children.push(sectionHeader("SKILLS"));
+    children.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: sections.skills.join(" | "),
+            size: 20,
+          }),
+        ],
+      })
+    );
   }
 
   const doc = new Document({
@@ -1371,6 +1444,17 @@ async function buildDocxBufferFromSections(sections) {
   });
 
   return Packer.toBuffer(doc);
+}
+
+function toSafeFileStem(nameValue) {
+  const fallback = "Candidate";
+  const base = String(nameValue || "").trim() || fallback;
+  const cleaned = base
+    .replace(/[^a-zA-Z0-9\s_-]/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return cleaned || fallback;
 }
 
 async function buildPdfBufferFromSections(sections) {
@@ -1726,6 +1810,7 @@ app.post("/api/download-optimized-resume", async (req, res) => {
   try {
     const format = String(req.body?.outputFormat || "docx").toLowerCase();
     const sections = normalizeSections(req.body?.sections || {});
+    const fileStem = toSafeFileStem(sections.name);
 
     if (!sections.summary && sections.experience.length === 0) {
       return res.status(400).json({ error: "Structured resume sections are required." });
@@ -1734,7 +1819,7 @@ app.post("/api/download-optimized-resume", async (req, res) => {
     if (format === "pdf") {
       const buffer = await buildPdfBufferFromSections(sections);
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", 'attachment; filename="optimized-resume.pdf"');
+      res.setHeader("Content-Disposition", `attachment; filename="${fileStem}_Optimized_Resume.pdf"`);
       return res.status(200).send(buffer);
     }
 
@@ -1743,7 +1828,7 @@ app.post("/api/download-optimized-resume", async (req, res) => {
       "Content-Type",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     );
-    res.setHeader("Content-Disposition", 'attachment; filename="optimized-resume.docx"');
+    res.setHeader("Content-Disposition", `attachment; filename="${fileStem}_Optimized_Resume.docx"`);
     return res.status(200).send(buffer);
   } catch (error) {
     console.error("/api/download-optimized-resume error", error);

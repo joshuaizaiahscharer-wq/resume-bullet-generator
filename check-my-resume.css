@@ -135,6 +135,12 @@ button:disabled {
   min-height: 1.2rem;
 }
 
+.optimized-status {
+  margin-top: 8px;
+  color: #a7f3d0;
+  font-weight: 600;
+}
+
 .hidden {
   display: none;
 }

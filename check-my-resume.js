@@ -16,6 +16,7 @@
   const breakdownGrid = document.getElementById("breakdown-grid");
   const improvementsGrid = document.getElementById("improvements-grid");
   const optimizedOutput = document.getElementById("optimized-output");
+  const optimizedStatus = document.getElementById("optimized-status");
 
   const categories = [
     { key: "structure", label: "Structure" },
@@ -34,6 +35,19 @@
   let extractedResumeText = "";
   let inputFileType = "";
   let optimizedSections = null;
+
+  function getDownloadFileNameFromHeader(contentDisposition, fallbackName) {
+    const value = String(contentDisposition || "");
+    const utfMatch = value.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utfMatch && utfMatch[1]) {
+      return decodeURIComponent(utfMatch[1]);
+    }
+    const basicMatch = value.match(/filename="?([^";]+)"?/i);
+    if (basicMatch && basicMatch[1]) {
+      return basicMatch[1];
+    }
+    return fallbackName;
+  }
 
   function setError(message) {
     errorText.textContent = message || "";
@@ -215,6 +229,7 @@
 
       isPaid = true;
       optimizedOutput.textContent = fixedResume;
+      optimizedStatus.textContent = "Your resume has been professionally optimized.";
       showOptimizedSection();
     } catch (error) {
       setError(error && error.message ? error.message : "Unable to optimize resume.");
@@ -263,8 +278,13 @@
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
+      const fallbackName = outputFormat === "pdf" ? "Optimized_Resume.pdf" : "Optimized_Resume.docx";
+      const filename = getDownloadFileNameFromHeader(
+        response.headers.get("content-disposition"),
+        fallbackName
+      );
       link.href = url;
-      link.download = outputFormat === "pdf" ? "optimized-resume.pdf" : "optimized-resume.docx";
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.remove();
