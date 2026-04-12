@@ -2123,7 +2123,31 @@ app.get("/api/resume-builder/load-cloud", async (req, res) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const savedResume = user.user_metadata?.resume_builder_save || null;
+  let savedResume = null;
+
+  try {
+    const { data: profile, error: profileError } = await supabase
+      .from("users")
+      .select("resume_builder_save")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      const missingColumn = getMissingColumnName(profileError);
+      if (missingColumn !== "resume_builder_save") {
+        console.error("[/api/resume-builder/load-cloud] users lookup error:", profileError.message);
+      }
+    } else if (profile?.resume_builder_save) {
+      savedResume = profile.resume_builder_save;
+    }
+  } catch (err) {
+    console.error("[/api/resume-builder/load-cloud] unexpected users lookup error:", err?.message);
+  }
+
+  if (!savedResume) {
+    savedResume = user.user_metadata?.resume_builder_save || null;
+  }
+
   return res.json({ savedResume });
 });
 
@@ -2138,10 +2162,12 @@ app.post("/api/resume-builder/save-cloud", async (req, res) => {
     return res.status(400).json({ error: "payload is required." });
   }
 
+  const savedAtIso = new Date().toISOString();
+
   const mergedMetadata = {
     ...(user.user_metadata || {}),
     resume_builder_save: payload,
-    resume_builder_saved_at: new Date().toISOString(),
+    resume_builder_saved_at: savedAtIso,
   };
 
   const { error } = await supabase.auth.admin.updateUserById(user.id, {
@@ -2151,6 +2177,26 @@ app.post("/api/resume-builder/save-cloud", async (req, res) => {
   if (error) {
     console.error("[/api/resume-builder/save-cloud] Supabase error:", error.message);
     return res.status(500).json({ error: "Failed to save resume." });
+  }
+
+  try {
+    const { error: profileError } = await supabase
+      .from("users")
+      .update({
+        resume_builder_save: payload,
+        resume_builder_saved_at: savedAtIso,
+        last_active: savedAtIso,
+      })
+      .eq("id", user.id);
+
+    if (profileError) {
+      const missingColumn = getMissingColumnName(profileError);
+      if (missingColumn !== "resume_builder_save" && missingColumn !== "resume_builder_saved_at") {
+        console.error("[/api/resume-builder/save-cloud] users update error:", profileError.message);
+      }
+    }
+  } catch (err) {
+    console.error("[/api/resume-builder/save-cloud] unexpected users update error:", err?.message);
   }
 
   return res.json({ ok: true });
