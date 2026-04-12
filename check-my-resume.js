@@ -51,6 +51,33 @@
   let inputFileType = "";
   let optimizedSections = null;
 
+  function saveCheckoutDraft() {
+    const payload = {
+      finalResumeText,
+      optimizedSections,
+      inputFileType,
+    };
+    localStorage.setItem("resumeCheckoutDraft", JSON.stringify(payload));
+  }
+
+  function restoreCheckoutDraft() {
+    const raw = localStorage.getItem("resumeCheckoutDraft");
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw);
+      finalResumeText = String(draft?.finalResumeText || "").trim();
+      fixedResume = finalResumeText;
+      optimizedSections = draft?.optimizedSections || null;
+      inputFileType = String(draft?.inputFileType || inputFileType || "").toLowerCase();
+      if (finalResumeText) {
+        optimizedOutput.textContent = finalResumeText;
+        showOptimizedSection();
+      }
+    } catch (_error) {
+      // ignore malformed localStorage
+    }
+  }
+
   function getDownloadFileNameFromHeader(contentDisposition, fallbackName) {
     const value = String(contentDisposition || "");
     const utfMatch = value.match(/filename\*=UTF-8''([^;]+)/i);
@@ -85,6 +112,10 @@
     showPaywall = visible;
     if (paywallModal) {
       paywallModal.classList.toggle("hidden", !visible);
+    }
+    if (!visible && paywallUnlockBtn) {
+      paywallUnlockBtn.disabled = false;
+      paywallUnlockBtn.textContent = "Unlock & Download";
     }
   }
 
@@ -400,6 +431,32 @@
     return performDownload();
   }
 
+  async function handleStripeCheckout() {
+    try {
+      paywallUnlockBtn.disabled = true;
+      paywallUnlockBtn.textContent = "Redirecting...";
+      saveCheckoutDraft();
+
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+      });
+
+      const data = await res.json().catch(function () {
+        return {};
+      });
+
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || "Unable to start checkout.");
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      setError(error && error.message ? error.message : "Unable to start checkout.");
+      paywallUnlockBtn.disabled = false;
+      paywallUnlockBtn.textContent = "Unlock & Download";
+    }
+  }
+
   async function performDownload() {
     if (!finalResumeText) return;
 
@@ -436,6 +493,7 @@
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
+      localStorage.removeItem("resumeCheckoutDraft");
     } catch (error) {
       setError(error && error.message ? error.message : "Unable to download optimized resume.");
     }
@@ -457,12 +515,7 @@
   });
 
   paywallUnlockBtn.addEventListener("click", async function () {
-    isPaid = true;
-    setPaywallVisible(false);
-    if (paywallHint) {
-      paywallHint.classList.add("hidden");
-    }
-    await performDownload();
+    await handleStripeCheckout();
   });
 
   paywallCancelBtn.addEventListener("click", function () {
@@ -491,4 +544,27 @@
   fixBtn.addEventListener("click", fixResume);
   copyBtn.addEventListener("click", copyResume);
   downloadBtn.addEventListener("click", downloadResume);
+
+  const searchParams = new URLSearchParams(window.location.search);
+  const paidInUrl = searchParams.get("paid") === "true";
+  const paidInStorage = localStorage.getItem("resumePaid") === "true";
+
+  if (paidInUrl) {
+    isPaid = true;
+    localStorage.setItem("resumePaid", "true");
+    restoreCheckoutDraft();
+    optimizedStatus.textContent = "Payment successful - your download is starting...";
+    if (paywallHint) paywallHint.classList.add("hidden");
+
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    window.history.replaceState({}, "", cleanUrl);
+
+    setTimeout(function () {
+      performDownload();
+    }, 200);
+  } else if (paidInStorage) {
+    isPaid = true;
+    restoreCheckoutDraft();
+    if (paywallHint) paywallHint.classList.add("hidden");
+  }
 })();

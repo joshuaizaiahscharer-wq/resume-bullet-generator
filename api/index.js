@@ -1954,6 +1954,37 @@ app.post("/api/download-optimized-resume", async (req, res) => {
   }
 });
 
+app.post("/api/stripe/checkout", async (req, res) => {
+  try {
+    if (!STRIPE_PRICE_ID) {
+      return res.status(500).json({ error: "STRIPE_PRICE_ID is not configured." });
+    }
+
+    const stripe = getStripeClient();
+    const baseUrl =
+      String(process.env.NEXT_PUBLIC_BASE_URL || "").trim() ||
+      String(process.env.SITE_URL || "").trim() ||
+      `${req.protocol}://${req.get("host")}`;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [
+        {
+          price: STRIPE_PRICE_ID,
+          quantity: 1,
+        },
+      ],
+      success_url: `${baseUrl}/check-my-resume?paid=true`,
+      cancel_url: `${baseUrl}/check-my-resume`,
+    });
+
+    return res.status(200).json({ url: session.url });
+  } catch (error) {
+    console.error("/api/stripe/checkout error", error);
+    return res.status(500).json({ error: "Failed to create checkout session." });
+  }
+});
+
 // ─── Resume Builder payment state + Stripe checkout ─────────────────────────
 app.get("/api/resume-builder/access", async (req, res) => {
   return res.json({ isUnlocked: isResumeUnlocked(req) });
