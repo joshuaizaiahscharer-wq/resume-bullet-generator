@@ -1640,38 +1640,44 @@ app.post("/api/fix-resume", async (req, res) => {
     }
 
     const client = getOpenAIClient();
-    const prompt = `You are an expert resume writer.
+    const prompt = `You are a senior resume writer specializing in high-quality, competitive resumes.
 
-Rewrite and fully optimize the resume.
+Your job is NOT to simply rewrite the resume.
 
-GOALS:
-- Improve clarity, structure, and professionalism
-- Add strong bullet points for each role
-- Keep everything realistic and truthful
-- DO NOT invent fake experience or fake metrics
+Your job is to UPGRADE it into a stronger, more competitive version.
 
-RULES:
-- Use role-specific language
-- Use strong action verbs
-- Add 2-4 bullet points per role
-- Only include numbers when realistic
-- Avoid generic phrases like "responsible for"
+UPGRADE RULES:
 
-FORMAT:
+1. Improve bullet points:
+- Replace generic phrases with more specific, contextual language
+- Show scope of responsibility (for example: environment, workload, type of work)
+- Avoid vague wording like "collaborated", "provided care", "assisted with"
 
-NAME
-CONTACT INFO
+2. Add depth WITHOUT faking data:
+- If exact numbers are unknown, describe scale or context instead
+- Example phrasing: "in a high-acuity emergency department" or "in a high-volume service environment"
 
-PROFESSIONAL SUMMARY (rewritten)
+3. Make each role feel distinct:
+- Nursing roles should sound clinical and high-responsibility
+- Service roles should sound fast-paced and customer-focused
 
-EXPERIENCE
-Each role:
-- Job Title | Company | Dates
-- 2-4 strong bullet points
+4. Improve wording quality:
+- Use confident, professional language
+- Avoid repetition
+- Vary sentence structure
 
-EDUCATION
+5. Keep it REAL:
+- Do NOT invent fake achievements or metrics
+- Do NOT exaggerate beyond believable scope
 
-SKILLS
+FORMATTING RULES:
+- Keep clean structure
+- Use bullet points
+- Make sections clearly separated
+- Improve readability
+
+GOAL:
+The final resume should feel more competitive, more specific, more impactful, and more professional.
 
 OUTPUT:
 JSON only. Use this exact shape:
