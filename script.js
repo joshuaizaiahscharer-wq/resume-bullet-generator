@@ -48,6 +48,9 @@ const matchScoreValue = document.getElementById("matchScoreValue");
 const matchScoreFill = document.getElementById("matchScoreFill");
 const includedKeywordsEl = document.getElementById("includedKeywords");
 const missingKeywordsEl = document.getElementById("missingKeywords");
+const toggleJdBeforeGen = document.getElementById("toggleJdBeforeGen");
+const jdBeforeGenPanel = document.getElementById("jdBeforeGenPanel");
+const jdBeforeGenInput = document.getElementById("jdBeforeGenInput");
 
 let currentBullets = [];
 let currentKeywords = [];
@@ -124,6 +127,16 @@ if (analyzeOptimizeBtn) {
   analyzeOptimizeBtn.addEventListener("click", handleAnalyzeOptimize);
 }
 
+// ─── Job description before generation toggle ─────────────────────────────────
+if (toggleJdBeforeGen && jdBeforeGenPanel) {
+  toggleJdBeforeGen.addEventListener("click", () => {
+    const isHidden = jdBeforeGenPanel.classList.toggle("hidden");
+    toggleJdBeforeGen.setAttribute("aria-expanded", String(!isHidden));
+    const icon = toggleJdBeforeGen.querySelector(".jd-toggle-icon");
+    if (icon) icon.textContent = isHidden ? "＋" : "－";
+  });
+}
+
 // ─── Quick-pick chips ─────────────────────────────────────────────────────────
 if (chipsContainer) {
   chipsContainer.addEventListener("click", (e) => {
@@ -154,11 +167,18 @@ async function handleGenerate() {
     return;
   }
 
+  const jobDescription = jdBeforeGenInput ? jdBeforeGenInput.value.trim() : "";
+
   setLoading(true);
 
   try {
-    const bullets = await fetchBullets(jobTitle);
+    const bullets = await fetchBullets(jobTitle, jobDescription);
     displayBullets(bullets, jobTitle);
+    // Pre-fill the post-generation JD optimizer with the same text so users
+    // can immediately run the keyword analysis without pasting again.
+    if (jobDescription && jobDescriptionInput && !jobDescriptionInput.value.trim()) {
+      jobDescriptionInput.value = jobDescription;
+    }
   } catch (err) {
     showError(err.message || "Something went wrong. Please try again.");
   } finally {
@@ -166,7 +186,7 @@ async function handleGenerate() {
   }
 }
 
-async function fetchBullets(jobTitle) {
+async function fetchBullets(jobTitle, jobDescription = "") {
   const pagePath = window.location.pathname;
   const userId = getCurrentUserId();
 
@@ -175,6 +195,7 @@ async function fetchBullets(jobTitle) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       jobTitle,
+      jobDescription: jobDescription || undefined,
       // Send page metadata for backend usage tracking.
       pagePath,
       pageType: inferPageType(pagePath),

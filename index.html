@@ -95,6 +95,30 @@
           <button class="chip" type="button">Teacher</button>
         </div>
 
+        <!-- Optional job description before generation -->
+        <div class="jd-before-gen">
+          <button
+            type="button"
+            id="toggleJdBeforeGen"
+            class="jd-before-gen-toggle"
+            aria-expanded="false"
+            aria-controls="jdBeforeGenPanel"
+          >
+            <span class="jd-toggle-icon">＋</span>
+            Add a job description to tailor your bullets <span class="jd-toggle-optional">(optional)</span>
+          </button>
+          <div id="jdBeforeGenPanel" class="jd-before-gen-panel hidden">
+            <label class="input-label" for="jdBeforeGenInput">Paste Job Description</label>
+            <textarea
+              id="jdBeforeGenInput"
+              class="jd-textarea"
+              placeholder="Paste the job posting here — the AI will tailor every bullet point to this specific role..."
+              aria-label="Paste job description to tailor bullet generation"
+              rows="6"
+            ></textarea>
+          </div>
+        </div>
+
         <div id="status" class="status hidden" aria-live="polite"></div>
 
         <section id="resultsSection" class="results hidden" aria-live="polite">
