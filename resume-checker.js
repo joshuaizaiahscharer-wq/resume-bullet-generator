@@ -43,7 +43,7 @@
         throw new Error(data.error || `Analysis failed (${response.status}).`);
       }
 
-      renderResult(data.score, data.feedback);
+      renderResult(data.score, data.feedback, data.rating);
       showStatus("Analysis complete.", false, true);
     } catch (err) {
       showStatus(err.message || "Unable to analyze resume right now.", true);
@@ -52,11 +52,14 @@
     }
   }
 
-  function renderResult(score, feedback) {
+  function renderResult(score, feedback, rating) {
     const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
     const safeFeedback = Array.isArray(feedback) ? feedback : [];
+    const safeRating = String(rating || "").trim();
 
-    scoreTitleEl.textContent = `Resume Score: ${safeScore}%`;
+    scoreTitleEl.textContent = safeRating
+      ? `Resume Score: ${safeScore}% (${safeRating})`
+      : `Resume Score: ${safeScore}%`;
     scoreProgressEl.style.width = `${safeScore}%`;
     scoreProgressEl.classList.remove("strong", "decent", "needs-work");
     scoreBadgeEl.classList.remove("strong", "decent", "needs-work");
@@ -68,7 +71,7 @@
     } else if (safeScore >= 60) {
       scoreProgressEl.classList.add("decent");
       scoreBadgeEl.classList.add("decent");
-      scoreBadgeEl.textContent = "Decent";
+      scoreBadgeEl.textContent = "Average";
     } else {
       scoreProgressEl.classList.add("needs-work");
       scoreBadgeEl.classList.add("needs-work");

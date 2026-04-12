@@ -647,37 +647,72 @@ function analyzeResume(bullets) {
 }
 
 function analyzeResumeText(resumeText) {
-  const text = String(resumeText || "").toLowerCase();
+  const raw = String(resumeText || "");
+  const text = raw.toLowerCase();
+  const bullets = raw
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[\s•\-–—*]+/, "").trim())
+    .filter(Boolean);
 
-  let score = 100;
+  let score = 70;
   const feedback = [];
 
-  const actionVerbs = ["managed", "led", "developed", "created", "improved"];
-  if (!actionVerbs.some((v) => text.includes(v))) {
-    score -= 15;
-    feedback.push("Use stronger action verbs (managed, led, developed)");
-  }
-
-  if (!/\d+%|\d+\+|\$\d+/g.test(text)) {
+  const weakVerbs = ["helped", "worked", "did", "made", "handled"];
+  const hasWeakVerbs = weakVerbs.some((v) => text.includes(v));
+  if (hasWeakVerbs) {
     score -= 20;
-    feedback.push("Add measurable results (%, $, numbers)");
+    feedback.push("Avoid weak verbs like 'helped' or 'worked' - use stronger action verbs");
   }
 
-  if (String(resumeText || "").length < 300) {
+  const hasMetrics = /\d+%|\d+\+|\$\d+/g.test(text);
+  if (!hasMetrics) {
+    score -= 25;
+    feedback.push("No measurable results - add numbers (%, $, quantities)");
+  }
+
+  const avgLength = bullets.length
+    ? bullets.reduce((acc, b) => acc + b.split(/\s+/).filter(Boolean).length, 0) / bullets.length
+    : 0;
+  if (avgLength < 10) {
+    score -= 20;
+    feedback.push("Bullets lack detail - expand with impact and context");
+  }
+
+  const genericPhrases = ["responsible for", "duties included", "worked on"];
+  if (genericPhrases.some((p) => text.includes(p))) {
     score -= 15;
-    feedback.push("Your resume is too short - add more detail");
+    feedback.push("Avoid generic phrases like 'responsible for'");
   }
 
-  const keywords = ["customer", "team", "sales", "inventory"];
-  const matches = keywords.filter((k) => text.includes(k));
-  if (matches.length < 2) {
-    score -= 10;
-    feedback.push("Include more role-specific keywords");
+  const starts = bullets
+    .map((b) => b.split(/\s+/).filter(Boolean)[0])
+    .filter(Boolean)
+    .map((w) => w.toLowerCase());
+  const uniqueStarts = new Set(starts);
+  if (starts.length && uniqueStarts.size < starts.length / 2) {
+    score -= 15;
+    feedback.push("Too many bullets start the same way - vary sentence structure");
   }
 
+  if (bullets.length < 5) {
+    score = Math.min(score, 40);
+    feedback.push("Not enough bullet points - resume looks incomplete");
+  }
+
+  if (raw.length < 200) {
+    score = Math.min(score, 35);
+    feedback.push("Resume is too short - lacks substance");
+  }
+
+  if (score > 90) score = 90;
   if (score < 0) score = 0;
 
-  return { score, feedback };
+  let rating;
+  if (score >= 80) rating = "Strong";
+  else if (score >= 60) rating = "Average";
+  else rating = "Needs Improvement";
+
+  return { score, rating, feedback };
 }
 
 function buildClusterFromJob(job) {
@@ -1210,6 +1245,7 @@ app.post("/api/analyze-resume", (req, res) => {
   const analysis = analyzeResumeText(resumeText);
   return res.json({
     score: analysis.score,
+    rating: analysis.rating,
     feedback: analysis.feedback,
   });
 });
