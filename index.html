@@ -69,6 +69,15 @@
     <main class="main">
       <div class="card">
         <label class="input-label" for="jobTitle">Job Title</label>
+        <label class="input-label" for="jobDescriptionInput">Paste Job Description (Optional)</label>
+        <textarea
+          id="jobDescriptionInput"
+          class="jd-textarea"
+          placeholder="Paste a job posting to tailor your resume bullets..."
+          aria-label="Paste Job Description (Optional)"
+        ></textarea>
+        <p id="tailorHint" class="optimizer-status hidden" aria-live="polite"></p>
+
         <div class="input-group">
           <input
             type="text"
@@ -78,7 +87,7 @@
             autocomplete="off"
           />
           <button id="generateBtn">
-            <span class="btn-text">Generate</span>
+            <span class="btn-text">Generate Resume Bullets</span>
             <span class="btn-arrow">→</span>
           </button>
         </div>
@@ -109,40 +118,6 @@
           <ul id="bulletList"></ul>
         </section>
 
-        <section class="jd-optimizer" aria-labelledby="jdOptimizerHeading">
-          <div class="jd-optimizer-header">
-            <p class="input-label">Optimize for a Job Description</p>
-            <h2 id="jdOptimizerHeading">Optimize for a Job Description</h2>
-          </div>
-          <label class="input-label" for="jobDescriptionInput">Paste Job Description</label>
-          <textarea
-            id="jobDescriptionInput"
-            class="jd-textarea"
-            placeholder="Paste the full job posting here to optimize and generate bullets..."
-            aria-label="Paste Job Description"
-          ></textarea>
-          <section id="optimizedJDPanel" class="optimized-jd hidden" aria-label="Optimized job description summary">
-            <div class="optimized-grid">
-              <div class="optimized-col">
-                <h3>Core Responsibilities</h3>
-                <ul id="optimizedResponsibilities"></ul>
-              </div>
-              <div class="optimized-col">
-                <h3>Key Skills</h3>
-                <ul id="optimizedSkills"></ul>
-              </div>
-              <div class="optimized-col">
-                <h3>Action Verbs</h3>
-                <ul id="optimizedVerbs"></ul>
-              </div>
-            </div>
-          </section>
-          <div class="jd-actions">
-            <button id="analyzeOptimizeBtn" class="jd-optimize-btn" type="button">Optimize Job Description</button>
-            <button id="generateFromOptimizedBtn" class="jd-optimize-btn jd-generate-btn" type="button" disabled>Generate Resume Bullets</button>
-            <p id="optimizerStatus" class="optimizer-status hidden" aria-live="polite"></p>
-          </div>
-        </section>
       </div>
     </main>
 

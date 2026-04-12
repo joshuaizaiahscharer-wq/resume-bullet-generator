@@ -16,10 +16,6 @@ const OpenAI = require("openai");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 const {
-  optimizeJobDescription,
-  generateResumeBullets,
-} = require("../server/openaiService");
-const {
   blogPosts: staticBlogPosts,
   blogPostBySlug: staticBlogPostBySlug,
   renderBlogListPage,
@@ -342,66 +338,6 @@ function extractResponseText(response) {
 
   return parts.join("\n").trim();
 }
-
-function cleanBullets(bullets) {
-  return bullets.map(bullet => {
-    return bullet
-      .replace(/,\s*with\s+[^.]+/gi, "")
-      .replace(/">.*$/gi, "")
-      .replace(/\.\./g, ".")
-      .trim();
-  });
-}
-
-app.post("/api/optimize-job-description", async (req, res) => {
-  const jobDescription = String(req.body?.jobDescription || "").trim();
-  console.log("Incoming jobDescription:", jobDescription);
-
-  if (!jobDescription) {
-    return res.status(400).json({
-      error: "Please enter a valid job description (at least 10 characters)."
-    });
-  }
-
-  const isShortInput = jobDescription.trim().length < 10;
-
-  try {
-    const optimizedJD = await optimizeJobDescription(jobDescription, {
-      shortInput: isShortInput,
-    });
-
-    return res.json({
-      optimizedJD,
-      source: "ai",
-      warning: isShortInput
-        ? "Try adding more detail (e.g., responsibilities, tools, or skills) for better optimization."
-        : null,
-    });
-  } catch (err) {
-    return res.status(500).json({ error: "Failed to optimize job description." });
-  }
-});
-
-app.post("/api/generate-resume-bullets", async (req, res) => {
-  const optimizedJD = req.body?.optimizedJD;
-
-  if (!optimizedJD || typeof optimizedJD !== "object") {
-    return res.status(400).json({ error: "optimizedJD is required." });
-  }
-
-  try {
-    const optimizedBullets = await generateResumeBullets(optimizedJD);
-    const cleanedBullets = cleanBullets(optimizedBullets);
-
-    if (!cleanedBullets.length) {
-      throw new Error("AI returned no bullets.");
-    }
-
-    return res.json({ bullets: cleanedBullets, source: "ai" });
-  } catch (err) {
-    return res.status(500).json({ error: "Failed to generate resume bullets." });
-  }
-});
 
 function buildBlogImagePrompt(topicOrTitle, customPrompt) {
   const base = String(customPrompt || "").trim() || String(topicOrTitle || "").trim();
@@ -730,13 +666,36 @@ const allClusterPages = allClusters.flatMap((cluster) =>
 
 // ─── POST /api/generate ───────────────────────────────────────────────────────
 app.post("/api/generate", async (req, res) => {
-  const { jobTitle, pagePath, pageType, userId: bodyUserId } = req.body;
+  const { jobTitle, jobDescription, pagePath, pageType, userId: bodyUserId } = req.body;
 
   if (!jobTitle || typeof jobTitle !== "string" || !jobTitle.trim()) {
-    return res.status(400).json({ error: "A valid jobTitle is required." });
+    return res.status(400).json({ error: "Job title is required." });
   }
 
   const sanitizedTitle = jobTitle.trim().slice(0, 100);
+  const sanitizedJobDescription = String(jobDescription || "").trim();
+  const hasJobDescription = sanitizedJobDescription.length > 10;
+
+  let prompt;
+  if (hasJobDescription) {
+    prompt = `
+Generate 10 professional resume bullet points for a ${sanitizedTitle}.
+
+Align the bullets with this job description:
+${sanitizedJobDescription}
+
+- Keep bullets concise
+- Focus on achievements
+- Use natural language
+`;
+  } else {
+    prompt = `
+Generate 10 strong resume bullet points for a ${sanitizedTitle}.
+
+- Focus on common responsibilities
+- Make them professional and impactful
+`;
+  }
 
   try {
     const completion = await openai.chat.completions.create({
@@ -753,9 +712,7 @@ app.post("/api/generate", async (req, res) => {
         },
         {
           role: "user",
-          content:
-            `Create 10 professional resume bullet points for a ${sanitizedTitle}. ` +
-            "Each bullet should begin with an action verb.",
+          content: prompt,
         },
       ],
       temperature: 0.7,

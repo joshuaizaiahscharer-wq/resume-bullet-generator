@@ -1,8 +1,6 @@
 // ─── Configuration ──────────────────────────────────────────────────────────
 // The API key lives in .env on the server — nothing sensitive here.
 const API_URL = "/api/generate";
-const OPTIMIZE_JD_API_URL = "/api/optimize-job-description";
-const GENERATE_BULLETS_API_URL = "/api/generate-resume-bullets";
 
 // ─── Hero typing cycle ────────────────────────────────────────────────────────
 (function initHeroTyping() {
@@ -42,16 +40,9 @@ const supportForm    = document.getElementById("supportForm");
 const supportStatus  = document.getElementById("supportStatus");
 const supportBtn     = document.getElementById("supportSubmitBtn");
 const jobDescriptionInput = document.getElementById("jobDescriptionInput");
-const analyzeOptimizeBtn = document.getElementById("analyzeOptimizeBtn");
-const generateFromOptimizedBtn = document.getElementById("generateFromOptimizedBtn");
-const optimizerStatus = document.getElementById("optimizerStatus");
-const optimizedJDPanel = document.getElementById("optimizedJDPanel");
-const optimizedResponsibilities = document.getElementById("optimizedResponsibilities");
-const optimizedSkills = document.getElementById("optimizedSkills");
-const optimizedVerbs = document.getElementById("optimizedVerbs");
+const tailorHint = document.getElementById("tailorHint");
 
 let currentBullets = [];
-let optimizedJD = null;
 
 // ─── Event listeners ─────────────────────────────────────────────────────────
 if (generateBtn) {
@@ -73,14 +64,6 @@ if (jobTitleInput) {
   });
 }
 
-if (jobDescriptionInput) {
-  jobDescriptionInput.addEventListener("input", () => {
-    optimizedJD = null;
-    if (generateFromOptimizedBtn) generateFromOptimizedBtn.disabled = true;
-    if (optimizedJDPanel) optimizedJDPanel.classList.add("hidden");
-  });
-}
-
 if (copyBtn) {
   copyBtn.addEventListener("click", handleCopy);
 }
@@ -89,12 +72,13 @@ if (supportForm) {
   supportForm.addEventListener("submit", handleSupportSubmit);
 }
 
-if (analyzeOptimizeBtn) {
-  analyzeOptimizeBtn.addEventListener("click", handleAnalyzeOptimize);
-}
-
-if (generateFromOptimizedBtn) {
-  generateFromOptimizedBtn.addEventListener("click", handleGenerateFromOptimized);
+if (jobDescriptionInput) {
+  jobDescriptionInput.addEventListener("input", () => {
+    if (!tailorHint) return;
+    tailorHint.classList.add("hidden");
+    tailorHint.textContent = "";
+    tailorHint.classList.remove("success", "error");
+  });
 }
 
 // ─── Quick-pick chips ─────────────────────────────────────────────────────────
@@ -130,8 +114,10 @@ async function handleGenerate() {
   setLoading(true);
 
   try {
-    const bullets = await fetchBullets(jobTitle);
+    const jdText = String(jobDescriptionInput?.value || "").trim();
+    const bullets = await fetchBullets(jobTitle, jdText);
     displayBullets(bullets, jobTitle);
+    showTailorHint(jdText.length > 10);
   } catch (err) {
     showError(err.message || "Something went wrong. Please try again.");
   } finally {
@@ -139,7 +125,7 @@ async function handleGenerate() {
   }
 }
 
-async function fetchBullets(jobTitle) {
+async function fetchBullets(jobTitle, jobDescription = "") {
   const pagePath = window.location.pathname;
   const userId = getCurrentUserId();
 
@@ -148,6 +134,7 @@ async function fetchBullets(jobTitle) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       jobTitle,
+      jobDescription: String(jobDescription || "").trim(),
       // Send page metadata for backend usage tracking.
       pagePath,
       pageType: inferPageType(pagePath),
@@ -198,7 +185,6 @@ function inferPageType(pathname) {
 function displayBullets(bullets, jobTitle) {
   clearStatus();
   currentBullets = bullets.slice();
-  showOptimizerStatus("", false);
 
   // Update heading with count and title
   const count = bullets.length;
@@ -241,130 +227,16 @@ function renderBulletList(bullets) {
   });
 }
 
-async function handleAnalyzeOptimize() {
-  if (!jobDescriptionInput || !analyzeOptimizeBtn) return;
-
-  const jdText = String(jobDescriptionInput.value || "").trim();
-  if (!jdText) {
-    showOptimizerStatus("Paste a job description first.", true);
-    jobDescriptionInput.focus();
+function showTailorHint(hasJobDescription) {
+  if (!tailorHint) return;
+  tailorHint.classList.remove("hidden", "error", "success");
+  if (hasJobDescription) {
+    tailorHint.textContent = "✔ Tailored to your job description";
+    tailorHint.classList.add("success");
     return;
   }
 
-  const isShortInput = jdText.length < 10;
-  if (isShortInput) {
-    showOptimizerStatus(
-      "Try adding more detail (e.g., responsibilities, tools, or skills) for better optimization.",
-      false
-    );
-  }
-
-  analyzeOptimizeBtn.disabled = true;
-  showOptimizerStatus("Optimizing job description...", false);
-
-  try {
-    optimizedJD = await requestOptimizedJobDescription(jdText);
-    renderOptimizedJD(optimizedJD);
-    if (generateFromOptimizedBtn) generateFromOptimizedBtn.disabled = false;
-    showOptimizerStatus("Job description optimized. Generate bullets when ready.", false, true);
-  } catch (err) {
-    showOptimizerStatus(err.message || "Failed to optimize job description.", true);
-  } finally {
-    analyzeOptimizeBtn.disabled = false;
-  }
-}
-
-async function requestOptimizedJobDescription(jobDescription) {
-  const response = await fetch(OPTIMIZE_JD_API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      jobDescription: String(jobDescription || "").trim(),
-      bullets: currentBullets,
-    }),
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.error || `Job description optimization failed (${response.status}).`);
-  }
-
-  if (!payload.optimizedJD || typeof payload.optimizedJD !== "object") {
-    throw new Error("No optimized job description returned.");
-  }
-
-  return payload.optimizedJD;
-}
-
-function renderOptimizedJD(data) {
-  if (!optimizedJDPanel) return;
-  setOptimizedList(optimizedResponsibilities, data.coreResponsibilities || []);
-  setOptimizedList(optimizedSkills, data.keySkills || []);
-  setOptimizedList(optimizedVerbs, data.actionVerbs || []);
-  optimizedJDPanel.classList.remove("hidden");
-}
-
-function setOptimizedList(container, items) {
-  if (!container) return;
-  container.innerHTML = "";
-  items.forEach((item) => {
-    const li = document.createElement("li");
-    li.textContent = item;
-    container.appendChild(li);
-  });
-}
-
-async function handleGenerateFromOptimized() {
-  if (!generateFromOptimizedBtn) return;
-  if (!optimizedJD) {
-    showOptimizerStatus("Optimize the job description first.", true);
-    return;
-  }
-
-  generateFromOptimizedBtn.disabled = true;
-  showOptimizerStatus("Generating resume bullets from optimized job description...", false);
-
-  try {
-    const bullets = await requestBulletsFromOptimized(optimizedJD);
-    currentBullets = bullets.slice();
-    resultsHeading.textContent = `${bullets.length} Bullet Points — Optimized Job Description`;
-    renderBulletList(currentBullets);
-    resultsSection.classList.remove("hidden");
-    showOptimizerStatus("Bullet generation complete.", false, true);
-  } catch (err) {
-    showOptimizerStatus(err.message || "Failed to generate bullets.", true);
-  } finally {
-    generateFromOptimizedBtn.disabled = false;
-  }
-}
-
-async function requestBulletsFromOptimized(optimizedJDData) {
-  const response = await fetch(GENERATE_BULLETS_API_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ optimizedJD: optimizedJDData }),
-  });
-
-  const payload = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    throw new Error(payload.error || `Bullet generation failed (${response.status}).`);
-  }
-
-  const bullets = Array.isArray(payload.bullets) ? payload.bullets : [];
-  if (!bullets.length) {
-    throw new Error("No bullets returned.");
-  }
-
-  return bullets;
-}
-
-function showOptimizerStatus(message, isError, isSuccess = false) {
-  if (!optimizerStatus) return;
-  optimizerStatus.textContent = message || "";
-  optimizerStatus.classList.remove("hidden", "error", "success");
-  if (isError) optimizerStatus.classList.add("error");
-  if (isSuccess) optimizerStatus.classList.add("success");
-  if (!message) optimizerStatus.classList.add("hidden");
+  tailorHint.textContent = "Using general industry best practices";
 }
 
 function copySingleBullet(btn, text) {
