@@ -255,7 +255,10 @@ async function handleOptimizeJobDescription() {
       body: JSON.stringify({ jobDescription: jdText }),
     });
 
-    const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch((parseErr) => {
+      console.warn("[optimize-job-description] Failed to parse response JSON:", parseErr.message);
+      return {};
+    });
     if (!response.ok) {
       throw new Error(data.error || `Request failed (${response.status}).`);
     }
@@ -327,7 +330,10 @@ async function handleGenerateFromJD() {
       body: JSON.stringify({ optimizedJD: currentOptimizedJD }),
     });
 
-    const data = await response.json().catch(() => ({}));
+    const data = await response.json().catch((parseErr) => {
+      console.warn("[generate-bullets-from-jd] Failed to parse response JSON:", parseErr.message);
+      return {};
+    });
     if (!response.ok) {
       throw new Error(data.error || `Request failed (${response.status}).`);
     }
@@ -357,14 +363,7 @@ async function handleGenerateFromJD() {
 
 function showOptimizerStatus(message, isError, isSuccess = false) {
   if (!optimizerStatus) return;
-  if (isError || isSuccess || !message) {
-    optimizerStatus.textContent = "";
-  }
-  if (message && !isError && !isSuccess) {
-    optimizerStatus.innerHTML = message;
-  } else {
-    optimizerStatus.textContent = message || "";
-  }
+  optimizerStatus.innerHTML = message || "";
   optimizerStatus.classList.remove("hidden", "error", "success");
   if (isError) optimizerStatus.classList.add("error");
   if (isSuccess) optimizerStatus.classList.add("success");
