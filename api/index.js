@@ -355,14 +355,28 @@ function cleanBullets(bullets) {
 
 app.post("/api/optimize-job-description", async (req, res) => {
   const jobDescription = String(req.body?.jobDescription || "").trim();
+  console.log("Incoming jobDescription:", jobDescription);
 
   if (!jobDescription) {
-    return res.status(400).json({ error: "jobDescription is required." });
+    return res.status(400).json({
+      error: "Please enter a valid job description (at least 10 characters)."
+    });
   }
 
+  const isShortInput = jobDescription.trim().length < 10;
+
   try {
-    const optimizedJD = await optimizeJobDescription(jobDescription);
-    return res.json({ optimizedJD, source: "ai" });
+    const optimizedJD = await optimizeJobDescription(jobDescription, {
+      shortInput: isShortInput,
+    });
+
+    return res.json({
+      optimizedJD,
+      source: "ai",
+      warning: isShortInput
+        ? "Try adding more detail (e.g., responsibilities, tools, or skills) for better optimization."
+        : null,
+    });
   } catch (err) {
     return res.status(500).json({ error: "Failed to optimize job description." });
   }

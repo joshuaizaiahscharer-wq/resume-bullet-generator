@@ -40,7 +40,11 @@ function parseJsonObject(raw) {
   return parsed;
 }
 
-async function optimizeJobDescription(jobDescription) {
+async function optimizeJobDescription(jobDescription, options = {}) {
+  const shortInput = Boolean(options.shortInput);
+  const minItems = shortInput ? 3 : 5;
+  const maxItems = shortInput ? 5 : 7;
+
   const response = await client.chat.completions.create({
     model: process.env.OPENAI_OPTIMIZER_MODEL || "gpt-4o-mini",
     messages: [
@@ -57,15 +61,16 @@ Rewrite this job description into a clean, structured summary optimized for resu
 
 OUTPUT FORMAT:
 
-1. Core Responsibilities (5-7 bullet points)
-2. Key Skills (5-7 items)
-3. Important Action Verbs (5-7 verbs)
+1. Core Responsibilities (${minItems}-${maxItems} bullet points)
+2. Key Skills (${minItems}-${maxItems} items)
+3. Important Action Verbs (${minItems}-${maxItems} verbs)
 
 RULES:
 - Simplify wording
 - Remove fluff
 - Focus on what actually matters for a resume
 - Use clear, professional language
+- If the input is short or vague, keep output concise (${minItems}-${maxItems} items per section)
 
 Return ONLY a JSON object in this shape:
 {
@@ -85,13 +90,13 @@ ${jobDescription}
   const payload = parseJsonObject(response.choices?.[0]?.message?.content);
   return {
     coreResponsibilities: Array.isArray(payload.coreResponsibilities)
-      ? payload.coreResponsibilities.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 7)
+      ? payload.coreResponsibilities.map((item) => String(item || "").trim()).filter(Boolean).slice(0, maxItems)
       : [],
     keySkills: Array.isArray(payload.keySkills)
-      ? payload.keySkills.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 7)
+      ? payload.keySkills.map((item) => String(item || "").trim()).filter(Boolean).slice(0, maxItems)
       : [],
     actionVerbs: Array.isArray(payload.actionVerbs)
-      ? payload.actionVerbs.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 7)
+      ? payload.actionVerbs.map((item) => String(item || "").trim()).filter(Boolean).slice(0, maxItems)
       : [],
   };
 }

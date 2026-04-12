@@ -251,6 +251,14 @@ async function handleAnalyzeOptimize() {
     return;
   }
 
+  const isShortInput = jdText.length < 10;
+  if (isShortInput) {
+    showOptimizerStatus(
+      "Try adding more detail (e.g., responsibilities, tools, or skills) for better optimization.",
+      false
+    );
+  }
+
   analyzeOptimizeBtn.disabled = true;
   showOptimizerStatus("Optimizing job description...", false);
 
@@ -270,7 +278,10 @@ async function requestOptimizedJobDescription(jobDescription) {
   const response = await fetch(OPTIMIZE_JD_API_URL, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ jobDescription }),
+    body: JSON.stringify({
+      jobDescription: String(jobDescription || "").trim(),
+      bullets: currentBullets,
+    }),
   });
 
   const payload = await response.json().catch(() => ({}));
