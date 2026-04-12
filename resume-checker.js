@@ -24,6 +24,7 @@
   // Store current resume text and payment status
   let currentResumeText = "";
   let paywallUnlocked = false;
+  let latestFeedback = [];
 
   analyzeBtn.addEventListener("click", analyzeResumeHandler);
   ctaBtn.addEventListener("click", handleCtaClick);
@@ -98,6 +99,8 @@
       scoreBadgeEl.classList.add("needs-work");
     }
 
+    latestFeedback = safeFeedback;
+
     // Render before/after improvement cards (show 2-3, blur the rest)
     renderImprovements(safeFeedback, resumeText);
 
@@ -150,63 +153,103 @@
   }
 
   function generateImprovementPairs(feedback, resumeText) {
-    // First, try to extract weak bullets from the user's resume
-    const userBullets = extractBulletsFromResume(resumeText);
-    const weakBullets = identifyWeakBullets(userBullets);
+    const experienceBullets = extractExperienceBullets(resumeText);
+    const weakBullets = identifyWeakBullets(experienceBullets);
+    const fallbackBullets = getFallbackBullets(experienceBullets, weakBullets);
+    const candidates = [...weakBullets, ...fallbackBullets].slice(0, 6);
 
-    const pairs = [];
-
-    // If we found weak bullets, improve them
-    if (weakBullets.length > 0) {
-      weakBullets.slice(0, 6).forEach((bullet) => {
+    return candidates
+      .map((bullet) => {
         const improved = improveBullet(bullet);
-        pairs.push({
-          before: bullet,
-          after: improved
-        });
-      });
-    }
-
-    // Fallback: use generic examples if not enough real improvements found
-    if (pairs.length < 2) {
-      const genericFallback = [
-        {
-          before: "Responsible for managing social media accounts",
-          after: "Increased social media engagement by <span class='improvement-highlight'>45%</span> through strategic content planning and audience targeting"
-        },
-        {
-          before: "Worked on various marketing projects",
-          after: "Led <span class='improvement-highlight'>12+ cross-functional marketing campaigns</span>, generating <span class='improvement-highlight'>$2.3M</span> in attributed revenue"
-        },
-        {
-          before: "Improved team productivity",
-          after: "Implemented new workflow system that <span class='improvement-highlight'>reduced processing time by 35%</span> and improved team productivity"
-        },
-        {
-          before: "Handled customer support tickets",
-          after: "Resolved <span class='improvement-highlight'>95% of support tickets</span> with <span class='improvement-highlight'>4.8/5 satisfaction rating</span>"
-        }
-      ];
-
-      pairs.push(...genericFallback.slice(0, 6 - pairs.length));
-    }
-
-    return pairs;
+        if (!improved) return null;
+        return { before: bullet, after: improved };
+      })
+      .filter(Boolean);
   }
 
-  function extractBulletsFromResume(resumeText) {
+  function extractExperienceBullets(resumeText) {
     if (!resumeText) return [];
 
-    // Split by lines and filter for potential bullet points
-    const lines = resumeText.split("\n").map((line) => line.trim()).filter((line) => line.length > 10);
+    const lines = String(resumeText)
+      .split(/\r?\n/)
+      .map((line) => line.trim());
 
-    // Look for lines that likely contain job duties (bullet points)
-    return lines.filter((line) => {
-      const startsWithBulletChar = /^[-•*→]\s/.test(line);
-      const looksLikeBullet = line.length > 20 && line.length < 300;
-      const notAHeading = !/^[A-Z\s]+$/.test(line);
-      return (startsWithBulletChar || looksLikeBullet) && notAHeading;
-    }).map((line) => line.replace(/^[-•*→]\s/, "").trim()); // Remove bullet characters
+    const bullets = [];
+    let activeSection = "other";
+    let underJobRole = false;
+
+    lines.forEach((line) => {
+      if (!line) {
+        underJobRole = false;
+        return;
+      }
+
+      const detectedSection = detectSection(line);
+      if (detectedSection) {
+        activeSection = detectedSection;
+        underJobRole = false;
+        return;
+      }
+
+      if (activeSection !== "experience") {
+        return;
+      }
+
+      if (isSkippableLine(line)) {
+        return;
+      }
+
+      if (isLikelyJobRoleLine(line)) {
+        underJobRole = true;
+        return;
+      }
+
+      const words = countWords(line);
+      const isBullet = /^[-•*–—]\s+/.test(line);
+      const cleaned = line.replace(/^[-•*–—]\s+/, "").trim();
+
+      if (isBullet && words > 6) {
+        bullets.push(cleaned);
+        return;
+      }
+
+      // Accept sentence-like lines under a job role as implicit bullets.
+      if (underJobRole && words > 6 && /[a-zA-Z]/.test(cleaned)) {
+        bullets.push(cleaned);
+      }
+    });
+
+    return dedupeList(bullets);
+  }
+
+  function detectSection(line) {
+    const normalized = line.toLowerCase().replace(/[^a-z\s]/g, " ").trim();
+
+    if (/^(contact|contact info|contact information)$/.test(normalized)) return "contact";
+    if (/^(summary|professional summary|profile|objective|career objective)$/.test(normalized)) return "summary";
+    if (/^(experience|work experience|professional experience|employment|employment history)$/.test(normalized)) return "experience";
+    if (/^(education|academic background|certifications?)$/.test(normalized)) return "education";
+    return null;
+  }
+
+  function isSkippableLine(line) {
+    const text = String(line || "").trim();
+    if (!text) return true;
+    if (countWords(text) < 5) return true;
+    if (text.includes("@")) return true;
+    if (/(https?:\/\/|www\.|linkedin\.com)/i.test(text)) return true;
+    if (/\+?\d?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/.test(text)) return true;
+    return false;
+  }
+
+  function isLikelyJobRoleLine(line) {
+    const text = String(line || "").trim();
+    if (!text) return false;
+    if (text.includes("@") || /(https?:\/\/|www\.|linkedin\.com)/i.test(text)) return false;
+    if (/\b(education|experience|summary|objective|skills?)\b/i.test(text)) return false;
+    if (/\b(19|20)\d{2}\b/.test(text)) return true;
+    if (/\b(manager|engineer|analyst|assistant|specialist|coordinator|associate|director|intern)\b/i.test(text)) return true;
+    return false;
   }
 
   function identifyWeakBullets(bullets) {
@@ -217,95 +260,149 @@
       "demonstrated",
       "assisted",
       "participated in",
-      "was involved in",
-      "managed",
-      "handled",
-      "was able to",
-      "helped",
-      "performed"
+      "was involved in"
     ];
 
-    const metricsRegex = /(\d+%|\$\d+|[0-9]+\+?(?:\s+(?:hours|days|weeks|months|years|projects|clients|users|employees|departments|teams)))/i;
+    const metricsRegex = /(\d+%|\$\d|\d+\+|\d+\s+(hours|days|weeks|months|years|projects|clients|users|employees|tickets|accounts))/i;
 
     return bullets.filter((bullet) => {
-      const lowerBullet = bullet.toLowerCase();
-      const hasWeakPhrase = weakIndicators.some((phrase) => lowerBullet.includes(phrase));
+      const lower = bullet.toLowerCase();
+      const hasWeakPhrase = weakIndicators.some((phrase) => lower.includes(phrase));
       const lacksMetrics = !metricsRegex.test(bullet);
       return hasWeakPhrase || lacksMetrics;
     });
   }
 
+  function getFallbackBullets(allBullets, weakBullets) {
+    const weakSet = new Set(weakBullets);
+    return allBullets.filter((line) => !weakSet.has(line) && countWords(line) > 6);
+  }
+
   function improveBullet(bullet) {
-    // Strong action verbs for replacements
-    const verbReplacements = {
-      "responsible for": "Drove",
-      "worked on": "Engineered",
-      "helped with": "Accelerated",
-      "demonstrated": "Delivered",
-      "assisted": "Enabled",
-      "participated in": "Spearheaded",
-      "was involved in": "Orchestrated",
-      "managed": "Led",
-      "handled": "Resolved",
-      "was able to": "Successfully",
-      "helped": "Contributed to",
-      "performed": "Executed",
-      "did": "Accomplished"
+    const clean = String(bullet || "").replace(/^[-•*–—]\s+/, "").trim();
+    if (!clean || countWords(clean) < 6 || isSkippableLine(clean)) {
+      return null;
+    }
+
+    const lower = clean.toLowerCase();
+    const core = clean
+      .replace(/^(responsible for|worked on|helped with|demonstrated|assisted with|assisted|participated in|was involved in)\s+/i, "")
+      .replace(/\.$/, "")
+      .trim();
+
+    if (!core || countWords(core) < 3) {
+      return null;
+    }
+
+    const templates = [
+      {
+        test: /inventory|stock|warehouse|supply chain|fulfillment/i,
+        verb: "Optimized",
+        tail: "reducing waste by 15% and improving stock accuracy by 22%"
+      },
+      {
+        test: /customer|client|support|service|ticket/i,
+        verb: "Improved",
+        tail: "raising customer satisfaction to 96% while cutting response time by 28%"
+      },
+      {
+        test: /sales|revenue|pipeline|account/i,
+        verb: "Increased",
+        tail: "driving 18% revenue growth and expanding qualified pipeline by 30%"
+      },
+      {
+        test: /social|marketing|campaign|content|brand/i,
+        verb: "Scaled",
+        tail: "boosting engagement by 34% and improving campaign conversion by 19%"
+      },
+      {
+        test: /process|workflow|operations|efficiency|procedure/i,
+        verb: "Streamlined",
+        tail: "reducing cycle time by 21% and increasing team throughput by 17%"
+      },
+      {
+        test: /team|staff|training|mentor|lead/i,
+        verb: "Led",
+        tail: "improving team productivity by 20% across 10+ contributors"
+      },
+      {
+        test: /project|implementation|delivery|launch/i,
+        verb: "Delivered",
+        tail: "completing 12+ key milestones on time and reducing delivery risk by 25%"
+      }
+    ];
+
+    const selected = templates.find((item) => item.test.test(lower)) || {
+      verb: "Improved",
+      tail: "increasing output quality by 16% and reducing rework by 14%"
     };
 
-    let improved = bullet;
-
-    // Replace weak verbs with strong ones
-    for (const [weak, strong] of Object.entries(verbReplacements)) {
-      const regex = new RegExp(`\\b${weak}\\b`, "i");
-      if (regex.test(improved)) {
-        improved = improved.replace(regex, strong);
-        break;
-      }
+    const objectPhrase = normalizeObjectPhrase(core);
+    if (!objectPhrase) {
+      return null;
     }
 
-    // Check if metrics exist; if not, add placeholder metrics
-    const metricsRegex = /(\d+%|\$\d+|[0-9]+\+?(?:\s+(?:hours|days|weeks|months|years|projects|clients|users|employees|departments|teams)))/i;
-    if (!metricsRegex.test(improved)) {
-      // Add contextual metrics based on bullet content
-      if (improved.toLowerCase().includes("revenue") || improved.toLowerCase().includes("sales")) {
-        improved = improved + " <span class='improvement-highlight'>increasing revenue by 25%+</span>";
-      } else if (
-        improved.toLowerCase().includes("time") ||
-        improved.toLowerCase().includes("process") ||
-        improved.toLowerCase().includes("efficiency")
-      ) {
-        improved = improved + " by <span class='improvement-highlight'>30%</span>";
-      } else if (improved.toLowerCase().includes("team") || improved.toLowerCase().includes("people")) {
-        improved = improved + " for <span class='improvement-highlight'>12+ team members</span>";
-      } else if (improved.toLowerCase().includes("user") || improved.toLowerCase().includes("customer")) {
-        improved = improved + " for <span class='improvement-highlight'>1000+ users/customers</span>";
-      } else if (improved.toLowerCase().includes("project") || improved.toLowerCase().includes("initiative")) {
-        improved = improved + ", delivering <span class='improvement-highlight'>$500K+</span> in value";
-      } else {
-        improved = improved + " with <span class='improvement-highlight'>measurable impact</span>";
-      }
-    } else {
-      // Highlight existing metrics
-      improved = improved.replace(metricsRegex, "<span class='improvement-highlight'>$1</span>");
+    const rewritten = `${selected.verb} ${objectPhrase}, ${selected.tail}.`;
+    const hasMetric = /(\d+%|\$\d|\d+\+)/.test(rewritten);
+    const startsWithStrongVerb = /^(Improved|Increased|Streamlined|Led|Delivered|Scaled|Optimized)\b/.test(rewritten);
+    if (!hasMetric || !startsWithStrongVerb) {
+      return null;
     }
 
-    return improved;
+    return highlightMetrics(rewritten);
+  }
+
+  function normalizeObjectPhrase(text) {
+    let phrase = String(text || "")
+      .replace(/^(managing|handling|working on|helping with|assisting with)\s+/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!phrase) return "key responsibilities";
+
+    // Remove trailing connectors that create awkward rewrites.
+    phrase = phrase.replace(/\b(and|with|for|to)$/i, "").trim();
+    return phrase || null;
+  }
+
+  function highlightMetrics(text) {
+    const escaped = escapeHtml(text);
+    return escaped.replace(/(\$\d[\d,.]*|\d+%|\d+\+)/g, "<span class='improvement-highlight'>$1</span>");
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function countWords(line) {
+    return String(line || "").trim().split(/\s+/).filter(Boolean).length;
+  }
+
+  function dedupeList(items) {
+    return [...new Set(items.map((item) => item.trim()).filter(Boolean))];
   }
 
   function createImprovementCard(improvement) {
     const card = document.createElement("div");
     card.className = "improvement-card";
 
+    const beforeText = escapeHtml(improvement.before);
+    const afterText = String(improvement.after || "");
+
     card.innerHTML = `
       <div class="improvement-pair">
         <div class="bullet-column">
           <div class="bullet-label">Before</div>
-          <div class="bullet-before">${improvement.before}</div>
+          <div class="bullet-before">${beforeText}</div>
         </div>
         <div class="bullet-column">
           <div class="bullet-label">After</div>
-          <div class="bullet-after">${improvement.after}</div>
+          <div class="bullet-after">${afterText}</div>
         </div>
       </div>
     `;
@@ -340,8 +437,7 @@
       sessionStorage.setItem("checkerPaywallUnlocked", "true");
 
       // Re-render improvements to show all locked ones
-      const feedbackListItems = Array.from(feedbackListEl.querySelectorAll("li")).map((li) => li.textContent);
-      renderImprovements(feedbackListItems);
+      renderImprovements(latestFeedback, currentResumeText);
 
       // Close modal and show success
       checkoutBtn.disabled = false;
