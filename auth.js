@@ -219,6 +219,39 @@
     return BulletAuth._supabase || window.__bulletSupabaseClient || null;
   }
 
+  async function ensureAuthClient() {
+    var existing = getAuthClient();
+    if (existing) return existing;
+
+    try {
+      if (!window.supabase || !window.supabase.createClient) return null;
+
+      var resp = await fetch('/api/public-auth-config');
+      if (!resp.ok) return null;
+      var config = await resp.json();
+
+      var supabaseUrl = (config && config.supabaseUrl) || '';
+      var supabaseKey =
+        (config && config.supabasePublishableKey) ||
+        (config && config.supabaseAnonKey) ||
+        '';
+      if (!supabaseUrl || !supabaseKey) return null;
+
+      if (window.__bulletSupabaseClient) {
+        BulletAuth._supabase = window.__bulletSupabaseClient;
+      } else {
+        BulletAuth._supabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+        });
+        window.__bulletSupabaseClient = BulletAuth._supabase;
+      }
+
+      return BulletAuth._supabase;
+    } catch (_err) {
+      return null;
+    }
+  }
+
   /* ── Modal injection (non-builder pages only) ── */
   function injectModal() {
     if (document.getElementById('authModal')) return false;
@@ -242,14 +275,14 @@
       });
 
       emailBtn.addEventListener('click', async function () {
-        var client = getAuthClient();
+        var client = getAuthClient() || await ensureAuthClient();
         var email = normalizeEmail(emailInput.value || '');
         if (!email || !email.includes('@')) {
           if (statusEl) statusEl.textContent = 'Please enter a valid email address.';
           return;
         }
         if (!client) {
-          if (statusEl) statusEl.textContent = 'Sign-in is still loading. Please try again in a moment.';
+          if (statusEl) statusEl.textContent = 'Sign-in is unavailable right now. Please check Supabase auth configuration.';
           return;
         }
         emailBtn.disabled = true;
@@ -277,11 +310,11 @@
     if (googleBtn) {
       googleBtn.addEventListener('click', async function () {
         try {
-          var client = getAuthClient();
+          var client = getAuthClient() || await ensureAuthClient();
           if (!client) {
             if (statusEl) {
               statusEl.className = 'auth-modal-status';
-              statusEl.textContent = 'Sign-in is still loading. Please try again in a moment.';
+              statusEl.textContent = 'Google sign-in is unavailable. Check Supabase keys and Google provider settings.';
             }
             return;
           }
