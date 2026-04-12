@@ -3,60 +3,43 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-type NavItem = {
-  href: string;
-  label: string;
-};
-
-const navItems: NavItem[] = [
-  { href: "/", label: "Home" },
-  { href: "/check-my-resume", label: "Check My Resume" },
-  { href: "/blog", label: "Blog" },
-];
-
-function isActive(pathname: string, href: string) {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
-
 export default function Navbar() {
   const pathname = usePathname();
 
+  const navLink = (href: string, label: string) => {
+    const active = pathname === href;
+
+    return (
+      <Link
+        href={href}
+        className={`text-sm transition ${
+          active ? "text-white font-semibold" : "text-gray-400 hover:text-white"
+        }`}
+      >
+        {label}
+      </Link>
+    );
+  };
+
   return (
-    <header className="w-full border-b border-slate-800/90 bg-slate-950/95 shadow-sm backdrop-blur">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-bold tracking-tight text-white">
-          BulletAI
+    <div className="w-full border-b border-gray-800 bg-[#0B0B0F] backdrop-blur">
+      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <Link href="/" className="text-lg font-bold text-white tracking-tight">
+          Bullet<span className="text-blue-500">AI</span>
         </Link>
 
-        <nav className="flex items-center gap-6" aria-label="Primary">
-          {navItems.map((item) => {
-            const active = isActive(pathname, item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={
-                  active
-                    ? "font-semibold text-cyan-300 underline decoration-cyan-400/70 underline-offset-8"
-                    : "text-slate-300 transition-colors hover:text-white"
-                }
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex items-center gap-6">
+          {navLink("/", "Home")}
+          {navLink("/check-my-resume", "Check My Resume")}
+          {navLink("/blog", "Blog")}
+        </div>
 
         <div>
-          <Link
-            href="/admin"
-            className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 transition hover:border-slate-500 hover:text-white"
-          >
-            Account
-          </Link>
+          <button className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition">
+            Get Started
+          </button>
         </div>
       </div>
-    </header>
+    </div>
   );
 }
