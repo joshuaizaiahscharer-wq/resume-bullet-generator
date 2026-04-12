@@ -1370,6 +1370,41 @@ app.post("/api/analyze-resume", (req, res) => {
   });
 });
 
+// ─── AI-powered bullet generation endpoint ─────────────────────────────────
+app.post("/api/generate-bullets-ai", async (req, res) => {
+  try {
+    const jobTitle = String(req.body?.jobTitle || "").trim();
+    const context = String(req.body?.context || "").trim();
+
+    if (!jobTitle) {
+      return res.status(400).json({ error: "jobTitle is required" });
+    }
+
+    if (jobTitle.length < 3) {
+      return res.status(400).json({ error: "Job title must be at least 3 characters" });
+    }
+
+    // Import the agent module
+    const { generateBulletsWithAgent } = require("./bullet-agent");
+
+    // Generate bullets using the AI agent
+    const bullets = await generateBulletsWithAgent(jobTitle, context);
+
+    return res.json({
+      jobTitle,
+      context,
+      bullets,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("Error generating bullets with AI agent:", error);
+    return res.status(500).json({
+      error: "Failed to generate bullets",
+      details: error.message,
+    });
+  }
+});
+
 app.get("/admin-dashboard", (req, res) => {
   return res.redirect(302, "/admin");
 });
