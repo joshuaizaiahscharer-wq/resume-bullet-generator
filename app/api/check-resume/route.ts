@@ -86,6 +86,10 @@ function sanitizeAnalysis(payload: Partial<AnalysisResult>, isEmptyResume: boole
 }
 
 export async function POST(req: Request) {
+  return Response.json({
+    result: "NEW SYSTEM ACTIVE",
+  });
+
   try {
     const body = await req.json().catch(() => ({}));
     const resumeText = String(body?.resumeText || "").trim();

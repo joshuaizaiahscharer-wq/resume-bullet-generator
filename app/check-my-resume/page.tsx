@@ -35,6 +35,7 @@ export default function CheckMyResumePage() {
   const [resumeText, setResumeText] = useState("");
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [fixedResume, setFixedResume] = useState("");
+  const [debugMessage, setDebugMessage] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
   const [error, setError] = useState("");
@@ -49,6 +50,7 @@ export default function CheckMyResumePage() {
 
   async function handleAnalyzeResume() {
     setError("");
+    setDebugMessage("");
     setFixedResume("");
     setIsAnalyzing(true);
 
@@ -62,6 +64,12 @@ export default function CheckMyResumePage() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(data?.error || "Analysis failed.");
+      }
+
+      if (typeof data?.result === "string" && data.result) {
+        setAnalysisResult(null);
+        setDebugMessage(data.result);
+        return;
       }
 
       setAnalysisResult(data as AnalysisResult);
@@ -136,6 +144,13 @@ export default function CheckMyResumePage() {
         </section>
 
         <section className="mt-6 space-y-6 transition-all duration-500">
+          {debugMessage ? (
+            <article className="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-6 shadow-xl">
+              <h2 className="text-2xl font-semibold text-white">System Status</h2>
+              <p className="mt-3 text-lg font-semibold text-cyan-200">{debugMessage}</p>
+            </article>
+          ) : null}
+
           {fixedResume ? (
             <article className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-6 shadow-xl">
               <h2 className="text-2xl font-semibold text-white">Your Optimized Resume</h2>
