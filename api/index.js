@@ -646,6 +646,40 @@ function analyzeResume(bullets) {
   return { score, feedback };
 }
 
+function analyzeResumeText(resumeText) {
+  const text = String(resumeText || "").toLowerCase();
+
+  let score = 100;
+  const feedback = [];
+
+  const actionVerbs = ["managed", "led", "developed", "created", "improved"];
+  if (!actionVerbs.some((v) => text.includes(v))) {
+    score -= 15;
+    feedback.push("Use stronger action verbs (managed, led, developed)");
+  }
+
+  if (!/\d+%|\d+\+|\$\d+/g.test(text)) {
+    score -= 20;
+    feedback.push("Add measurable results (%, $, numbers)");
+  }
+
+  if (String(resumeText || "").length < 300) {
+    score -= 15;
+    feedback.push("Your resume is too short - add more detail");
+  }
+
+  const keywords = ["customer", "team", "sales", "inventory"];
+  const matches = keywords.filter((k) => text.includes(k));
+  if (matches.length < 2) {
+    score -= 10;
+    feedback.push("Include more role-specific keywords");
+  }
+
+  if (score < 0) score = 0;
+
+  return { score, feedback };
+}
+
 function buildClusterFromJob(job) {
   const title = job.title;
   const noExpJob = jobBySlug[`${job.slug}-no-experience`];
@@ -1160,6 +1194,26 @@ app.get("/resume-template-builder", (req, res) => {
   res.sendFile(path.join(process.cwd(), "resume-template-builder.html"));
 });
 
+app.get("/resume-checker", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "resume-checker.html"));
+});
+
+app.post("/api/analyze-resume", (req, res) => {
+  const resumeText = String(req.body?.resumeText || "");
+
+  if (!resumeText || resumeText.trim().length < 50) {
+    return res.status(400).json({
+      error: "Please paste a full resume",
+    });
+  }
+
+  const analysis = analyzeResumeText(resumeText);
+  return res.json({
+    score: analysis.score,
+    feedback: analysis.feedback,
+  });
+});
+
 app.get("/admin-dashboard", (req, res) => {
   return res.redirect(302, "/admin");
 });
@@ -1213,6 +1267,7 @@ app.post("/api/admin/blog/generate", async (req, res) => {
       "",
       `Topic: ${topic}`,
       `Tone: ${tone}`,
+      "/resume-checker",
       "",
       "Include:",
       "- Strong title",

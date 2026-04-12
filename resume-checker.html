@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Resume Score Checker | BulletAI</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=1" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=1" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="stylesheet" href="/blog.css" />
+    <link rel="stylesheet" href="/resume-checker.css" />
+    <link rel="stylesheet" href="/auth.css" />
+  </head>
+  <body>
+    <site-navbar active-page="resume-checker"></site-navbar>
+
+    <main class="checker-main">
+      <section class="checker-card" aria-labelledby="checkerTitle">
+        <p class="checker-eyebrow">Standalone Tool</p>
+        <h1 id="checkerTitle">Resume Score Checker</h1>
+        <p class="checker-sub">Paste your full resume and get an instant score, practical feedback, and clear improvement suggestions.</p>
+
+        <label class="checker-label" for="resumeText">Your Resume</label>
+        <textarea
+          id="resumeText"
+          class="checker-textarea"
+          placeholder="Paste your full resume here..."
+          aria-label="Paste your full resume"
+        ></textarea>
+
+        <div class="checker-actions">
+          <button id="analyzeResumeBtn" class="checker-btn" type="button">Analyze Resume</button>
+          <p id="checkerStatus" class="checker-status hidden" aria-live="polite"></p>
+        </div>
+
+        <section id="checkerResult" class="checker-result hidden" aria-live="polite">
+          <div class="score-head">
+            <h2 id="scoreTitle">Resume Score: 0%</h2>
+            <span id="scoreBadge" class="score-badge">Needs Improvement</span>
+          </div>
+          <div class="progress-bar" role="progressbar" aria-label="Resume score" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div id="scoreProgress" class="progress-fill" style="width: 0%"></div>
+          </div>
+
+          <h3>How to Improve</h3>
+          <ul id="feedbackList" class="feedback-list"></ul>
+        </section>
+      </section>
+    </main>
+
+    <script src="/shared-navbar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="/auth.js"></script>
+    <script src="/resume-checker.js"></script>
+  </body>
+</html>

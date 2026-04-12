@@ -3,12 +3,14 @@
 
   const NAV_LINKS = [
     { href: "/", label: "Home", key: "home" },
+    { href: "/resume-checker", label: "Resume Checker", key: "resume-checker" },
     { href: "/blog", label: "Blog", key: "blog" },
     { href: "/resume-template-builder", label: "Resume Builder", key: "resume-builder" },
   ];
 
   function inferActivePage(pathname) {
     if (!pathname || pathname === "/") return "home";
+    if (pathname.startsWith("/resume-checker")) return "resume-checker";
     if (pathname.startsWith("/blog")) return "blog";
     if (pathname.startsWith("/resume-template-builder")) return "resume-builder";
     return "";

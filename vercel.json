@@ -6,6 +6,7 @@
     { "source": "/blog/(.*)", "destination": "/api/index.js" },
     { "source": "/jobs", "destination": "/api/index.js" },
     { "source": "/admin", "destination": "/api/index.js" },
+    { "source": "/resume-checker", "destination": "/api/index.js" },
     { "source": "/resume-template-builder", "destination": "/api/index.js" },
     { "source": "/resume-bullet-points-for-(.*)", "destination": "/api/index.js" },
     { "source": "/(.*)-resume-summary-examples", "destination": "/api/index.js" },
