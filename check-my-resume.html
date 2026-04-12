@@ -15,6 +15,9 @@
         <label class="field-label" for="resume-input">Resume Input</label>
         <textarea id="resume-input" placeholder="Paste your full resume here..."></textarea>
 
+        <label class="field-label" for="resume-file">Or Upload Resume (.pdf or .docx)</label>
+        <input id="resume-file" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+
         <div class="row">
           <button id="analyze-btn">Analyze Resume</button>
           <p id="error-text" class="error"></p>
@@ -52,7 +55,10 @@
       <section id="optimized-section" class="panel hidden">
         <div class="score-row">
           <h2>Your Optimized Resume</h2>
-          <button id="copy-btn">Copy</button>
+          <div class="action-buttons">
+            <button id="copy-btn">Copy</button>
+            <button id="download-btn">Download Optimized Resume</button>
+          </div>
         </div>
         <pre id="optimized-output"></pre>
       </section>

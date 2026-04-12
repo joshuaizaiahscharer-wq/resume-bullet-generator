@@ -1,8 +1,10 @@
 (function () {
   const resumeInput = document.getElementById("resume-input");
+  const resumeFileInput = document.getElementById("resume-file");
   const analyzeBtn = document.getElementById("analyze-btn");
   const fixBtn = document.getElementById("fix-btn");
   const copyBtn = document.getElementById("copy-btn");
+  const downloadBtn = document.getElementById("download-btn");
 
   const errorText = document.getElementById("error-text");
   const analysisSection = document.getElementById("analysis-section");
@@ -29,6 +31,9 @@
   let isLoading = false;
   let isPaid = false;
   let fixedResume = "";
+  let extractedResumeText = "";
+  let inputFileType = "";
+  let optimizedSections = null;
 
   function setError(message) {
     errorText.textContent = message || "";
@@ -59,6 +64,34 @@
     improvementsSection.classList.add("hidden");
     paywallSection.classList.add("hidden");
     optimizedSection.classList.remove("hidden");
+  }
+
+  async function extractTextFromSelectedFile() {
+    const file = resumeFileInput.files && resumeFileInput.files[0];
+    if (!file) return null;
+
+    const formData = new FormData();
+    formData.append("resumeFile", file);
+
+    const response = await fetch("/api/extract-resume-text", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json().catch(function () {
+      return {};
+    });
+
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to extract text from uploaded file.");
+    }
+
+    extractedResumeText = String(data.extractedText || "").trim();
+    inputFileType = String(data.fileType || "").toLowerCase();
+    if (extractedResumeText) {
+      resumeInput.value = extractedResumeText;
+    }
+    return extractedResumeText;
   }
 
   function renderBreakdown(breakdown) {
@@ -96,7 +129,13 @@
   }
 
   async function analyzeResume() {
-    const resumeText = String(resumeInput.value || "").trim();
+    let resumeText = String(resumeInput.value || "").trim();
+
+    const hasFile = resumeFileInput.files && resumeFileInput.files[0];
+    if (hasFile) {
+      resumeText = (await extractTextFromSelectedFile()) || "";
+    }
+
     if (!resumeText) {
       setError("Please paste your resume first.");
       return;
@@ -134,7 +173,17 @@
   }
 
   async function fixResume() {
-    const resumeText = String(resumeInput.value || "").trim();
+    let resumeText = String(resumeInput.value || "").trim();
+
+    const hasFile = resumeFileInput.files && resumeFileInput.files[0];
+    if (hasFile && !extractedResumeText) {
+      resumeText = (await extractTextFromSelectedFile()) || "";
+    }
+
+    if (!resumeText && extractedResumeText) {
+      resumeText = extractedResumeText;
+    }
+
     if (!resumeText) {
       setError("Please paste your resume first.");
       return;
@@ -159,6 +208,7 @@
       }
 
       fixedResume = String(data.fixedResume || "").trim();
+      optimizedSections = data.sections || null;
       if (!fixedResume) {
         throw new Error("Resume optimization failed.");
       }
@@ -186,7 +236,53 @@
     }
   }
 
+  async function downloadResume() {
+    if (!optimizedSections) {
+      setError("No optimized resume is available to download yet.");
+      return;
+    }
+
+    try {
+      const outputFormat = inputFileType === "pdf" ? "pdf" : "docx";
+      const response = await fetch("/api/download-optimized-resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sections: optimizedSections,
+          outputFormat,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(function () {
+          return {};
+        });
+        throw new Error(data.error || "Download failed.");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = outputFormat === "pdf" ? "optimized-resume.pdf" : "optimized-resume.docx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      setError(error && error.message ? error.message : "Unable to download optimized resume.");
+    }
+  }
+
+  resumeFileInput.addEventListener("change", function () {
+    extractedResumeText = "";
+    inputFileType = "";
+    optimizedSections = null;
+    setError("");
+  });
+
   analyzeBtn.addEventListener("click", analyzeResume);
   fixBtn.addEventListener("click", fixResume);
   copyBtn.addEventListener("click", copyResume);
+  downloadBtn.addEventListener("click", downloadResume);
 })();

@@ -13,6 +13,11 @@ const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
+const multer = require("multer");
+const mammoth = require("mammoth");
+const pdfParse = require("pdf-parse");
+const PDFDocument = require("pdfkit");
+const { Document, HeadingLevel, Packer, Paragraph, TextRun } = require("docx");
 const supabase = require("../lib/supabase");
 const { recordGeneratorUsage } = require("../lib/usageTracking");
 const {
@@ -24,6 +29,10 @@ const {
 } = require("../lib/blogPages");
 
 const app = express();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
 
 // Use SITE_URL for sitemap/robots. In production, set this in Vercel env vars.
 const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
@@ -1211,6 +1220,215 @@ function hasResponsibilityHeavyBullets(text) {
   return responsibilityCount >= 2 && responsibilityCount > outcomeCount;
 }
 
+function detectResumeFileType(file) {
+  const name = String(file?.originalname || "").toLowerCase();
+  if (name.endsWith(".pdf")) return "pdf";
+  if (name.endsWith(".docx")) return "docx";
+
+  const mime = String(file?.mimetype || "").toLowerCase();
+  if (mime.includes("pdf")) return "pdf";
+  if (mime.includes("wordprocessingml") || mime.includes("msword")) return "docx";
+
+  return null;
+}
+
+function normalizeExtractedText(value) {
+  return String(value || "")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+function normalizeSections(payload) {
+  const experience = Array.isArray(payload?.experience)
+    ? payload.experience.map((item) => {
+        const role = String(item?.role || "").trim();
+        const bullets = Array.isArray(item?.bullets)
+          ? item.bullets.map((b) => String(b || "").trim()).filter(Boolean).slice(0, 6)
+          : [];
+        return { role, bullets };
+      }).filter((item) => item.role || item.bullets.length > 0)
+    : [];
+
+  const education = Array.isArray(payload?.education)
+    ? payload.education.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+
+  const skills = Array.isArray(payload?.skills)
+    ? payload.skills.map((item) => String(item || "").trim()).filter(Boolean)
+    : [];
+
+  return {
+    name: String(payload?.name || "").trim(),
+    contactInfo: String(payload?.contactInfo || "").trim(),
+    summary: String(payload?.summary || "").trim(),
+    experience,
+    education,
+    skills,
+  };
+}
+
+function renderSectionsToPlainText(sections) {
+  const parts = [];
+  if (sections.name) parts.push(sections.name);
+  if (sections.contactInfo) parts.push(sections.contactInfo);
+  if (sections.summary) {
+    parts.push("", "PROFESSIONAL SUMMARY", sections.summary);
+  }
+
+  if (sections.experience.length > 0) {
+    parts.push("", "EXPERIENCE");
+    sections.experience.forEach((role) => {
+      if (role.role) parts.push(role.role);
+      role.bullets.forEach((bullet) => parts.push(`- ${bullet}`));
+      parts.push("");
+    });
+  }
+
+  if (sections.education.length > 0) {
+    parts.push("EDUCATION");
+    sections.education.forEach((item) => parts.push(`- ${item}`));
+    parts.push("");
+  }
+
+  if (sections.skills.length > 0) {
+    parts.push("SKILLS");
+    sections.skills.forEach((item) => parts.push(`- ${item}`));
+  }
+
+  return parts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+async function buildDocxBufferFromSections(sections) {
+  const children = [];
+
+  if (sections.name) {
+    children.push(
+      new Paragraph({
+        heading: HeadingLevel.TITLE,
+        children: [new TextRun({ text: sections.name, bold: true })],
+      })
+    );
+  }
+  if (sections.contactInfo) children.push(new Paragraph(sections.contactInfo));
+
+  if (sections.summary) {
+    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "PROFESSIONAL SUMMARY" }));
+    children.push(new Paragraph(sections.summary));
+  }
+
+  if (sections.experience.length > 0) {
+    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "EXPERIENCE" }));
+    sections.experience.forEach((role) => {
+      if (role.role) {
+        children.push(
+          new Paragraph({
+            children: [new TextRun({ text: role.role, bold: true })],
+          })
+        );
+      }
+      role.bullets.forEach((bullet) => {
+        children.push(
+          new Paragraph({
+            text: bullet,
+            bullet: { level: 0 },
+          })
+        );
+      });
+    });
+  }
+
+  if (sections.education.length > 0) {
+    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "EDUCATION" }));
+    sections.education.forEach((item) => {
+      children.push(
+        new Paragraph({
+          text: item,
+          bullet: { level: 0 },
+        })
+      );
+    });
+  }
+
+  if (sections.skills.length > 0) {
+    children.push(new Paragraph({ heading: HeadingLevel.HEADING_1, text: "SKILLS" }));
+    sections.skills.forEach((item) => {
+      children.push(
+        new Paragraph({
+          text: item,
+          bullet: { level: 0 },
+        })
+      );
+    });
+  }
+
+  const doc = new Document({
+    sections: [
+      {
+        properties: {},
+        children,
+      },
+    ],
+  });
+
+  return Packer.toBuffer(doc);
+}
+
+async function buildPdfBufferFromSections(sections) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ margin: 50, size: "LETTER" });
+      const chunks = [];
+
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("error", reject);
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+
+      if (sections.name) {
+        doc.fontSize(20).font("Helvetica-Bold").text(sections.name);
+      }
+      if (sections.contactInfo) {
+        doc.moveDown(0.3).fontSize(11).font("Helvetica").text(sections.contactInfo);
+      }
+
+      if (sections.summary) {
+        doc.moveDown().fontSize(13).font("Helvetica-Bold").text("PROFESSIONAL SUMMARY");
+        doc.moveDown(0.3).fontSize(11).font("Helvetica").text(sections.summary);
+      }
+
+      if (sections.experience.length > 0) {
+        doc.moveDown().fontSize(13).font("Helvetica-Bold").text("EXPERIENCE");
+        sections.experience.forEach((role) => {
+          if (role.role) {
+            doc.moveDown(0.4).fontSize(11).font("Helvetica-Bold").text(role.role);
+          }
+          role.bullets.forEach((bullet) => {
+            doc.fontSize(11).font("Helvetica").text(`• ${bullet}`, { indent: 12 });
+          });
+        });
+      }
+
+      if (sections.education.length > 0) {
+        doc.moveDown().fontSize(13).font("Helvetica-Bold").text("EDUCATION");
+        sections.education.forEach((item) => {
+          doc.fontSize(11).font("Helvetica").text(`• ${item}`, { indent: 12 });
+        });
+      }
+
+      if (sections.skills.length > 0) {
+        doc.moveDown().fontSize(13).font("Helvetica-Bold").text("SKILLS");
+        sections.skills.forEach((item) => {
+          doc.fontSize(11).font("Helvetica").text(`• ${item}`, { indent: 12 });
+        });
+      }
+
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
 function sanitizeResumeAnalysis(payload, isEmptyResume, resumeText) {
   const raw = payload?.breakdown || {};
   const breakdown = {
@@ -1271,6 +1489,38 @@ function sanitizeResumeAnalysis(payload, isEmptyResume, resumeText) {
 
 app.get("/check-my-resume", (req, res) => {
   res.sendFile(path.join(process.cwd(), "check-my-resume.html"));
+});
+
+app.post("/api/extract-resume-text", upload.single("resumeFile"), async (req, res) => {
+  try {
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: "Resume file is required." });
+    }
+
+    const fileType = detectResumeFileType(file);
+    if (!fileType) {
+      return res.status(400).json({ error: "Unsupported file type. Use PDF or DOCX." });
+    }
+
+    let extractedText = "";
+    if (fileType === "pdf") {
+      const parsedPdf = await pdfParse(file.buffer);
+      extractedText = normalizeExtractedText(parsedPdf.text);
+    } else {
+      const parsedDocx = await mammoth.extractRawText({ buffer: file.buffer });
+      extractedText = normalizeExtractedText(parsedDocx.value);
+    }
+
+    if (!extractedText) {
+      return res.status(400).json({ error: "Could not extract readable text from file." });
+    }
+
+    return res.status(200).json({ extractedText, fileType, fileName: file.originalname || "resume" });
+  } catch (error) {
+    console.error("/api/extract-resume-text error", error);
+    return res.status(500).json({ error: "Failed to extract text from resume file." });
+  }
 });
 
 app.post("/api/check-resume", async (req, res) => {
@@ -1424,7 +1674,22 @@ EDUCATION
 SKILLS
 
 OUTPUT:
-Clean, well-formatted plain text resume
+JSON only. Use this exact shape:
+{
+  "sections": {
+    "name": "string",
+    "contactInfo": "string",
+    "summary": "string",
+    "experience": [
+      {
+        "role": "Job Title | Company | Dates",
+        "bullets": ["bullet", "bullet"]
+      }
+    ],
+    "education": ["line", "line"],
+    "skills": ["skill", "skill"]
+  }
+}
 
 Resume:
 ${resumeText}`;
@@ -1435,15 +1700,48 @@ ${resumeText}`;
       messages: [{ role: "user", content: prompt }],
     });
 
-    const fixedResume = String(completion.choices[0]?.message?.content || "").trim();
-    if (!fixedResume) {
+    const content = String(completion.choices[0]?.message?.content || "");
+    const parsed = JSON.parse(parseFirstJsonObject(content));
+    const sections = normalizeSections(parsed?.sections || parsed);
+    const fixedResume = renderSectionsToPlainText(sections);
+
+    if (!fixedResume || (!sections.summary && sections.experience.length === 0)) {
       return res.status(500).json({ error: "Resume optimization failed." });
     }
 
-    return res.status(200).json({ fixedResume });
+    return res.status(200).json({ fixedResume, sections });
   } catch (error) {
     console.error("/api/fix-resume error", error);
     return res.status(500).json({ error: "Failed to optimize resume." });
+  }
+});
+
+app.post("/api/download-optimized-resume", async (req, res) => {
+  try {
+    const format = String(req.body?.outputFormat || "docx").toLowerCase();
+    const sections = normalizeSections(req.body?.sections || {});
+
+    if (!sections.summary && sections.experience.length === 0) {
+      return res.status(400).json({ error: "Structured resume sections are required." });
+    }
+
+    if (format === "pdf") {
+      const buffer = await buildPdfBufferFromSections(sections);
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", 'attachment; filename="optimized-resume.pdf"');
+      return res.status(200).send(buffer);
+    }
+
+    const buffer = await buildDocxBufferFromSections(sections);
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+    res.setHeader("Content-Disposition", 'attachment; filename="optimized-resume.docx"');
+    return res.status(200).send(buffer);
+  } catch (error) {
+    console.error("/api/download-optimized-resume error", error);
+    return res.status(500).json({ error: "Failed to generate downloadable resume." });
   }
 });
 

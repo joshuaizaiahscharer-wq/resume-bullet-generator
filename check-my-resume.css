@@ -71,6 +71,26 @@ textarea {
   line-height: 1.45;
 }
 
+input[type="file"] {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #334155;
+  background: #020617;
+  color: var(--text);
+  padding: 10px;
+}
+
+input[type="file"]::file-selector-button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-right: 10px;
+  background: #155e75;
+  color: #ecfeff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 textarea:focus {
   outline: none;
   border-color: var(--accent);
@@ -102,6 +122,12 @@ button:hover {
 button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .error {
