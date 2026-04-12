@@ -43,7 +43,30 @@
             <div id="scoreProgress" class="progress-fill" style="width: 0%"></div>
           </div>
 
-          <h3>How to Improve</h3>
+          <!-- Urgency Messaging -->
+          <div class="urgency-banner">
+            <p class="urgency-text">⚡ Most users improve their resume score by <strong>30–50%</strong> with optimized bullet points.</p>
+          </div>
+
+          <!-- Before/After Improvements Section -->
+          <div class="improvements-section">
+            <h3>Sample Improvements</h3>
+            <div id="improvementsList" class="improvements-list"></div>
+            
+            <!-- Blur Overlay for Hidden Improvements -->
+            <div id="improvementsBlurmask" class="improvements-blur hidden">
+              <div class="blur-content">
+                <p id="moreImprovementsText" class="more-improvements-text">+ Loading more...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- CTA Button -->
+          <button id="rewriteCtaBtn" class="cta-button" type="button">Rewrite My Resume Instantly</button>
+          <p class="cta-subtext">Unlock all improvements and get AI-powered rewrites for every bullet point</p>
+
+          <!-- Original Feedback Section (hidden by default) -->
+          <h3 style="margin-top: 24px;">Detailed Feedback</h3>
           <ul id="feedbackList" class="feedback-list"></ul>
         </section>
       </section>

@@ -241,6 +241,165 @@ h1 {
   content: "❌ ";
 }
 
+/* Urgency Banner */
+.urgency-banner {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(34, 197, 94, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 16px 0 22px;
+}
+
+.urgency-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #e5e7eb;
+  line-height: 1.5;
+}
+
+.urgency-text strong {
+  color: #22c55e;
+  font-weight: 700;
+}
+
+/* Improvements Section */
+.improvements-section {
+  margin: 20px 0;
+  position: relative;
+}
+
+.improvements-section > h3 {
+  margin: 0 0 14px;
+  font-size: 1.1rem;
+  color: #f8fafc;
+}
+
+.improvements-list {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* Before/After Improvement Card */
+.improvement-card {
+  background: #0b1220;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 14px;
+  overflow: hidden;
+}
+
+.improvement-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.bullet-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bullet-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.bullet-before {
+  padding: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border-left: 3px solid #ef4444;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+  text-decoration: line-through;
+  text-decoration-color: rgba(239, 68, 68, 0.4);
+}
+
+.bullet-after {
+  padding: 8px;
+  background: rgba(34, 197, 94, 0.08);
+  border-left: 3px solid #22c55e;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #e5e7eb;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.improvement-highlight {
+  background: rgba(34, 197, 94, 0.3);
+  color: #86efac;
+  font-weight: 600;
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+/* Blur Overlay for Hidden Improvements */
+.improvements-blur {
+  position: relative;
+  margin-top: 12px;
+  padding: 20px;
+  background: #0b1220;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  filter: blur(3px);
+  pointer-events: none;
+}
+
+.blur-content {
+  text-align: center;
+}
+
+.more-improvements-text {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* CTA Button */
+.cta-button {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  color: #ffffff;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  transition: all 0.2s ease;
+  box-shadow: 0 10px 28px rgba(34, 197, 94, 0.32);
+  margin-top: 16px;
+}
+
+.cta-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 36px rgba(34, 197, 94, 0.42);
+}
+
+.cta-button:active:not(:disabled) {
+  transform: translateY(0px);
+}
+
+.cta-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cta-subtext {
+  margin: 8px 0 0;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  text-align: center;
+}
+
 .hidden {
   display: none !important;
 }
@@ -256,5 +415,14 @@ h1 {
 
   .checker-textarea {
     min-height: 260px;
+  }
+
+  .improvement-pair {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-button {
+    padding: 14px 16px;
+    font-size: 0.95rem;
   }
 }

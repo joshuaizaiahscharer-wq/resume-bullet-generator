@@ -44,6 +44,17 @@ const tailorHint = document.getElementById("tailorHint");
 
 let currentBullets = [];
 
+// ─── Load resume data from checker ───────────────────────────────────────────
+(function loadResumeFromChecker() {
+  const resumeData = sessionStorage.getItem("resumeDataFromChecker");
+  if (resumeData && jobDescriptionInput) {
+    jobDescriptionInput.value = resumeData;
+    sessionStorage.removeItem("resumeDataFromChecker");
+    // Scroll to input area
+    jobDescriptionInput.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+})();
+
 // ─── Event listeners ─────────────────────────────────────────────────────────
 if (generateBtn) {
   generateBtn.addEventListener("click", handleGenerate);
