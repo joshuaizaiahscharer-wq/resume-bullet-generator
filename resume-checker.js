@@ -13,16 +13,29 @@
   const moreImprovementsEl = document.getElementById("moreImprovementsText");
   const improvementsBlurEl = document.getElementById("improvementsBlurmask");
   const ctaBtn = document.getElementById("rewriteCtaBtn");
+  const paywallModal = document.getElementById("paywallModal");
+  const paywallCloseBtn = document.getElementById("paywallCloseBtn");
+  const checkoutBtn = document.getElementById("checkoutBtn");
 
-  if (!textarea || !analyzeBtn || !statusEl || !resultEl || !scoreTitleEl || !scoreBadgeEl || !scoreProgressEl || !feedbackListEl || !improvementsListEl || !ctaBtn) {
+  if (!textarea || !analyzeBtn || !statusEl || !resultEl || !scoreTitleEl || !scoreBadgeEl || !scoreProgressEl || !feedbackListEl || !improvementsListEl || !ctaBtn || !paywallModal) {
     return;
   }
 
-  // Store current resume text for CTA redirect
+  // Store current resume text and payment status
   let currentResumeText = "";
+  let paywallUnlocked = false;
 
   analyzeBtn.addEventListener("click", analyzeResumeHandler);
   ctaBtn.addEventListener("click", handleCtaClick);
+  paywallCloseBtn.addEventListener("click", closePaywallModal);
+  checkoutBtn.addEventListener("click", handleCheckout);
+
+  // Close paywall when clicking backdrop
+  paywallModal.addEventListener("click", (e) => {
+    if (e.target === paywallModal.querySelector(".paywall-backdrop")) {
+      closePaywallModal();
+    }
+  });
 
   async function analyzeResumeHandler() {
     const resumeText = String(textarea.value || "").trim();
@@ -116,11 +129,21 @@
       improvementsListEl.appendChild(card);
     });
 
-    // Show blur overlay if there are more improvements
+    // Show blur overlay if there are more improvements (locked by paywall)
     if (improvements.length > maxVisible) {
       const remaining = improvements.length - maxVisible;
-      moreImprovementsEl.textContent = `+ ${remaining} more ${remaining === 1 ? "improvement" : "improvements"} available`;
-      improvementsBlurEl.classList.remove("hidden");
+      if (paywallUnlocked) {
+        // If unlocked, show all remaining improvements
+        improvements.slice(maxVisible).forEach((improvement) => {
+          const card = createImprovementCard(improvement);
+          improvementsListEl.appendChild(card);
+        });
+        improvementsBlurEl.classList.add("hidden");
+      } else {
+        // If locked, show blur with locked message
+        moreImprovementsEl.textContent = `🔒 ${remaining} more ${remaining === 1 ? "improvement" : "improvements"} locked`;
+        improvementsBlurEl.classList.remove("hidden");
+      }
     } else {
       improvementsBlurEl.classList.add("hidden");
     }
@@ -199,12 +222,59 @@
   }
 
   function handleCtaClick() {
-    // Store resume text and redirect to generator
-    if (currentResumeText) {
-      sessionStorage.setItem("resumeDataFromChecker", currentResumeText);
-    }
-    window.location.href = "/index.html";
+    // Open paywall modal instead of redirecting
+    openPaywallModal();
   }
+
+  function openPaywallModal() {
+    paywallModal.classList.remove("hidden");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closePaywallModal() {
+    paywallModal.classList.add("hidden");
+    document.body.style.overflow = "";
+  }
+
+  function handleCheckout() {
+    // Simulate checkout process
+    checkoutBtn.disabled = true;
+    checkoutBtn.textContent = "Processing...";
+
+    // In production, integrate with Stripe/payment processor
+    // For now, simulate successful payment after 1.5 seconds
+    setTimeout(() => {
+      paywallUnlocked = true;
+      sessionStorage.setItem("checkerPaywallUnlocked", "true");
+
+      // Re-render improvements to show all locked ones
+      const feedbackListItems = Array.from(feedbackListEl.querySelectorAll("li")).map((li) => li.textContent);
+      renderImprovements(feedbackListItems);
+
+      // Close modal and show success
+      checkoutBtn.disabled = false;
+      checkoutBtn.textContent = "Unlock Full Optimization";
+      closePaywallModal();
+
+      // Show success message
+      showStatus("✨ Payment successful! All improvements unlocked.", false, true);
+
+      // Optional: redirect to generator with resume data after brief delay
+      setTimeout(() => {
+        if (currentResumeText) {
+          sessionStorage.setItem("resumeDataFromChecker", currentResumeText);
+        }
+        window.location.href = "/index.html";
+      }, 1500);
+    }, 1500);
+  }
+
+  // Check if paywall was previously unlocked
+  (function checkPaywallStatus() {
+    if (sessionStorage.getItem("checkerPaywallUnlocked") === "true") {
+      paywallUnlocked = true;
+    }
+  })();
 
   function showStatus(message, isError, isSuccess) {
     statusEl.textContent = message || "";
