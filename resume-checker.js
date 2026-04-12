@@ -17,6 +17,13 @@
   const paywallModal = document.getElementById("paywallModal");
   const paywallCloseBtn = document.getElementById("paywallCloseBtn");
   const checkoutBtn = document.getElementById("checkoutBtn");
+  const aiJobTitleInput = document.getElementById("aiJobTitle");
+  const aiJobContextInput = document.getElementById("aiJobContext");
+  const generateRoleBulletsBtn = document.getElementById("generateRoleBulletsBtn");
+  const aiBulletsStatusEl = document.getElementById("aiBulletsStatus");
+  const aiBulletsResultEl = document.getElementById("aiBulletsResult");
+  const aiBulletsListEl = document.getElementById("aiBulletsList");
+  const insertRoleBulletsBtn = document.getElementById("insertRoleBulletsBtn");
 
   if (!textarea || !analyzeBtn || !statusEl || !resultEl || !scoreTitleEl || !scoreBadgeEl || !scoreProgressEl || !feedbackListEl || !improvementsListEl || !ctaBtn || !paywallModal) {
     return;
@@ -26,11 +33,18 @@
   let currentResumeText = "";
   let paywallUnlocked = false;
   let latestFeedback = [];
+  let latestGeneratedBullets = [];
 
   analyzeBtn.addEventListener("click", analyzeResumeHandler);
   ctaBtn.addEventListener("click", handleCtaClick);
   paywallCloseBtn.addEventListener("click", closePaywallModal);
   checkoutBtn.addEventListener("click", handleCheckout);
+  if (generateRoleBulletsBtn) {
+    generateRoleBulletsBtn.addEventListener("click", generateRoleBulletsHandler);
+  }
+  if (insertRoleBulletsBtn) {
+    insertRoleBulletsBtn.addEventListener("click", insertGeneratedBulletsIntoResume);
+  }
 
   // Close paywall when clicking backdrop
   paywallModal.addEventListener("click", (e) => {
@@ -74,6 +88,106 @@
     } finally {
       analyzeBtn.disabled = false;
     }
+  }
+
+  async function generateRoleBulletsHandler() {
+    const jobTitle = String(aiJobTitleInput?.value || "").trim();
+    const context = String(aiJobContextInput?.value || "").trim();
+
+    if (!jobTitle) {
+      showAiBulletsStatus("Enter a job title first.", true);
+      return;
+    }
+
+    generateRoleBulletsBtn.disabled = true;
+    showAiBulletsStatus("Generating role-specific bullets...", false);
+
+    try {
+      const response = await fetch("/api/generate-bullets-ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          jobTitle,
+          context,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `Generation failed (${response.status}).`);
+      }
+
+      const bullets = Array.isArray(data.bullets)
+        ? data.bullets.map((line) => String(line || "").trim()).filter(Boolean)
+        : [];
+
+      if (!bullets.length) {
+        throw new Error("No bullets were generated. Try adding more context.");
+      }
+
+      latestGeneratedBullets = bullets.slice(0, 3);
+      renderAiBullets(latestGeneratedBullets);
+      showAiBulletsStatus("Bullets generated. You can now insert them into your resume.", false, true);
+    } catch (err) {
+      showAiBulletsStatus(err.message || "Unable to generate bullets right now.", true);
+    } finally {
+      generateRoleBulletsBtn.disabled = false;
+    }
+  }
+
+  function renderAiBullets(bullets) {
+    if (!aiBulletsListEl || !aiBulletsResultEl) {
+      return;
+    }
+
+    aiBulletsListEl.innerHTML = "";
+    bullets.forEach((line) => {
+      const li = document.createElement("li");
+      li.textContent = line;
+      aiBulletsListEl.appendChild(li);
+    });
+
+    aiBulletsResultEl.classList.remove("hidden");
+  }
+
+  function insertGeneratedBulletsIntoResume() {
+    if (!latestGeneratedBullets.length) {
+      showAiBulletsStatus("Generate bullets first.", true);
+      return;
+    }
+
+    const existing = String(textarea.value || "").trimEnd();
+    const formattedBullets = latestGeneratedBullets.map((line) => `- ${line}`).join("\n");
+    const header = String(aiJobTitleInput?.value || "").trim();
+    const sectionBlock = header
+      ? `${header}\n${formattedBullets}`
+      : formattedBullets;
+
+    textarea.value = existing
+      ? `${existing}\n\n${sectionBlock}`
+      : sectionBlock;
+
+    currentResumeText = textarea.value;
+    showAiBulletsStatus("Bullets inserted into your resume text.", false, true);
+  }
+
+  function showAiBulletsStatus(message, isError, isSuccess) {
+    if (!aiBulletsStatusEl) {
+      return;
+    }
+
+    aiBulletsStatusEl.textContent = message || "";
+    aiBulletsStatusEl.classList.remove("hidden", "error", "success");
+
+    if (!message) {
+      aiBulletsStatusEl.classList.add("hidden");
+      return;
+    }
+
+    if (isError) aiBulletsStatusEl.classList.add("error");
+    if (isSuccess) aiBulletsStatusEl.classList.add("success");
   }
 
   function renderResult(score, feedback, rating, resumeText) {

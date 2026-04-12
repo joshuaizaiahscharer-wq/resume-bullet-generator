@@ -29,6 +29,31 @@
           aria-label="Paste your full resume"
         ></textarea>
 
+        <section class="ai-bullets-widget" aria-labelledby="aiBulletsTitle">
+          <div class="ai-bullets-head">
+            <h2 id="aiBulletsTitle">Generate Role Bullets</h2>
+            <p>Enter a job title to generate 3 role-specific bullets, then insert them into your resume.</p>
+          </div>
+          <div class="ai-bullets-controls">
+            <div class="ai-bullets-field">
+              <label for="aiJobTitle">Job Title</label>
+              <input id="aiJobTitle" type="text" placeholder="Server & Bartender" maxlength="120" />
+            </div>
+            <div class="ai-bullets-field">
+              <label for="aiJobContext">Context (Optional)</label>
+              <input id="aiJobContext" type="text" placeholder="High-volume restaurant" maxlength="180" />
+            </div>
+            <button id="generateRoleBulletsBtn" class="checker-btn ai-bullets-btn" type="button">Generate 3 Bullets</button>
+          </div>
+          <p id="aiBulletsStatus" class="checker-status hidden" aria-live="polite"></p>
+          <div id="aiBulletsResult" class="ai-bullets-result hidden">
+            <ul id="aiBulletsList" class="ai-bullets-list"></ul>
+            <div class="ai-bullets-actions">
+              <button id="insertRoleBulletsBtn" class="checker-btn ai-bullets-insert" type="button">Insert Into Resume</button>
+            </div>
+          </div>
+        </section>
+
         <div class="checker-actions">
           <button id="analyzeResumeBtn" class="checker-btn" type="button">Analyze Resume</button>
           <p id="checkerStatus" class="checker-status hidden" aria-live="polite"></p>

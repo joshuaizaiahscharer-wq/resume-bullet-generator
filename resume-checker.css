@@ -122,6 +122,109 @@ h1 {
   box-shadow: 0 8px 22px rgba(59, 130, 246, 0.28);
 }
 
+.ai-bullets-widget {
+  margin-top: 16px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.ai-bullets-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  color: #f8fafc;
+}
+
+.ai-bullets-head p {
+  margin: 6px 0 0;
+  font-size: 0.88rem;
+  color: #9ca3af;
+}
+
+.ai-bullets-controls {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) 220px;
+  gap: 10px;
+  align-items: end;
+}
+
+.ai-bullets-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-bullets-field label {
+  color: #9ca3af;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.ai-bullets-field input {
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: #0b1220;
+  color: #e5e7eb;
+  padding: 0 12px;
+  outline: none;
+}
+
+.ai-bullets-field input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.ai-bullets-btn {
+  margin: 0;
+  height: 40px;
+  padding: 0 14px;
+  width: auto;
+}
+
+.ai-bullets-result {
+  margin-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.18);
+  padding-top: 12px;
+}
+
+.ai-bullets-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.ai-bullets-list li {
+  border: 1px solid rgba(59, 130, 246, 0.26);
+  background: rgba(59, 130, 246, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: #dbeafe;
+  line-height: 1.45;
+}
+
+.ai-bullets-list li::before {
+  content: "• ";
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.ai-bullets-actions {
+  margin-top: 10px;
+}
+
+.ai-bullets-insert {
+  width: auto;
+  min-width: 180px;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+}
+
 .checker-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 12px 30px rgba(59, 130, 246, 0.42);
@@ -636,6 +739,15 @@ h1 {
 
   .checker-textarea {
     min-height: 260px;
+  }
+
+  .ai-bullets-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-bullets-btn,
+  .ai-bullets-insert {
+    width: 100%;
   }
 
   .improvement-pair {
