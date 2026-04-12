@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Check My Resume | BulletAI</title>
+    <link rel="stylesheet" href="/check-my-resume.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <h1 id="page-title">Check My Resume</h1>
+        <p id="page-subtext">Paste your resume and get a professional evaluation in seconds</p>
+
+        <label class="field-label" for="resume-input">Resume Input</label>
+        <textarea id="resume-input" placeholder="Paste your full resume here..."></textarea>
+
+        <div class="row">
+          <button id="analyze-btn">Analyze Resume</button>
+          <p id="error-text" class="error"></p>
+        </div>
+      </section>
+
+      <section id="analysis-section" class="panel hidden">
+        <div class="score-row">
+          <h2>Resume Score</h2>
+          <span id="score-pill" class="pill">0% (Weak)</span>
+        </div>
+
+        <div id="breakdown-grid" class="breakdown-grid"></div>
+      </section>
+
+      <section id="improvements-section" class="panel hidden">
+        <h3>Top 3 Improvements</h3>
+        <div id="improvements-grid" class="improvements-grid"></div>
+      </section>
+
+      <section id="paywall-section" class="panel hidden">
+        <h3>Fix My Resume</h3>
+        <p>
+          Let BulletAI fully rewrite and optimize your resume for clarity, structure, and impact.
+        </p>
+        <ul>
+          <li>Strong bullet points for every role</li>
+          <li>Improved structure and formatting</li>
+          <li>Professional summary rewrite</li>
+          <li>Clean, job-ready resume</li>
+        </ul>
+        <button id="fix-btn">Fix My Resume -&gt;</button>
+      </section>
+
+      <section id="optimized-section" class="panel hidden">
+        <div class="score-row">
+          <h2>Your Optimized Resume</h2>
+          <button id="copy-btn">Copy</button>
+        </div>
+        <pre id="optimized-output"></pre>
+      </section>
+    </main>
+
+    <script src="/check-my-resume.js"></script>
+  </body>
+</html>

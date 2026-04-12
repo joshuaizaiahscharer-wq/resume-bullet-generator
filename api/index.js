@@ -1164,6 +1164,253 @@ app.get("/admin-dashboard", (req, res) => {
   return res.redirect(302, "/admin");
 });
 
+function clampScore(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function toRoundedInt(value, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.round(parsed);
+}
+
+function parseFirstJsonObject(text) {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("Model response did not include valid JSON.");
+  }
+  return text.slice(start, end + 1);
+}
+
+function scoreToLabel(score) {
+  if (score >= 80) return "Strong";
+  if (score >= 60) return "Decent";
+  return "Weak";
+}
+
+function sanitizeResumeAnalysis(payload, isEmptyResume) {
+  const raw = payload?.breakdown || {};
+  const breakdown = {
+    structure: clampScore(toRoundedInt(raw.structure, 55), 0, 100),
+    flow: clampScore(toRoundedInt(raw.flow, 55), 0, 100),
+    organization: clampScore(toRoundedInt(raw.organization, 55), 0, 100),
+    grammar: clampScore(toRoundedInt(raw.grammar, 55), 0, 100),
+    bulletUsage: clampScore(toRoundedInt(raw.bulletUsage, 55), 0, 100),
+    bulletStrength: clampScore(toRoundedInt(raw.bulletStrength, 55), 0, 100),
+    impact: clampScore(toRoundedInt(raw.impact, 55), 0, 100),
+    relevance: clampScore(toRoundedInt(raw.relevance, 55), 0, 100),
+  };
+
+  const weightedScore = Math.round(
+    breakdown.structure * 0.15 +
+      breakdown.flow * 0.15 +
+      breakdown.organization * 0.1 +
+      breakdown.grammar * 0.1 +
+      breakdown.bulletUsage * 0.1 +
+      breakdown.bulletStrength * 0.15 +
+      breakdown.impact * 0.15 +
+      breakdown.relevance * 0.1
+  );
+
+  const score = isEmptyResume
+    ? clampScore(weightedScore, 0, 39)
+    : clampScore(weightedScore, 40, 100);
+
+  const improvements = Array.isArray(payload?.improvements)
+    ? payload.improvements
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+        .slice(0, 3)
+    : [];
+
+  const fallbackImprovements = [
+    "Rework experience bullets to highlight outcomes and concrete impact, not just duties.",
+    "Tighten sentence structure and formatting so the resume is easier to scan quickly.",
+    "Align summary and skills more closely with your target role to improve relevance.",
+  ];
+
+  return {
+    score,
+    label: scoreToLabel(score),
+    breakdown,
+    improvements: improvements.length === 3 ? improvements : fallbackImprovements,
+  };
+}
+
+app.get("/check-my-resume", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "check-my-resume.html"));
+});
+
+app.post("/api/check-resume", async (req, res) => {
+  try {
+    const resumeText = String(req.body?.resumeText || "").trim();
+    const isEmptyResume = resumeText.length === 0;
+
+    if (isEmptyResume) {
+      return res.status(200).json({
+        score: 25,
+        label: "Weak",
+        breakdown: {
+          structure: 20,
+          flow: 25,
+          organization: 20,
+          grammar: 35,
+          bulletUsage: 20,
+          bulletStrength: 20,
+          impact: 20,
+          relevance: 25,
+        },
+        improvements: [
+          "Paste your full resume so each section can be evaluated accurately.",
+          "Add an experience section with job title, company, dates, and achievement-focused bullets.",
+          "Include a clear skills section tailored to the role you are targeting.",
+        ],
+      });
+    }
+
+    const client = getOpenAIClient();
+
+    const prompt = `You are a professional resume reviewer.
+
+You must evaluate the resume step-by-step across these categories:
+
+1. Structure
+2. Flow & Readability
+3. Organization
+4. Grammar & Spelling
+5. Bullet Point Usage
+6. Bullet Point Strength
+7. Impact
+8. Relevance
+
+STEP-BY-STEP ANALYSIS:
+- Analyze structure
+- Then flow/readability
+- Then bullet usage/strength
+- Then impact
+- Then grammar/professionalism
+- Then relevance
+
+SCORING RULES:
+- Score each category 0-100
+- Be realistic and fair
+- NEVER give a score below 40 unless resume is empty
+- Do NOT over-penalize missing metrics
+
+OUTPUT JSON ONLY:
+
+{
+  "score": number,
+  "label": "Weak | Decent | Strong",
+  "breakdown": {
+    "structure": number,
+    "flow": number,
+    "organization": number,
+    "grammar": number,
+    "bulletUsage": number,
+    "bulletStrength": number,
+    "impact": number,
+    "relevance": number
+  },
+  "improvements": [
+    "Specific improvement based on the resume",
+    "Second different improvement",
+    "Third improvement targeting another area"
+  ]
+}
+
+IMPROVEMENT RULES:
+- Must be personalized to THIS resume
+- Must be actionable
+- Must not be generic
+- Must not repeat
+- Must not all focus on metrics
+
+Resume:
+${resumeText}`;
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const content = String(completion.choices[0]?.message?.content || "");
+    const parsed = JSON.parse(parseFirstJsonObject(content));
+    const safeResult = sanitizeResumeAnalysis(parsed, false);
+    return res.status(200).json(safeResult);
+  } catch (error) {
+    console.error("/api/check-resume error", error);
+    return res.status(500).json({ error: "Failed to analyze resume." });
+  }
+});
+
+app.post("/api/fix-resume", async (req, res) => {
+  try {
+    const resumeText = String(req.body?.resumeText || "").trim();
+    if (!resumeText) {
+      return res.status(400).json({ error: "Resume text is required." });
+    }
+
+    const client = getOpenAIClient();
+    const prompt = `You are an expert resume writer.
+
+Rewrite and fully optimize the resume.
+
+GOALS:
+- Improve clarity, structure, and professionalism
+- Add strong bullet points for each role
+- Keep everything realistic and truthful
+- DO NOT invent fake experience or fake metrics
+
+RULES:
+- Use role-specific language
+- Use strong action verbs
+- Add 2-4 bullet points per role
+- Only include numbers when realistic
+- Avoid generic phrases like "responsible for"
+
+FORMAT:
+
+NAME
+CONTACT INFO
+
+PROFESSIONAL SUMMARY (rewritten)
+
+EXPERIENCE
+Each role:
+- Job Title | Company | Dates
+- 2-4 strong bullet points
+
+EDUCATION
+
+SKILLS
+
+OUTPUT:
+Clean, well-formatted plain text resume
+
+Resume:
+${resumeText}`;
+
+    const completion = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.3,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const fixedResume = String(completion.choices[0]?.message?.content || "").trim();
+    if (!fixedResume) {
+      return res.status(500).json({ error: "Resume optimization failed." });
+    }
+
+    return res.status(200).json({ fixedResume });
+  } catch (error) {
+    console.error("/api/fix-resume error", error);
+    return res.status(500).json({ error: "Failed to optimize resume." });
+  }
+});
+
 // ─── Resume Builder payment state + Stripe checkout ─────────────────────────
 app.get("/api/resume-builder/access", async (req, res) => {
   return res.json({ isUnlocked: isResumeUnlocked(req) });
