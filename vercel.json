@@ -8,6 +8,7 @@
     { "source": "/api/extract-resume-text", "destination": "/api/index.js" },
     { "source": "/api/download-optimized-resume", "destination": "/api/index.js" },
     { "source": "/api/stripe/checkout", "destination": "/api/index.js" },
+    { "source": "/api/public-auth-config", "destination": "/api/index.js" },
     { "source": "/blog", "destination": "/api/index.js" },
     { "source": "/blog/(.*)", "destination": "/api/index.js" },
     { "source": "/jobs", "destination": "/api/index.js" },
