@@ -46,7 +46,28 @@ function scoreToLabel(score: number): "Weak" | "Decent" | "Strong" {
   return "Weak";
 }
 
-function sanitizeAnalysis(payload: Partial<AnalysisResult>, isEmptyResume: boolean): AnalysisResult {
+function hasStrongAchievementEvidence(text: string): boolean {
+  const hasNumbers = /\b\d+(?:\.\d+)?%?\b/.test(text);
+  const hasOutcomeLanguage = /(increased|reduced|improved|grew|boosted|saved|cut|achieved|delivered|exceeded|optimized|launched|won|awarded)/i.test(text);
+  const hasDifferentiation = /(led|spearheaded|owned|built|designed|architected|implemented|published|mentored|trained)/i.test(text);
+  return (hasNumbers && hasOutcomeLanguage) || (hasOutcomeLanguage && hasDifferentiation);
+}
+
+function hasResponsibilityHeavyBullets(text: string): boolean {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => /^[-*•]/.test(line));
+
+  if (lines.length === 0) return false;
+
+  const responsibilityCount = lines.filter((line) => /(responsible for|assisted|collaborated|managed|helped|supported|worked with|handled)/i.test(line)).length;
+  const outcomeCount = lines.filter((line) => /(increased|reduced|improved|grew|saved|delivered|achieved|launched|optimized|built)/i.test(line)).length;
+
+  return responsibilityCount >= 2 && responsibilityCount > outcomeCount;
+}
+
+function sanitizeAnalysis(payload: Partial<AnalysisResult>, isEmptyResume: boolean, resumeText: string): AnalysisResult {
   const raw = (payload.breakdown || {}) as Partial<Breakdown>;
 
   const breakdown: Breakdown = {
@@ -60,6 +81,10 @@ function sanitizeAnalysis(payload: Partial<AnalysisResult>, isEmptyResume: boole
     relevance: clamp(toInt(raw.relevance, 55), 0, 100),
   };
 
+  if (hasResponsibilityHeavyBullets(resumeText)) {
+    breakdown.bulletStrength = Math.min(breakdown.bulletStrength, 78);
+  }
+
   const weighted = Math.round(
     breakdown.structure * 0.15 +
       breakdown.flow * 0.15 +
@@ -71,7 +96,10 @@ function sanitizeAnalysis(payload: Partial<AnalysisResult>, isEmptyResume: boole
       breakdown.relevance * 0.1,
   );
 
-  const score = isEmptyResume ? clamp(weighted, 0, 39) : clamp(weighted, 40, 100);
+  let score = isEmptyResume ? clamp(weighted, 0, 39) : clamp(weighted, 40, 100);
+  if (!isEmptyResume && score > 85 && !hasStrongAchievementEvidence(resumeText)) {
+    score = 85;
+  }
 
   const improvements = Array.isArray(payload.improvements)
     ? payload.improvements.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 3)
@@ -152,6 +180,9 @@ SCORING RULES:
 - Be realistic and fair
 - NEVER give a score below 40 unless resume is empty
 - Do NOT over-penalize missing metrics
+- Do NOT give scores above 85 unless the resume shows clear, specific achievements and differentiation
+- Bullet points that only describe responsibilities (for example: collaborated, assisted, managed) should NOT be rated as high bullet strength
+- Bullet strength must reflect specificity, uniqueness, and clarity of contribution
 
 OUTPUT JSON ONLY:
 
@@ -181,6 +212,8 @@ IMPROVEMENT RULES:
 - Must not be generic
 - Must not repeat
 - Must not all focus on metrics
+- Each improvement must reference a specific part of the resume (for example, summary, a specific experience section, or a bullet pattern)
+- Avoid vague advice like "add measurable results" without pointing to where the issue appears
 
 Resume:
 ${resumeText}`;
@@ -193,7 +226,7 @@ ${resumeText}`;
 
     const content = completion.choices[0]?.message?.content || "";
     const parsed = JSON.parse(extractJsonObject(content)) as Partial<AnalysisResult>;
-    const safeResult = sanitizeAnalysis(parsed, isEmptyResume);
+    const safeResult = sanitizeAnalysis(parsed, isEmptyResume, resumeText);
 
     return NextResponse.json(safeResult, { status: 200 });
   } catch (error) {
