@@ -78,8 +78,26 @@
           </div>
         </div>
         <p id="optimized-status" class="optimized-status"></p>
+        <p id="paywall-hint" class="paywall-hint hidden">Review complete - unlock your resume to download</p>
         <pre id="optimized-output"></pre>
       </section>
+
+      <div id="paywall-modal" class="paywall-modal hidden" role="dialog" aria-modal="true" aria-labelledby="paywall-title">
+        <div class="paywall-card">
+          <h2 id="paywall-title">Unlock Your Optimized Resume</h2>
+          <p class="paywall-copy">
+            Download your professionally optimized resume and start applying with confidence.
+          </p>
+          <ul class="paywall-features">
+            <li>Fully rewritten resume</li>
+            <li>Strong bullet points</li>
+            <li>Clean professional formatting</li>
+            <li>Ready-to-submit document</li>
+          </ul>
+          <button id="paywall-unlock-btn" class="paywall-unlock-btn" type="button">Unlock &amp; Download</button>
+          <button id="paywall-cancel-btn" class="paywall-cancel-btn" type="button">Cancel</button>
+        </div>
+      </div>
     </main>
 
     <script src="/shared-navbar.js"></script>

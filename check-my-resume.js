@@ -6,6 +6,9 @@
   const finalizeBtn = document.getElementById("finalize-btn");
   const copyBtn = document.getElementById("copy-btn");
   const downloadBtn = document.getElementById("download-btn");
+  const paywallModal = document.getElementById("paywall-modal");
+  const paywallUnlockBtn = document.getElementById("paywall-unlock-btn");
+  const paywallCancelBtn = document.getElementById("paywall-cancel-btn");
 
   const errorText = document.getElementById("error-text");
   const analysisSection = document.getElementById("analysis-section");
@@ -20,6 +23,7 @@
   const changePreviewList = document.getElementById("change-preview-list");
   const optimizedOutput = document.getElementById("optimized-output");
   const optimizedStatus = document.getElementById("optimized-status");
+  const paywallHint = document.getElementById("paywall-hint");
   const pdfDisclaimer = document.getElementById("pdf-disclaimer");
 
   const categories = [
@@ -35,6 +39,7 @@
 
   let isLoading = false;
   let isPaid = false;
+  let showPaywall = false;
   let fixedResume = "";
   let originalResumeText = "";
   let improvedResumeText = "";
@@ -72,8 +77,15 @@
       fixBtn.textContent = loading ? "Optimizing Resume..." : "Fix My Resume ->";
     }
 
-    analyzeBtn.disabled = loading || isPaid;
-    fixBtn.disabled = loading || !analysisSection || analysisSection.classList.contains("hidden") || isPaid;
+    analyzeBtn.disabled = loading;
+    fixBtn.disabled = loading || !analysisSection || analysisSection.classList.contains("hidden");
+  }
+
+  function setPaywallVisible(visible) {
+    showPaywall = visible;
+    if (paywallModal) {
+      paywallModal.classList.toggle("hidden", !visible);
+    }
   }
 
   function showAnalysisSections() {
@@ -262,6 +274,7 @@
 
     setError("");
     isPaid = false;
+    setPaywallVisible(false);
     fixedResume = "";
     originalResumeText = "";
     improvedResumeText = "";
@@ -379,6 +392,17 @@
       return;
     }
 
+    if (!isPaid) {
+      setPaywallVisible(true);
+      return;
+    }
+
+    return performDownload();
+  }
+
+  async function performDownload() {
+    if (!finalResumeText) return;
+
     try {
       const outputFormat = inputFileType === "pdf" ? "pdf" : "docx";
       const response = await fetch("/api/download-optimized-resume", {
@@ -424,10 +448,25 @@
     }
 
     fixedResume = finalResumeText;
-    isPaid = true;
     optimizedOutput.textContent = finalResumeText;
     optimizedStatus.textContent = "Your Final Resume";
+    if (paywallHint) {
+      paywallHint.classList.remove("hidden");
+    }
     showOptimizedSection();
+  });
+
+  paywallUnlockBtn.addEventListener("click", async function () {
+    isPaid = true;
+    setPaywallVisible(false);
+    if (paywallHint) {
+      paywallHint.classList.add("hidden");
+    }
+    await performDownload();
+  });
+
+  paywallCancelBtn.addEventListener("click", function () {
+    setPaywallVisible(false);
   });
 
   resumeFileInput.addEventListener("change", function () {
