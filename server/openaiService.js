@@ -28,51 +28,84 @@ async function extractKeywords(jobDescription) {
     messages: [
       {
         role: "system",
-        content: "You extract the most important resume keywords from job descriptions.",
+        content: "You are an expert in resume writing and job analysis. Your job is to convert ANY job description into standardized resume keywords.",
       },
       {
         role: "user",
         content: `
-Extract ONLY high-value resume keywords from this job description.
+-----------------------------------
+🎯 GOAL
+-----------------------------------
+Transform job descriptions into:
+- Clean
+- Reusable
+- ATS-friendly resume concepts
 
-STRICT RULES:
-- ONLY return meaningful resume concepts
-- Keywords must be:
-  - Skills (e.g., customer service, inventory management)
-  - Responsibilities (e.g., cash handling, drink preparation)
-  - Industry terms (e.g., bartending, POS systems)
+-----------------------------------
+🧠 UNIVERSAL RULES
+-----------------------------------
 
-DO NOT INCLUDE:
-- Single generic words (e.g., work, well, able, must, long)
-- Sentence fragments (e.g., "key responsibilities include")
-- Duplicate word variations (e.g., mixing, mixed, mix)
-- Irrelevant tools (e.g., Excel unless clearly required)
+1. DO NOT extract text directly
+→ You must REWRITE everything
 
-FORMAT:
-- Return 5-10 keywords MAX
-- Use clean phrases (2-3 words preferred)
+2. Keywords must be:
+- 2–3 words ONLY
+- Generalizable across industries
+- Common resume language
 
-GOOD OUTPUT:
+3. Convert responsibilities into concepts:
+
+Examples:
+
+"serves drinks and interacts with customers"
+→ "customer service"
+
+"manages inventory and stock levels"
+→ "inventory management"
+
+"develops software applications"
+→ "software development"
+
+"analyzes data and reports insights"
+→ "data analysis"
+
+"plans marketing campaigns"
+→ "campaign management"
+
+-----------------------------------
+🚫 NEVER RETURN
+-----------------------------------
+
+- Sentences
+- Long phrases
+- Words like:
+  "responsibilities"
+  "must"
+  "include"
+  "work"
+  "provide"
+
+- Company/org names
+- Duplicates (mixing, mix, mixed)
+
+-----------------------------------
+✅ OUTPUT FORMAT
+-----------------------------------
+
+Return ONLY a JSON array (5–8 keywords max)
+
+Example:
+
 [
   "customer service",
-  "drink preparation",
-  "cash handling",
   "inventory management",
-  "ID verification",
-  "bar maintenance"
+  "cash handling",
+  "team collaboration",
+  "process optimization",
+  "data analysis"
 ]
 
-BAD OUTPUT:
-[
-  "work",
-  "must work quickly",
-  "mixing",
-  "checking",
-  "long periods"
-]
-
-Return ONLY a JSON array.
-
+-----------------------------------
 Job Description:
 ${jobDescription}
 `,
