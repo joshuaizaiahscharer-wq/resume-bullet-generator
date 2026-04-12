@@ -36,6 +36,10 @@ const bulletList     = document.getElementById("bulletList");
 const copyBtn        = document.getElementById("copyBtn");
 const regenerateBtn  = document.getElementById("regenerateBtn");
 const chipsContainer = document.getElementById("chips");
+const resumeScorePanel = document.getElementById("resumeScorePanel");
+const resumeScoreValue = document.getElementById("resumeScoreValue");
+const resumeScoreFill = document.getElementById("resumeScoreFill");
+const resumeFeedbackList = document.getElementById("resumeFeedbackList");
 const supportForm    = document.getElementById("supportForm");
 const supportStatus  = document.getElementById("supportStatus");
 const supportBtn     = document.getElementById("supportSubmitBtn");
@@ -115,8 +119,8 @@ async function handleGenerate() {
 
   try {
     const jdText = String(jobDescriptionInput?.value || "").trim();
-    const bullets = await fetchBullets(jobTitle, jdText);
-    displayBullets(bullets, jobTitle);
+    const result = await fetchBullets(jobTitle, jdText);
+    displayBullets(result.bullets, jobTitle, result.score, result.feedback);
     showTailorHint(jdText.length > 10);
   } catch (err) {
     showError(err.message || "Something went wrong. Please try again.");
@@ -152,7 +156,11 @@ async function fetchBullets(jobTitle, jobDescription = "") {
     throw new Error("The server returned no bullet points. Please try again.");
   }
 
-  return data.bullets;
+  return {
+    bullets: data.bullets,
+    score: Number.isFinite(Number(data.score)) ? Number(data.score) : 0,
+    feedback: Array.isArray(data.feedback) ? data.feedback : [],
+  };
 }
 
 function getCurrentUserId() {
@@ -182,7 +190,7 @@ function inferPageType(pathname) {
 }
 
 // ─── UI helpers ──────────────────────────────────────────────────────────────
-function displayBullets(bullets, jobTitle) {
+function displayBullets(bullets, jobTitle, score = 0, feedback = []) {
   clearStatus();
   currentBullets = bullets.slice();
 
@@ -191,6 +199,7 @@ function displayBullets(bullets, jobTitle) {
   resultsHeading.textContent = `${count} Bullet Point${count !== 1 ? "s" : ""} — ${jobTitle}`;
 
   renderBulletList(bullets);
+  renderResumeAnalysis(score, feedback);
 
   resultsSection.classList.remove("hidden");
 
@@ -199,6 +208,36 @@ function displayBullets(bullets, jobTitle) {
   copyBtn.classList.remove("copied");
 
   resultsSection.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderResumeAnalysis(score, feedback) {
+  if (!resumeScorePanel || !resumeScoreValue || !resumeScoreFill || !resumeFeedbackList) return;
+
+  const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
+  resumeScorePanel.classList.remove("hidden");
+  resumeScoreValue.textContent = `${safeScore}%`;
+  resumeScoreFill.style.width = `${safeScore}%`;
+  resumeScoreFill.classList.remove("score-strong", "score-decent", "score-needs-work");
+
+  if (safeScore >= 80) {
+    resumeScoreFill.classList.add("score-strong");
+  } else if (safeScore >= 60) {
+    resumeScoreFill.classList.add("score-decent");
+  } else {
+    resumeScoreFill.classList.add("score-needs-work");
+  }
+
+  resumeScorePanel
+    .querySelector(".resume-score-bar")
+    ?.setAttribute("aria-valuenow", String(safeScore));
+
+  resumeFeedbackList.innerHTML = "";
+  const items = feedback.length ? feedback : ["Great foundation. Add role-specific impact metrics for an even stronger profile."];
+  items.forEach((item) => {
+    const li = document.createElement("li");
+    li.textContent = item;
+    resumeFeedbackList.appendChild(li);
+  });
 }
 
 function renderBulletList(bullets) {

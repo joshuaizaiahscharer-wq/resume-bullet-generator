@@ -590,6 +590,62 @@ function generateCoverLetters(title) {
   ];
 }
 
+function analyzeResume(bullets) {
+  const safeBullets = Array.isArray(bullets) ? bullets : [];
+  const text = safeBullets.join(" ").toLowerCase();
+
+  let score = 100;
+  const feedback = [];
+
+  const actionVerbs = [
+    "managed", "developed", "led", "created",
+    "improved", "increased", "reduced", "implemented",
+    "designed", "optimized",
+  ];
+
+  const hasActionVerb = actionVerbs.some((verb) => text.includes(verb));
+  if (!hasActionVerb) {
+    score -= 15;
+    feedback.push("Use stronger action verbs (e.g., managed, developed, led)");
+  }
+
+  const hasMetrics = /\d+%|\d+\+|\$\d+/g.test(text);
+  if (!hasMetrics) {
+    score -= 20;
+    feedback.push("Add measurable results (e.g., %, $, numbers)");
+  }
+
+  const bulletStarts = safeBullets
+    .map((b) => String(b || "").trim())
+    .filter(Boolean)
+    .map((b) => b.split(/\s+/)[0].toLowerCase());
+  const uniqueStarts = new Set(bulletStarts);
+  if (bulletStarts.length && uniqueStarts.size < bulletStarts.length / 2) {
+    score -= 10;
+    feedback.push("Avoid repeating the same starting words in bullets");
+  }
+
+  const tooShort = safeBullets.some((b) => String(b || "").trim().split(/\s+/).length < 6);
+  if (tooShort) {
+    score -= 10;
+    feedback.push("Some bullets are too short - add more detail");
+  }
+
+  const strongKeywords = [
+    "customer", "sales", "inventory", "team",
+    "performance", "efficiency", "operations",
+  ];
+  const keywordMatches = strongKeywords.filter((k) => text.includes(k));
+  if (keywordMatches.length < 3) {
+    score -= 10;
+    feedback.push("Include more relevant industry keywords");
+  }
+
+  if (score < 0) score = 0;
+
+  return { score, feedback };
+}
+
 function buildClusterFromJob(job) {
   const title = job.title;
   const noExpJob = jobBySlug[`${job.slug}-no-experience`];
@@ -724,6 +780,7 @@ Generate 10 strong resume bullet points for a ${sanitizedTitle}.
       .split("\n")
       .map((line) => line.replace(/^[\s•\-–—*]+/, "").trim())
       .filter((line) => line.length > 0);
+    const analysis = analyzeResume(bullets);
 
     // Record usage after successful generation.
     // Wrapped in its own try/catch so tracking issues never affect users.
@@ -751,7 +808,11 @@ Generate 10 strong resume bullet points for a ${sanitizedTitle}.
       console.warn("[usageTracking] Route-level tracking error:", trackingErr.message);
     }
 
-    return res.json({ bullets });
+    return res.json({
+      bullets,
+      score: analysis.score,
+      feedback: analysis.feedback,
+    });
   } catch (err) {
     console.error("OpenAI error:", err.message);
     const status = err.status ?? 500;

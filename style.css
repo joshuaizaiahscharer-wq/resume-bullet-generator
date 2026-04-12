@@ -521,6 +521,87 @@ body {
   background: rgba(34, 197, 94, 0.08);
 }
 
+.resume-score-panel {
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  background: #0b1020;
+}
+
+.resume-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.resume-score-row h3 {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+}
+
+.resume-score-value {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #cbd5e1;
+}
+
+.resume-score-bar {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #111827;
+  overflow: hidden;
+  border: 1px solid #1e293b;
+  margin-bottom: 12px;
+}
+
+.resume-score-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  transition: width 0.35s ease, background 0.2s ease;
+  background: linear-gradient(90deg, #ef4444, #f97316);
+}
+
+.resume-score-fill.score-strong {
+  background: linear-gradient(90deg, #22c55e, #10b981);
+}
+
+.resume-score-fill.score-decent {
+  background: linear-gradient(90deg, #eab308, #f59e0b);
+}
+
+.resume-score-fill.score-needs-work {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+}
+
+.resume-feedback h4 {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+}
+
+#resumeFeedbackList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#resumeFeedbackList li {
+  font-size: 0.84rem;
+  color: #fca5a5;
+  line-height: 1.4;
+}
+
+#resumeFeedbackList li::before {
+  content: "❌ ";
+}
+
 /* ── Job Description Optimizer ─────────────────────────────── */
 .jd-optimizer {
   margin-bottom: 26px;
