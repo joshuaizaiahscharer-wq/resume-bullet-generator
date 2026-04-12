@@ -108,6 +108,14 @@ let paymentStatusChannel = null;
 const PENDING_AUTH_RESUME_KEY = "resume_builder_pending_auth_resume_v1";
 let pendingAuthScrollRestoreY = null;
 
+function getSharedAuthClient() {
+  return window.__bulletSupabaseClient || window.BulletAuth?._supabase || null;
+}
+
+function getActiveAuthClient() {
+  return resumeAuthClient || getSharedAuthClient();
+}
+
 async function getCurrentUserData(userId) {
   if (!resumeAuthClient || !userId) return null;
 
@@ -319,13 +327,28 @@ function buildCloudResumePayload() {
 }
 
 async function getAuthAccessToken() {
-  if (!resumeAuthClient) return "";
-  const { data } = await resumeAuthClient.auth.getSession();
-  return data?.session?.access_token || "";
+  const candidates = [resumeAuthClient, getSharedAuthClient()].filter(Boolean);
+
+  for (const client of candidates) {
+    try {
+      const { data } = await client.auth.getSession();
+      const token = data?.session?.access_token || "";
+      if (token) {
+        if (!resumeAuthClient) {
+          resumeAuthClient = client;
+        }
+        return token;
+      }
+    } catch (_err) {
+      // Try next candidate client.
+    }
+  }
+
+  return "";
 }
 
 async function loadSavedResumeForSignedInUser() {
-  if (!resumeBuilderState.signedInEmail || !resumeAuthClient) return;
+  if (!resumeBuilderState.signedInEmail || !getActiveAuthClient()) return;
 
   try {
     const accessToken = await getAuthAccessToken();
@@ -355,7 +378,7 @@ async function loadSavedResumeForSignedInUser() {
 }
 
 async function saveCurrentResumeForSignedInUser() {
-  if (!resumeBuilderState.signedInEmail || !resumeAuthClient) return false;
+  if (!resumeBuilderState.signedInEmail || !getActiveAuthClient()) return false;
 
   try {
     const accessToken = await getAuthAccessToken();
@@ -370,8 +393,19 @@ async function saveCurrentResumeForSignedInUser() {
       body: JSON.stringify({ payload: buildCloudResumePayload() }),
     });
 
-    return response.ok;
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      if (elementRefs.authStatus) {
+        elementRefs.authStatus.textContent = errorBody?.error || "Cloud save failed.";
+      }
+      return false;
+    }
+
+    return true;
   } catch (_err) {
+    if (elementRefs.authStatus) {
+      elementRefs.authStatus.textContent = "Cloud save failed.";
+    }
     return false;
   }
 }
@@ -380,10 +414,62 @@ async function initCloudAuth() {
   try {
     if (!window.supabase?.createClient) return;
 
+    const sharedClient = getSharedAuthClient();
+    if (sharedClient) {
+      resumeAuthClient = sharedClient;
+      cloudAuthAvailable = true;
+
+      const { data } = await resumeAuthClient.auth.getSession();
+      const user = data?.session?.user || null;
+      resumeBuilderState.signedInEmail = normalizeEmail(user?.email || "");
+      resumeBuilderState.hasPaid = false;
+      resumeBuilderState.isUnlocked = false;
+
+      if (resumeBuilderState.signedInEmail) {
+        const restoredLocalDraft = restoreResumeAfterAuthRedirect();
+        if (restoredLocalDraft) {
+          await saveCurrentResumeForSignedInUser();
+        } else {
+          await loadSavedResumeForSignedInUser();
+        }
+
+        await fetchAccessState(user?.id || "");
+        subscribeToPaymentStatus(user?.id || "");
+      }
+
+      resumeAuthClient.auth.onAuthStateChange(async (_event, session) => {
+        const authUser = session?.user || null;
+        resumeBuilderState.signedInEmail = normalizeEmail(session?.user?.email || "");
+
+        if (!authUser) {
+          resumeBuilderState.hasPaid = false;
+          resumeBuilderState.isUnlocked = false;
+          clearPaymentStatusSubscription();
+        }
+
+        if (resumeBuilderState.signedInEmail) {
+          const restoredLocalDraft = restoreResumeAfterAuthRedirect();
+          if (restoredLocalDraft) {
+            await saveCurrentResumeForSignedInUser();
+          } else {
+            await loadSavedResumeForSignedInUser();
+          }
+
+          await fetchAccessState(authUser?.id || "");
+          subscribeToPaymentStatus(authUser?.id || "");
+        }
+
+        refreshUi();
+        restoreScrollAfterAuthRedirect();
+      });
+
+      return;
+    }
+
     const response = await fetch("/api/public-auth-config");
     const config = await response.json();
     const supabaseUrl = config?.supabaseUrl || "";
-    const supabaseKey = config?.supabasePublishableKey || "";
+    const supabaseKey = config?.supabasePublishableKey || config?.supabaseAnonKey || "";
     if (!supabaseUrl || !supabaseKey) return;
 
     resumeAuthClient = window.supabase.createClient(supabaseUrl, supabaseKey, {
