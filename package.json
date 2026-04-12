@@ -17,7 +17,7 @@
     "multer": "^2.1.1",
     "nodemailer": "^8.0.5",
     "openai": "^4.52.0",
-    "pdf-parse": "^2.4.5",
+    "pdf-parse": "^1.1.1",
     "pdfkit": "^0.18.0",
     "sharp": "^0.34.5",
     "stripe": "^22.0.1"

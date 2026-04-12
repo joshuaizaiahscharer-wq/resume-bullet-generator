@@ -15,7 +15,6 @@ const cors = require("cors");
 const OpenAI = require("openai");
 const multer = require("multer");
 const mammoth = require("mammoth");
-const pdfParse = require("pdf-parse");
 const PDFDocument = require("pdfkit");
 const { Document, HeadingLevel, Packer, Paragraph, TextRun } = require("docx");
 const supabase = require("../lib/supabase");
@@ -1505,6 +1504,7 @@ app.post("/api/extract-resume-text", upload.single("resumeFile"), async (req, re
 
     let extractedText = "";
     if (fileType === "pdf") {
+      const pdfParse = require("pdf-parse");
       const parsedPdf = await pdfParse(file.buffer);
       extractedText = normalizeExtractedText(parsedPdf.text);
     } else {
