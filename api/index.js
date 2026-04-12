@@ -42,8 +42,13 @@ const STRIPE_CHECK_MY_RESUME_PRODUCT_ID =
   process.env.STRIPE_CHECK_MY_RESUME_PRODUCT_ID || "prod_UKBRUZb1LrPcpV";
 const STRIPE_CHECK_MY_RESUME_PRICE_ID =
   process.env.STRIPE_CHECK_MY_RESUME_PRICE_ID || "price_1TLX4E12xoyNnQNyqanmPF7z";
+const SUPABASE_URL_PUBLIC =
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || "";
+  process.env.SUPABASE_PUBLISHABLE_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  "";
 const PAYMENT_STATE_SECRET =
   process.env.PAYMENT_STATE_SECRET ||
   process.env.ADMIN_PASSWORD ||
@@ -2006,7 +2011,7 @@ app.get("/api/resume-builder/access", async (req, res) => {
 
 app.get("/api/public-auth-config", (req, res) => {
   return res.json({
-    supabaseUrl: process.env.SUPABASE_URL || "",
+    supabaseUrl: SUPABASE_URL_PUBLIC,
     supabaseAnonKey: SUPABASE_PUBLISHABLE_KEY,
     supabasePublishableKey: SUPABASE_PUBLISHABLE_KEY,
   });
