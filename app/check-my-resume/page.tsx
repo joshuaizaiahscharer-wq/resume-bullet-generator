@@ -118,51 +118,53 @@ export default function CheckMyResumePage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto w-full max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl backdrop-blur sm:p-8">
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            {isPaid ? "Your Optimized Resume" : "Check My Resume"}
-          </h1>
-          <p className="mt-2 max-w-3xl text-slate-300">
-            {isPaid
-              ? "Your resume has been fully rewritten and optimized."
-              : "Paste your resume and get a professional evaluation in seconds"}
-          </p>
+    <div className="mx-auto w-full max-w-4xl">
+      <header className="mb-8 text-center">
+        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Check My Resume</h1>
+        <p className="mx-auto mt-2 max-w-2xl text-slate-300">
+          Paste your resume and get a professional evaluation in seconds
+        </p>
+      </header>
 
-          {!isPaid ? (
-            <>
-              <div className="mt-6">
-                <label htmlFor="resumeInput" className="mb-2 block text-sm font-semibold text-slate-300">
-                  Resume Input
-                </label>
-                <textarea
-                  id="resumeInput"
-                  value={resumeText}
-                  onChange={(event) => setResumeText(event.target.value)}
-                  placeholder="Paste your full resume here..."
-                  className="h-72 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/25"
-                />
-              </div>
+      <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-2xl backdrop-blur sm:p-8">
+        {!isPaid ? (
+          <>
+            <div className="mt-1">
+              <label htmlFor="resumeInput" className="mb-2 block text-sm font-semibold text-slate-300">
+                Resume Input
+              </label>
+              <textarea
+                id="resumeInput"
+                value={resumeText}
+                onChange={(event) => setResumeText(event.target.value)}
+                placeholder="Paste your full resume here..."
+                className="h-72 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/25"
+              />
+            </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleAnalyzeResume}
-                  disabled={!canAnalyze}
-                  className="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition-all hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isLoading ? "Analyzing..." : "Analyze Resume"}
-                </button>
-                {error ? <p className="text-sm text-rose-300">{error}</p> : null}
-              </div>
-            </>
-          ) : null}
-        </section>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleAnalyzeResume}
+                disabled={!canAnalyze}
+                className="rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition-all hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {isLoading ? "Analyzing..." : "Analyze Resume"}
+              </button>
+              {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+            </div>
+          </>
+        ) : (
+          <>
+            <h2 className="text-2xl font-semibold text-white">Your Optimized Resume</h2>
+            <p className="mt-2 text-slate-300">Your resume has been fully rewritten and optimized.</p>
+          </>
+        )}
+      </section>
 
-        {!isPaid && analysisResult ? (
-          <section className="mt-6 space-y-6">
-            <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl">
+      {!isPaid && analysisResult ? (
+        <section className="mt-6 space-y-6">
+          <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <h2 className="text-2xl font-semibold text-white">Resume Score</h2>
                 <span className={`rounded-full border px-4 py-1 text-sm font-bold ${getLabelStyles(analysisResult.label)}`}>
@@ -189,9 +191,9 @@ export default function CheckMyResumePage() {
                   );
                 })}
               </div>
-            </article>
+          </article>
 
-            <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl">
+          <article className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-xl">
               <h3 className="text-xl font-semibold text-white">Top 3 Improvements</h3>
               <div className="mt-4 grid gap-4 md:grid-cols-3">
                 {analysisResult.improvements.slice(0, 3).map((improvement, index) => (
@@ -203,9 +205,9 @@ export default function CheckMyResumePage() {
                   </div>
                 ))}
               </div>
-            </article>
+          </article>
 
-            <article className="rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-slate-900 to-cyan-950/40 p-6 shadow-xl sm:p-8">
+          <article className="rounded-2xl border border-cyan-400/30 bg-gradient-to-br from-slate-900 to-cyan-950/40 p-6 shadow-xl sm:p-8">
               <h3 className="text-2xl font-bold text-white">Fix My Resume</h3>
               <p className="mt-2 text-slate-300">
                 Let BulletAI fully rewrite and optimize your resume for clarity, structure, and impact.
@@ -225,13 +227,13 @@ export default function CheckMyResumePage() {
                 {isLoading ? "Optimizing Resume..." : "Fix My Resume ->"}
               </button>
               {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
-            </article>
-          </section>
-        ) : null}
+          </article>
+        </section>
+      ) : null}
 
-        {isPaid ? (
-          <section className="mt-6">
-            <article className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-6 shadow-xl">
+      {isPaid ? (
+        <section className="mt-6">
+          <article className="rounded-2xl border border-emerald-500/25 bg-emerald-500/10 p-6 shadow-xl">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-2xl font-semibold text-white">Your Optimized Resume</h2>
                 <button
@@ -246,10 +248,9 @@ export default function CheckMyResumePage() {
                 {fixedResume}
               </pre>
               {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
-            </article>
-          </section>
-        ) : null}
-      </div>
-    </main>
+          </article>
+        </section>
+      ) : null}
+    </div>
   );
 }
