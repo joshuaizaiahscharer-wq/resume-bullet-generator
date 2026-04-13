@@ -43,13 +43,8 @@
 
         <div id="adminAuthGate" class="admin-gate" aria-live="polite">
           <p class="admin-gate-title">Sign in to access admin controls.</p>
-          <p class="admin-gate-subtitle">Enter your admin password to continue.</p>
-          <form id="adminPasswordForm" style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:8px;">
-            <input id="adminPasswordInput" type="password" placeholder="Admin password" autocomplete="current-password"
-              style="padding:10px 16px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:15px;width:260px;outline:none;" />
-            <button id="adminGateSignInBtn" class="admin-gate-btn" type="submit">Sign In</button>
-            <p id="adminPasswordError" style="color:#f87171;font-size:13px;display:none;">Incorrect password. Please try again.</p>
-          </form>
+          <p class="admin-gate-subtitle">After login, your dashboard tools and paywall controls will load here.</p>
+          <button id="adminGateSignInBtn" class="admin-gate-btn" type="button">Sign In</button>
         </div>
 
         <div id="adminDashboardContent" hidden>

@@ -2,9 +2,12 @@ import { UsersTable } from "/admin/ui-components.js";
 import {
   fetchUsers,
   generateBlogPostDraft,
+  getCurrentAuthUser,
+  getOrCreateUserData,
   maybeTrackPaymentFromUrl,
   publishBlogPost,
   subscribeToUsers,
+  syncCurrentUserPresence,
   updateUserPayment,
 } from "/admin/users-data.js";
 
@@ -439,52 +442,46 @@ async function initDashboard() {
   renderLoadingState();
 
   try {
-    const authResp = await fetch("/api/auth/user", { credentials: "include" });
-    if (!authResp.ok) {
+    const currentUser = await getCurrentAuthUser();
+    if (!currentUser) {
       dashboardState.isAdmin = false;
-      renderAuthGate("Enter your admin password to continue.");
-      bindControls();
-      return;
-    }
-
-    const currentUser = await authResp.json();
-    if (!currentUser || !currentUser.id) {
-      dashboardState.isAdmin = false;
-      renderAuthGate("Enter your admin password to continue.");
-      bindControls();
+      console.log("Admin state:", dashboardState.isAdmin);
+      renderAccessDenied("Please sign in to continue.");
       return;
     }
 
     dashboardState.currentUserId = currentUser.id;
 
-    const adminCheckResp = await fetch(`/api/admin/support`, { credentials: "include" });
-    if (adminCheckResp.status === 401) {
+    const userData = await getOrCreateUserData(currentUser);
+    if (!userData) {
       dashboardState.isAdmin = false;
-      renderAuthGate("Enter your admin password to continue.");
+      console.log("Admin state:", dashboardState.isAdmin);
+      renderAccessDenied("Unable to load your user profile. Check console logs for AUTH USER, USER ROW, and ERROR.");
       bindControls();
       return;
     }
 
-    if (adminCheckResp.status === 403) {
-      dashboardState.isAdmin = false;
-      renderAccessDenied("Access denied.");
-      bindControls();
-      return;
+    if (userData.id !== currentUser.id) {
+      console.error("AUTH/PROFILE ID MISMATCH:", {
+        authUserId: currentUser.id,
+        profileUserId: userData.id,
+      });
     }
 
-    if (!adminCheckResp.ok) {
-      dashboardState.isAdmin = false;
-      renderAccessDenied("Unable to verify admin access. Please try again later.");
-      bindControls();
-      return;
-    }
-
-    dashboardState.isAdmin = true;
+    console.log("is_admin value:", userData.is_admin);
+    dashboardState.isAdmin = userData.is_admin === true;
     console.log("Admin state:", dashboardState.isAdmin);
+
+    if (!dashboardState.isAdmin) {
+      renderAccessDenied("Your account is signed in, but is_admin is false.");
+      bindControls();
+      return;
+    }
 
     renderPostAuthDashboard();
 
     await maybeTrackPaymentFromUrl();
+    await syncCurrentUserPresence();
     await refreshUsers();
     await subscribeToUsers(refreshUsers);
   } catch (error) {
@@ -497,26 +494,9 @@ async function initDashboard() {
   bindControls();
 }
 
-document.getElementById("adminPasswordForm")?.addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const password = document.getElementById("adminPasswordInput")?.value || "";
-  const errorEl = document.getElementById("adminPasswordError");
-  if (errorEl) errorEl.style.display = "none";
-
-  try {
-    const resp = await fetch("/api/admin/password-login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ password }),
-    });
-    if (resp.ok) {
-      await initDashboard();
-    } else {
-      if (errorEl) errorEl.style.display = "block";
-    }
-  } catch (err) {
-    if (errorEl) errorEl.style.display = "block";
+document.getElementById("adminGateSignInBtn")?.addEventListener("click", () => {
+  if (window.BulletAuth && typeof window.BulletAuth.openAuthModal === "function") {
+    window.BulletAuth.openAuthModal();
   }
 });
 
