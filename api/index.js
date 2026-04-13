@@ -2222,8 +2222,20 @@ app.post("/api/resume-builder/save-cloud", async (req, res) => {
     console.error("[/api/resume-builder/save-cloud] unexpected metadata save error:", err?.message);
   }
 
+  console.log("[/api/resume-builder/save-cloud] save result:", {
+    userId: user.id,
+    usersSaveSucceeded,
+    metadataSaveSucceeded,
+  });
+
   if (!usersSaveSucceeded && !metadataSaveSucceeded) {
-    return res.status(500).json({ error: "Failed to save resume." });
+    return res.status(500).json({
+      error: "Failed to save resume.",
+      debug: {
+        usersSaveSucceeded,
+        metadataSaveSucceeded,
+      },
+    });
   }
 
   return res.json({ ok: true });
