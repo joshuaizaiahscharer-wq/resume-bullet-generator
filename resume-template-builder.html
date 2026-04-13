@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Build a premium, professionally formatted resume template with live preview and secure unlock flow."
+    />
+    <title>Resume Template Builder | BulletAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;700&family=Source+Serif+4:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=1" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=1" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=1" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=1" />
+    <link rel="shortcut icon" href="/favicon-32x32.png?v=1" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="stylesheet" href="/blog.css" />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/resume-template-builder.css" />
+    <link rel="stylesheet" href="/auth.css" />
+  </head>
+  <body class="resume-builder-body">
+    <site-navbar active-page="resume-builder"></site-navbar>
+
+    <header class="builder-hero">
+      <span class="badge">Premium Resume Builder</span>
+      <h1>Design a polished resume in minutes</h1>
+      <p class="builder-hero-sub">
+        Build your resume with professional structure, live preview, and a secure unlock flow ready for Stripe checkout.
+      </p>
+      <div class="builder-benefits" aria-label="Benefits">
+        <article class="benefit-card">
+          <h2>Professional formatting</h2>
+          <p>Clean spacing, strong hierarchy, and recruiter-friendly readability built into every section.</p>
+        </article>
+        <article class="benefit-card">
+          <h2>Easy to customize</h2>
+          <p>Edit every detail instantly with a guided form designed for fast resume writing.</p>
+        </article>
+        <article class="benefit-card">
+          <h2>Instant preview</h2>
+          <p>See your resume update in real time while you write so you can refine as you go.</p>
+        </article>
+        <article class="benefit-card">
+          <h2>Download after purchase</h2>
+          <p>Unlock the full template and export as PDF once payment is verified.</p>
+        </article>
+      </div>
+      <div class="builder-hero-actions">
+        <a href="#builderApp" class="builder-primary-cta">Start Building Your Resume</a>
+        <button id="heroResumeAccessBtn" class="builder-secondary-cta" type="button">Sign In To View Saved Resumes</button>
+      </div>
+      <p id="heroResumeAccessStatus" class="builder-hero-status">Sign in to load a previously saved resume.</p>
+    </header>
+
+    <main id="builderApp" class="builder-main" aria-live="polite">
+      <section class="builder-layout" aria-label="Resume Builder Workspace">
+        <div class="builder-form-panel">
+          <div class="panel-header">
+            <p class="panel-eyebrow">ResumeBuilderForm</p>
+            <h2>Resume details</h2>
+            <p>Fill in your information, then click Generate Resume to create your locked preview.</p>
+          </div>
+          <div id="resumeBuilderFormRoot"></div>
+        </div>
+      </section>
+
+      <section id="generatedResumeSection" class="builder-preview-panel generated-preview-section hidden" aria-label="Generated Resume Preview">
+          <div class="panel-header panel-header--preview">
+            <div class="panel-header-copy">
+              <p class="panel-eyebrow">ResumePreview</p>
+              <h2>Your generated resume</h2>
+              <p>Your professional template appears here after you click Generate Resume.</p>
+            </div>
+            <button id="editResumeBtn" class="download-btn download-btn--secondary" type="button" hidden>
+              Edit Resume
+            </button>
+          </div>
+
+          <div class="preview-toolbar">
+            <div class="toolbar-pickers">
+              <div class="picker-row">
+                <span class="picker-label">Style</span>
+                <div class="style-picker" id="stylePickerRoot" aria-label="Resume style">
+                  <button class="style-pill style-pill--active" data-style="classic" type="button">Classic</button>
+                  <button class="style-pill" data-style="modern" type="button">Modern</button>
+                  <button class="style-pill" data-style="executive" type="button">Executive</button>
+                  <button class="style-pill" data-style="minimal" type="button">Minimal</button>
+                  <button class="style-pill" data-style="neo" type="button">Neo</button>
+                  <button class="style-pill" data-style="slate" type="button">Slate</button>
+                  <button class="style-pill" data-style="journal" type="button">Journal</button>
+                  <button class="style-pill" data-style="orbit" type="button">Orbit</button>
+                </div>
+              </div>
+              <div class="picker-row">
+                <span class="picker-label">Font</span>
+                <div class="style-picker" id="fontPickerRoot" aria-label="Resume font">
+                  <button class="style-pill style-pill--active" data-font="inter" type="button">Inter</button>
+                  <button class="style-pill" data-font="lato" type="button">Lato</button>
+                  <button class="style-pill" data-font="merriweather" type="button">Merriweather</button>
+                  <button class="style-pill" data-font="playfair" type="button">Playfair</button>
+                  <button class="style-pill" data-font="source-serif" type="button">Source Serif</button>
+                </div>
+              </div>
+
+              <div class="advanced-customize" id="advancedCustomizeRoot" aria-label="Advanced formatting options">
+                <div class="advanced-customize-header">
+                  <span class="picker-label">Advanced Formatting</span>
+                </div>
+
+                <div class="advanced-control-grid">
+                  <div class="advanced-control-field">
+                    <label for="accentColorPicker">Accent Color</label>
+                    <div class="accent-row">
+                      <input id="accentColorPicker" class="accent-color-input" type="color" value="#6366f1" />
+                      <div class="accent-swatches" id="accentSwatches">
+                        <button class="accent-swatch is-active" type="button" data-accent="#6366f1" style="--swatch:#6366f1" aria-label="Indigo"></button>
+                        <button class="accent-swatch" type="button" data-accent="#0ea5e9" style="--swatch:#0ea5e9" aria-label="Sky"></button>
+                        <button class="accent-swatch" type="button" data-accent="#14b8a6" style="--swatch:#14b8a6" aria-label="Teal"></button>
+                        <button class="accent-swatch" type="button" data-accent="#16a34a" style="--swatch:#16a34a" aria-label="Green"></button>
+                        <button class="accent-swatch" type="button" data-accent="#f59e0b" style="--swatch:#f59e0b" aria-label="Amber"></button>
+                        <button class="accent-swatch" type="button" data-accent="#dc2626" style="--swatch:#dc2626" aria-label="Red"></button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="advanced-control-field">
+                    <label for="bodySizeSlider">Body Text Size <span id="bodySizeValue">100%</span></label>
+                    <input id="bodySizeSlider" type="range" min="90" max="120" step="1" value="100" />
+                  </div>
+
+                  <div class="advanced-control-field">
+                    <label for="headingSizeSlider">Heading Scale <span id="headingSizeValue">100%</span></label>
+                    <input id="headingSizeSlider" type="range" min="90" max="130" step="1" value="100" />
+                  </div>
+
+                  <div class="advanced-control-field">
+                    <label for="lineHeightSlider">Line Height <span id="lineHeightValue">150%</span></label>
+                    <input id="lineHeightSlider" type="range" min="130" max="190" step="1" value="150" />
+                  </div>
+
+                  <div class="advanced-control-field">
+                    <label for="sectionGapSlider">Section Spacing <span id="sectionGapValue">100%</span></label>
+                    <input id="sectionGapSlider" type="range" min="85" max="130" step="1" value="100" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="toolbar-right">
+              <span id="paymentStatusBadge" class="payment-badge payment-badge--locked">Locked</span>
+              <span id="resumeAuthStatus" class="resume-auth-status">Not signed in</span>
+              <span id="resumeSaveIndicator" class="resume-save-indicator hidden" aria-live="polite">Saved ✓</span>
+              <button id="resumeAuthBtn" class="download-btn download-btn--secondary" type="button">
+                Sign In
+              </button>
+              <button id="saveResumeBtn" class="download-btn download-btn--secondary" type="button" disabled>
+                Save Resume
+              </button>
+              <button id="clearResumeBtn" class="download-btn download-btn--secondary" type="button">
+                Clear Resume
+              </button>
+              <button id="resetStorageBtn" class="download-btn download-btn--secondary" type="button">
+                Reset Storage
+              </button>
+              <button id="downloadResumeDocxBtn" class="download-btn download-btn--secondary" type="button" disabled>
+                Download DOCX
+              </button>
+              <button id="downloadResumeBtn" class="download-btn" type="button" disabled>
+                Download PDF
+              </button>
+            </div>
+          </div>
+
+          <div id="previewPaywallRow" class="preview-paywall-row">
+            <div id="resumePreviewShell" class="resume-preview-shell is-locked">
+              <div id="resumePreviewRoot"></div>
+              <div id="paywallOverlayRoot"></div>
+            </div>
+          </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-logo">&#10022; BulletAI</p>
+        <p class="footer-copy">
+          Resume Template Builder with secure unlock flow. Connect Stripe checkout to launch premium access.
+        </p>
+        <div class="footer-links">
+          <a href="/">Bullet Generator</a>
+          <a href="/jobs">All job pages</a>
+          <a href="/#support">Contact support</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Sign-in modal -->
+    <div id="authModal" class="auth-modal-overlay" hidden aria-hidden="true">
+      <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
+        <button class="auth-modal-close" id="authModalClose" type="button" aria-label="Close">&#10005;</button>
+        <h2 class="auth-modal-title" id="authModalTitle">Sign in to save your resume</h2>
+        <p class="auth-modal-subtitle">We&rsquo;ll email you a one-time link &mdash; no password needed.</p>
+
+        <div class="auth-modal-email-section">
+          <input id="authModalEmailInput" type="email" class="auth-modal-email-input" placeholder="you@example.com" autocomplete="email" />
+          <button id="authModalEmailBtn" class="auth-modal-submit-btn" type="button">Send magic link</button>
+        </div>
+
+        <div class="auth-modal-divider"><span>or</span></div>
+
+        <button id="authModalGoogleBtn" class="auth-modal-oauth-btn auth-modal-google-btn" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <p class="auth-modal-status" id="authModalStatus"></p>
+      </div>
+    </div>
+
+    <script src="/shared-navbar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="/auth.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="/resume-template-builder.js"></script>
+  </body>
+</html>

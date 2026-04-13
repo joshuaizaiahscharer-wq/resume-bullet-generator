@@ -1,0 +1,7 @@
+# Environment — never commit this
+node_modules
+.config
+.local
+.env
+.env.local
+.DS_Store

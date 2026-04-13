@@ -1,0 +1,220 @@
+/**
+ * auth.css — Shared authentication styles
+ *
+ * Included on every page. Covers:
+ *  1. #navAuthBtn — sign-in pill in both the main nav and the blog nav
+ *  2. Auth modal — full overlay + card (mirrors the styles in
+ *     resume-template-builder.css so the modal looks identical on every page)
+ */
+
+/* ── Nav auth button ─────────────────────────────────────────────────────── */
+
+#navAuthBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border: 1px solid rgba(59, 130, 246, 0.58);
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.14);
+  color: #bfdbfe;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 0.18s, color 0.18s, border-color 0.18s, box-shadow 0.18s;
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#navAuthBtn:hover {
+  background: rgba(59, 130, 246, 0.24);
+  border-color: rgba(59, 130, 246, 0.9);
+  color: #dbeafe;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.17);
+}
+
+#navAuthBtn[data-state="signed-in"] {
+  border-color: rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.12);
+  color: #bfdbfe;
+  font-size: 0.75rem;
+}
+
+#navAuthBtn[data-state="signed-in"]:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* ── Auth modal overlay ──────────────────────────────────────────────────── */
+
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  padding: 16px;
+}
+
+.auth-modal-overlay[hidden] {
+  display: none;
+}
+
+.auth-modal {
+  position: relative;
+  background: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 16px;
+  padding: 36px 32px 28px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+
+.auth-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.auth-modal-close:hover {
+  color: #dbe4f3;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.auth-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #e5e7eb;
+  margin: 0 0 8px;
+}
+
+.auth-modal-subtitle {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.auth-modal-email-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-modal-email-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0b1220;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font-size: 0.9375rem;
+  color: #e5e7eb;
+  outline: none;
+  transition: border-color 0.18s;
+}
+
+.auth-modal-email-input::placeholder {
+  color: #475569;
+}
+
+.auth-modal-email-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.auth-modal-submit-btn {
+  width: 100%;
+  padding: 11px;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.18s, transform 0.16s;
+}
+
+.auth-modal-submit-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.auth-modal-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.auth-modal-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: #475569;
+  font-size: 0.8125rem;
+}
+
+.auth-modal-divider::before,
+.auth-modal-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.auth-modal-oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.16s;
+  margin-bottom: 10px;
+}
+
+.auth-modal-google-btn {
+  background: #fff;
+  border: 1px solid #dadce0;
+  color: #3c4043;
+}
+
+.auth-modal-google-btn:hover {
+  background: #f8f9fa;
+  transform: translateY(-1px);
+}
+
+.auth-modal-status {
+  margin: 14px 0 0;
+  font-size: 0.8125rem;
+  text-align: center;
+  color: #9ca3af;
+  min-height: 1.25em;
+}
+
+.auth-modal-status--success {
+  color: #60a5fa;
+}

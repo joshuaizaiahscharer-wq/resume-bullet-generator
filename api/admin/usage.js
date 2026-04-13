@@ -1,0 +1,109 @@
+// api/admin/usage.js
+// Returns top 20 most searched job titles with counts.
+//
+// Protected by Replit Auth session + is_admin check.
+// In the Express server this route is registered in api/index.js with
+// isAuthenticated middleware. This file is kept as the Vercel serverless
+// function entry point and delegates auth to the same middleware.
+//
+// Security note: service_role key never leaves the server. Only aggregated
+// counts (no user PII) are returned in the response.
+
+require("dotenv").config();
+const supabase = require("../../lib/supabase");
+const { isAuthenticated } = require("../../lib/replitAuth");
+
+function isMissingUserIdColumn(error) {
+  const msg = String(error?.message || "").toLowerCase();
+  return msg.includes("user_id") && msg.includes("does not exist");
+}
+
+async function getAdminProfileByReplitSub(replitSub) {
+  if (!replitSub) return null;
+  const { data, error } = await supabase
+    .from("users")
+    .select("replit_sub, is_admin")
+    .eq("replit_sub", replitSub)
+    .maybeSingle();
+  if (error) return null;
+  return data || null;
+}
+
+module.exports = async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed." });
+  }
+
+  let authPassed = false;
+  await new Promise((resolve) => {
+    isAuthenticated(req, res, () => {
+      authPassed = true;
+      resolve();
+    });
+    if (res.headersSent) resolve();
+  });
+
+  if (!authPassed || res.headersSent) {
+    return;
+  }
+
+  const replitSub = req.user && req.user.claims && req.user.claims.sub;
+  if (!replitSub) {
+    return res.status(401).json({ error: "Unauthorized." });
+  }
+
+  const adminProfile = await getAdminProfileByReplitSub(replitSub).catch(() => null);
+  if (!adminProfile?.is_admin) {
+    return res.status(403).json({ error: "Admin access required." });
+  }
+
+  try {
+    let { data, error } = await supabase
+      .from("generator_usage")
+      .select("normalized_job_title, created_at, user_id")
+      .order("created_at", { ascending: false })
+      .limit(5000);
+
+    if (error && isMissingUserIdColumn(error)) {
+      const fallback = await supabase
+        .from("generator_usage")
+        .select("normalized_job_title, created_at")
+        .order("created_at", { ascending: false })
+        .limit(5000);
+      data = fallback.data;
+      error = fallback.error;
+    }
+
+    if (error) {
+      console.error("[/api/admin/usage] Supabase error:", error.message);
+      return res.status(500).json({ error: error.message });
+    }
+
+    const rows = data ?? [];
+    const counts = new Map();
+    for (const row of rows) {
+      const title = (row.normalized_job_title || "").trim();
+      if (title) counts.set(title, (counts.get(title) || 0) + 1);
+    }
+
+    const topJobs = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([job, count]) => ({ job, count }));
+
+    const recentJobs = rows.slice(0, 50).map((row) => ({
+      job: (row.normalized_job_title || "").trim(),
+      userId: row.user_id || null,
+      createdAt: row.created_at,
+    }));
+
+    return res.status(200).json({
+      totalRecords: rows.length,
+      topJobs,
+      recentJobs,
+    });
+  } catch (err) {
+    console.error("[/api/admin/usage] Unexpected error:", err.message);
+    return res.status(500).json({ error: err.message });
+  }
+};

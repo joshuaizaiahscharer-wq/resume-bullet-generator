@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Check My Resume | BulletAI</title>
+    <link rel="stylesheet" href="/blog.css" />
+    <link rel="stylesheet" href="/auth.css" />
+    <link rel="stylesheet" href="/check-my-resume.css" />
+  </head>
+  <body>
+    <site-navbar active-page="check-my-resume"></site-navbar>
+
+    <main class="page">
+      <section class="panel">
+        <h1 id="page-title">Check My Resume</h1>
+        <p id="page-subtext">Paste your resume and get a professional evaluation in seconds</p>
+
+        <label class="field-label" for="resume-input">Resume Input</label>
+        <textarea id="resume-input" placeholder="Paste your full resume here..."></textarea>
+
+        <label class="field-label" for="resume-file">Or Upload Resume (.pdf or .docx)</label>
+        <input id="resume-file" type="file" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+        <p class="upload-helper">Best results: Upload a .docx file</p>
+        <div id="pdf-disclaimer" class="pdf-disclaimer hidden" role="status" aria-live="polite">
+          <strong>Note on PDF uploads:</strong> PDF files may not retain exact formatting after optimization. For best results, upload your resume as a .docx file to preserve layout and styling.
+        </div>
+
+        <div class="row">
+          <button id="analyze-btn">Analyze Resume</button>
+          <p id="error-text" class="error"></p>
+        </div>
+      </section>
+
+      <section id="analysis-section" class="panel hidden">
+        <div class="score-row">
+          <h2>Resume Score</h2>
+          <span id="score-pill" class="pill">0% (Weak)</span>
+        </div>
+
+        <div id="breakdown-grid" class="breakdown-grid"></div>
+      </section>
+
+      <section id="improvements-section" class="panel hidden">
+        <h3>Top 3 Improvements</h3>
+        <div id="improvements-grid" class="improvements-grid"></div>
+      </section>
+
+      <section id="paywall-section" class="panel hidden">
+        <h3>Fix My Resume</h3>
+        <p>
+          Let BulletAI fully rewrite and optimize your resume for clarity, structure, and impact.
+        </p>
+        <ul>
+          <li>Strong bullet points for every role</li>
+          <li>Improved structure and formatting</li>
+          <li>Professional summary rewrite</li>
+          <li>Clean, job-ready resume</li>
+        </ul>
+        <button id="fix-btn">Fix My Resume -&gt;</button>
+      </section>
+
+      <section id="preview-section" class="panel hidden">
+        <div class="score-row">
+          <h2>Preview &amp; Approve Changes</h2>
+          <button id="finalize-btn">Build Final Resume</button>
+        </div>
+        <p class="preview-subtext">Review each improvement and choose whether to keep the new version or keep your original wording.</p>
+        <div id="change-preview-list" class="change-preview-list"></div>
+      </section>
+
+      <section id="optimized-section" class="panel hidden">
+        <div class="score-row">
+          <h2>Your Optimized Resume</h2>
+          <div class="action-buttons">
+            <button id="copy-btn">Copy</button>
+            <button id="download-btn">Download Optimized Resume</button>
+          </div>
+        </div>
+        <p id="optimized-status" class="optimized-status"></p>
+        <p id="paywall-hint" class="paywall-hint hidden">Review complete - unlock your resume to download</p>
+        <pre id="optimized-output"></pre>
+      </section>
+
+      <div id="paywall-modal" class="paywall-modal hidden" role="dialog" aria-modal="true" aria-labelledby="paywall-title">
+        <div class="paywall-card">
+          <h2 id="paywall-title">Unlock Your Optimized Resume</h2>
+          <p class="paywall-copy">
+            Download your professionally optimized resume and start applying with confidence.
+          </p>
+          <ul class="paywall-features">
+            <li>Fully rewritten resume</li>
+            <li>Strong bullet points</li>
+            <li>Clean professional formatting</li>
+            <li>Ready-to-submit document</li>
+          </ul>
+          <button id="paywall-unlock-btn" class="paywall-unlock-btn" type="button">Unlock &amp; Download</button>
+          <button id="paywall-cancel-btn" class="paywall-cancel-btn" type="button">Cancel</button>
+        </div>
+      </div>
+    </main>
+
+    <script src="/shared-navbar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="/auth.js"></script>
+    <script src="/check-my-resume.js"></script>
+  </body>
+</html>

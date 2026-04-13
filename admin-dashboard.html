@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Dashboard | BulletAI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=1" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=1" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=1" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=1" />
+    <link rel="shortcut icon" href="/favicon-32x32.png?v=1" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/auth.css" />
+    <link rel="stylesheet" href="/admin-dashboard.css" />
+  </head>
+  <body class="admin-page-body">
+    <nav class="nav nav--wide">
+      <a href="/" class="nav-logo">&#10022; BulletAI</a>
+      <div class="nav-actions">
+        <a href="/" class="nav-link">Bullet Generator</a>
+        <a href="/resume-template-builder" class="nav-link">Resume Template Builder</a>
+        <a href="/admin" class="nav-link nav-link--active">Admin</a>
+        <button id="navAuthBtn" class="nav-auth-btn" type="button" aria-label="Sign in to BulletAI">Sign In</button>
+      </div>
+    </nav>
+
+    <main class="admin-main">
+      <section class="admin-card" aria-labelledby="adminTitle">
+        <div class="admin-header">
+          <div>
+            <h1 id="adminTitle">Admin Dashboard</h1>
+            <p class="admin-subtitle">Manage users and payment access</p>
+          </div>
+        </div>
+
+        <div id="adminAuthGate" class="admin-gate" aria-live="polite">
+          <p class="admin-gate-title">Sign in to access admin controls.</p>
+          <p class="admin-gate-subtitle">Enter your admin password to continue.</p>
+          <form id="adminPasswordForm" style="display:flex;flex-direction:column;gap:10px;align-items:center;margin-top:8px;">
+            <input id="adminPasswordInput" type="password" placeholder="Admin password" autocomplete="current-password"
+              style="padding:10px 16px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#f1f5f9;font-size:15px;width:260px;outline:none;" />
+            <button id="adminGateSignInBtn" class="admin-gate-btn" type="submit">Sign In</button>
+            <p id="adminPasswordError" style="color:#f87171;font-size:13px;display:none;">Incorrect password. Please try again.</p>
+          </form>
+        </div>
+
+        <div id="adminDashboardContent" hidden>
+          <section class="blog-generator" aria-labelledby="blogGeneratorTitle">
+            <div class="blog-generator-header">
+              <h2 id="blogGeneratorTitle">AI Blog Generator</h2>
+              <p>Create, preview, and publish SEO-ready posts to your blog.</p>
+            </div>
+
+            <div class="blog-generator-controls">
+              <label class="control-search" for="blogTopicInput">
+                <span>Blog Topic</span>
+                <input id="blogTopicInput" type="text" placeholder="e.g. How to write resume bullet points that get interviews" />
+              </label>
+
+              <label class="control-search" for="blogImagePromptInput">
+                <span>Image Prompt (optional)</span>
+                <input id="blogImagePromptInput" type="text" placeholder="e.g. modern resume on desk, soft lighting, minimal style" />
+              </label>
+
+              <label class="control-select" for="blogToneSelect">
+                <span>Tone</span>
+                <select id="blogToneSelect">
+                  <option value="Professional">Professional</option>
+                  <option value="Casual">Casual</option>
+                  <option value="SEO Optimized">SEO Optimized</option>
+                </select>
+              </label>
+
+              <label class="control-search" for="blogOverrideDateInput">
+                <span>Override Publish Date <em style="font-weight:400;color:#94a3b8;">(optional — for backdating or scheduling)</em></span>
+                <input id="blogOverrideDateInput" type="datetime-local" />
+              </label>
+
+              <div class="blog-generator-actions">
+                <button id="generateBlogBtn" class="admin-gate-btn" type="button">Generate Post</button>
+                <button id="publishBlogBtn" class="admin-gate-btn" type="button" disabled>Publish Post</button>
+              </div>
+            </div>
+
+            <p id="blogGeneratorStatus" class="blog-generator-status" aria-live="polite"></p>
+
+            <div class="blog-preview-shell" id="blogPreviewShell" hidden>
+              <article class="blog-preview-paper">
+                <img id="blogPreviewImage" class="blog-preview-image" alt="Generated blog preview" loading="lazy" hidden />
+                <h3 id="blogPreviewTitle">Untitled Draft</h3>
+                <p id="blogPreviewImageMeta" class="blog-preview-image-meta" hidden></p>
+                <div id="blogPreviewContent" class="blog-preview-content"></div>
+              </article>
+            </div>
+          </section>
+
+          <div class="admin-controls" aria-label="Dashboard controls">
+            <label class="control-search" for="userSearchInput">
+              <span>Search</span>
+              <input
+                id="userSearchInput"
+                type="search"
+                placeholder="Search by user ID or email"
+                autocomplete="off"
+              />
+            </label>
+
+            <label class="control-select" for="paymentFilterSelect">
+              <span>Filter</span>
+              <select id="paymentFilterSelect">
+                <option value="all">Show All</option>
+                <option value="paid">Paid Only</option>
+                <option value="free">Free Only</option>
+              </select>
+            </label>
+
+            <label class="control-select" for="sortSelect">
+              <span>Sort</span>
+              <select id="sortSelect">
+                <option value="lastActive_desc">Last Active (Newest)</option>
+                <option value="lastActive_asc">Last Active (Oldest)</option>
+                <option value="payment_desc">Payment Status (Paid First)</option>
+                <option value="payment_asc">Payment Status (Free First)</option>
+              </select>
+            </label>
+        </div>
+
+          <div class="admin-table-wrap" id="adminTableRoot" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="adminToast" class="admin-toast" role="status" aria-live="polite"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="/auth.js"></script>
+    <script type="module" src="/admin-dashboard.js"></script>
+  </body>
+</html>

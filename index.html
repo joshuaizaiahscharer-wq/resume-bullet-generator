@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google-site-verification" content="VEIGdEbFNNwkV64kj97Igmt_5KO8trlNUXJtaIqVAw0" />
+    <title>Resume Bullet Generator — AI-Powered</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=1" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=1" />
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=1" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=1" />
+    <link rel="shortcut icon" href="/favicon-32x32.png?v=1" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="stylesheet" href="/blog.css" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="/auth.css" />
+  </head>
+  <body>
+    <site-navbar active-page="home"></site-navbar>
+
+    <!-- Hero -->
+    <header class="hero">
+      <span class="badge">✦ Powered by GPT</span>
+      <h1>Resume bullets that get<br /><span class="gradient-text" id="heroTyped">interviews.</span></h1>
+      <p class="hero-sub">
+        Type any job title and get <strong>10 polished, action-verb-led bullet points</strong>
+        ready to paste straight into your resume — in about 15 seconds.
+      </p>
+      <div class="hero-trust">
+        <span class="trust-item">✓ No sign-up</span>
+        <span class="trust-sep">·</span>
+        <span class="trust-item">✓ 100% free</span>
+        <span class="trust-sep">·</span>
+        <span class="trust-item">✓ Works for any role</span>
+      </div>
+    </header>
+
+    <!-- Stats bar -->
+    <div class="stats-bar" aria-label="Key stats">
+      <div class="stat-item">
+        <span class="stat-number">50k<span class="stat-plus">+</span></span>
+        <span class="stat-label">Resumes improved</span>
+      </div>
+      <div class="stat-divider" aria-hidden="true"></div>
+      <div class="stat-item">
+        <span class="stat-number">10</span>
+        <span class="stat-label">Bullets per job</span>
+      </div>
+      <div class="stat-divider" aria-hidden="true"></div>
+      <div class="stat-item">
+        <span class="stat-number">~15s</span>
+        <span class="stat-label">Generation time</span>
+      </div>
+      <div class="stat-divider" aria-hidden="true"></div>
+      <div class="stat-item">
+        <span class="stat-number">500<span class="stat-plus">+</span></span>
+        <span class="stat-label">Job titles supported</span>
+      </div>
+    </div>
+
+    <!-- Card -->
+    <main class="main">
+      <div class="card">
+        <label class="input-label" for="jobTitle">Job Title</label>
+        <label class="input-label" for="jobDescriptionInput">Paste Job Description (Optional)</label>
+        <textarea
+          id="jobDescriptionInput"
+          class="jd-textarea"
+          placeholder="Paste a job posting to tailor your resume bullets..."
+          aria-label="Paste Job Description (Optional)"
+        ></textarea>
+        <p id="tailorHint" class="optimizer-status hidden" aria-live="polite"></p>
+
+        <div class="input-group">
+          <input
+            type="text"
+            id="jobTitle"
+            placeholder="e.g. Bartender, Software Engineer, Project Manager"
+            aria-label="Job title"
+            autocomplete="off"
+          />
+          <button id="generateBtn">
+            <span class="btn-text">Generate Resume Bullets</span>
+            <span class="btn-arrow">→</span>
+          </button>
+        </div>
+
+        <!-- Quick-pick chips -->
+        <div class="chips" id="chips" aria-label="Quick-pick job titles">
+          <button class="chip" type="button">Software Engineer</button>
+          <button class="chip" type="button">Product Manager</button>
+          <button class="chip" type="button">Data Analyst</button>
+          <button class="chip" type="button">Marketing Manager</button>
+          <button class="chip" type="button">Bartender</button>
+          <button class="chip" type="button">Cashier</button>
+          <button class="chip" type="button">Nurse</button>
+          <button class="chip" type="button">Teacher</button>
+        </div>
+
+        <div id="status" class="status hidden" aria-live="polite"></div>
+
+        <section id="resultsSection" class="results hidden" aria-live="polite">
+          <div class="results-header">
+            <h2 id="resultsHeading">Bullet Points</h2>
+            <div class="results-actions">
+              <button id="regenerateBtn" class="icon-btn" title="Regenerate">↻ Regenerate</button>
+              <button id="copyBtn" class="copy-btn">Copy All</button>
+            </div>
+          </div>
+
+          <ul id="bulletList"></ul>
+        </section>
+
+      </div>
+    </main>
+
+    <!-- How it works -->
+    <section class="how-it-works" id="how-it-works" aria-labelledby="hiw-heading">
+      <div class="section-header">
+        <p class="section-eyebrow">Simple process</p>
+        <h2 class="section-title" id="hiw-heading">How it works</h2>
+        <p class="section-desc">Three steps from job title to interview-ready resume.</p>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num-wrap"><span class="step-num">1</span></div>
+          <h3 class="step-title">Enter a job title</h3>
+          <p class="step-desc">Type any role — from Software Engineer to Bartender. Pick from the quick chips or write your own.</p>
+        </div>
+        <div class="step-connector" aria-hidden="true">→</div>
+        <div class="step-card">
+          <div class="step-num-wrap"><span class="step-num">2</span></div>
+          <h3 class="step-title">AI writes the bullets</h3>
+          <p class="step-desc">GPT-4o crafts 10 strong, action-verb-led bullet points tailored to your specific role in seconds.</p>
+        </div>
+        <div class="step-connector" aria-hidden="true">→</div>
+        <div class="step-card">
+          <div class="step-num-wrap"><span class="step-num">3</span></div>
+          <h3 class="step-title">Copy to your resume</h3>
+          <p class="step-desc">One click copies all bullets. Paste them straight into your resume, LinkedIn, or portfolio.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-section" aria-labelledby="features-heading">
+      <div class="section-header">
+        <p class="section-eyebrow">Why BulletAI</p>
+        <h2 class="section-title" id="features-heading">Built for real job seekers</h2>
+        <p class="section-desc">Every bullet is engineered to pass ATS filters and impress hiring managers.</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon" aria-hidden="true">⚡</span>
+          <h3 class="feature-title">Action-verb led</h3>
+          <p class="feature-desc">Every bullet opens with a powerful action verb — the #1 best practice recommended by career coaches and recruiters.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon" aria-hidden="true">📊</span>
+          <h3 class="feature-title">Quantified results</h3>
+          <p class="feature-desc">Bullets include realistic metrics and outcomes that show impact, not just responsibilities.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon" aria-hidden="true">🎯</span>
+          <h3 class="feature-title">ATS-optimized</h3>
+          <p class="feature-desc">Industry-relevant keywords help your resume sail through automated screening systems and reach human eyes.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon" aria-hidden="true">🔁</span>
+          <h3 class="feature-title">Infinite variations</h3>
+          <p class="feature-desc">Hit Regenerate for a fresh set of bullets any time. Never submit the same resume twice.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon" aria-hidden="true">🌍</span>
+          <h3 class="feature-title">Every industry</h3>
+          <p class="feature-desc">Works for any role from entry-level to executive across tech, healthcare, retail, and hundreds of other sectors.</p>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon" aria-hidden="true">🔒</span>
+          <h3 class="feature-title">No sign-up needed</h3>
+          <p class="feature-desc">Fully free, no account, no email, no credit card. Open the page and start generating immediately.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Before / After example -->
+    <section class="before-after-section" aria-labelledby="ba-heading">
+      <div class="section-header">
+        <p class="section-eyebrow">See the difference</p>
+        <h2 class="section-title" id="ba-heading">Weak vs. strong resume bullet</h2>
+        <p class="section-desc">This is the kind of upgrade BulletAI produces for every job title.</p>
+      </div>
+      <div class="ba-grid">
+        <div class="ba-card ba-card--before">
+          <p class="ba-label">❌ Before</p>
+          <p class="ba-text">Responsible for helping customers and processing transactions at the register.</p>
+        </div>
+        <div class="ba-arrow" aria-hidden="true">→</div>
+        <div class="ba-card ba-card--after">
+          <p class="ba-label">✅ After</p>
+          <p class="ba-text">Processed 200+ daily transactions with 99.8% accuracy, reducing checkout wait times by 20% during peak hours.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Popular Job Pages -->
+    <section class="job-links" aria-labelledby="popular-jobs-heading">
+      <p class="input-label" id="popular-jobs-heading">Popular job pages</p>
+      <div class="job-links-grid">
+        <a href="/resume-bullet-points-for-bartender">Bartender</a>
+        <a href="/resume-bullet-points-for-cashier">Cashier</a>
+        <a href="/resume-bullet-points-for-sales-associate">Sales Associate</a>
+        <a href="/jobs">View all jobs &rarr;</a>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq-section" id="faq" aria-labelledby="faq-heading">
+      <div class="section-header">
+        <p class="section-eyebrow">Got questions?</p>
+        <h2 class="section-title" id="faq-heading">Frequently asked questions</h2>
+      </div>
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary class="faq-question">Is BulletAI really free?</summary>
+          <p class="faq-answer">Yes — 100% free. No account, no credit card, no hidden fees. Just open the page and generate.</p>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">How many bullet points do I get?</summary>
+          <p class="faq-answer">You get 10 unique, tailored bullet points per generation. Hit "Regenerate" as many times as you like for fresh variations.</p>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">Will these bullets pass ATS filters?</summary>
+          <p class="faq-answer">Yes. The AI uses industry-specific keywords and strong action verbs — two of the biggest factors in passing applicant tracking systems.</p>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">Can I use the bullets exactly as generated?</summary>
+          <p class="faq-answer">Absolutely, but we recommend personalizing them with real numbers and specifics from your own experience. Recruiters love specificity.</p>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">What job titles does it support?</summary>
+          <p class="faq-answer">Any job title — from entry-level roles like Cashier or Barista to senior positions like VP of Engineering or Chief Marketing Officer. If the job exists, BulletAI can write bullets for it.</p>
+        </details>
+        <details class="faq-item">
+          <summary class="faq-question">How is this different from ChatGPT?</summary>
+          <p class="faq-answer">BulletAI uses a specialized prompt fine-tuned specifically for resume bullet generation. You get structured, ready-to-use output without crafting a prompt yourself.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- Support -->
+    <section class="support-section" id="support" aria-labelledby="support-heading">
+      <div class="section-header">
+        <p class="section-eyebrow">Need help?</p>
+        <h2 class="section-title" id="support-heading">Contact support</h2>
+        <p class="section-desc">Send our team a message and we&apos;ll get back to you as soon as possible.</p>
+      </div>
+      <div class="support-card">
+        <form id="supportForm" class="support-form" novalidate>
+          <div class="support-row support-row--two">
+            <div>
+              <label class="input-label" for="supportName">Name (optional)</label>
+              <input type="text" id="supportName" name="name" maxlength="120" placeholder="Your name" />
+            </div>
+            <div>
+              <label class="input-label" for="supportEmail">Email</label>
+              <input type="email" id="supportEmail" name="email" maxlength="200" placeholder="you@example.com" required />
+            </div>
+          </div>
+          <div class="support-row">
+            <label class="input-label" for="supportMessage">How can we help?</label>
+            <textarea
+              id="supportMessage"
+              name="message"
+              rows="5"
+              maxlength="4000"
+              placeholder="Describe your issue, question, or feedback."
+              required
+            ></textarea>
+          </div>
+          <div class="support-actions">
+            <button id="supportSubmitBtn" type="submit">Send message</button>
+            <p id="supportStatus" class="support-status hidden" aria-live="polite"></p>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="explore-more" aria-labelledby="learn-about-heading">
+      <div class="explore-more-inner">
+        <h3 id="learn-about-heading">Learn about BulletAI</h3>
+        <p>See our mission, writing principles, and how our tools help job seekers stand out.</p>
+        <a href="/about" class="explore-more-link">Read About Page &rarr;</a>
+      </div>
+    </section>
+
+    <section class="explore-more" aria-labelledby="explore-more-heading">
+      <div class="explore-more-inner">
+        <h3 id="explore-more-heading">Explore More</h3>
+        <p>Check out our latest tips and guides</p>
+        <a href="/blog" class="explore-more-link">Visit Blog &rarr;</a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <p class="footer-logo">&#10022; BulletAI</p>
+        <p class="footer-copy">Built with the OpenAI API &mdash; results may vary. Always personalize bullets with your own experience.</p>
+        <div class="footer-links">
+          <a href="/resume-template-builder">Resume Template Builder</a>
+          <a href="/jobs">All job pages</a>
+          <a href="#support">Contact support</a>
+          <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI API</a>
+        </div>
+      </div>
+    </footer>
+
+    <script src="/shared-navbar.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="/auth.js"></script>
+    <script src="script.js"></script>
+    <script>
+      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+    </script>
+    <script defer src="/_vercel/insights/script.js"></script>
+  </body>
+</html>
