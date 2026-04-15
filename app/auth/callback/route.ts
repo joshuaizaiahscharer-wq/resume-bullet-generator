@@ -16,5 +16,5 @@ export async function GET(request: Request) {
   }
 
   const next = url.searchParams.get("next") || "/";
-  return NextResponse.redirect(new URL(next, url.origin));
+  return NextResponse.redirect(new URL(next, url.origin), 301);
 }

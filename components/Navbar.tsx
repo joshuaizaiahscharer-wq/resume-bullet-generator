@@ -37,7 +37,7 @@ export default function Navbar() {
 
         <div>
           <Link
-            href="/resume-generator"
+            href="/resume-template-builder"
             className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition"
           >
             Get Started

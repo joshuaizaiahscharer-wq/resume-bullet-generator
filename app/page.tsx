@@ -145,7 +145,7 @@ export default function HomePage() {
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <Link
-              href="/resume-generator"
+              href="/resume-template-builder"
               className="rounded-xl bg-blue-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-400"
             >
               Generate My Resume Bullets
@@ -279,7 +279,7 @@ export default function HomePage() {
         <p>
           For deeper strategy, visit our <Link href="/blog" className="text-blue-300 hover:text-blue-200">blog</Link>{" "}
           for practical resume tips and role-specific guidance. You can also jump straight into the tool at{" "}
-          <Link href="/resume-generator" className="text-blue-300 hover:text-blue-200">/resume-generator</Link>.
+          <Link href="/resume-template-builder" className="text-blue-300 hover:text-blue-200">/resume-template-builder</Link>.
         </p>
       </SectionWrap>
 
@@ -303,7 +303,7 @@ export default function HomePage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/resume-generator"
+              href="/resume-template-builder"
               className="rounded-xl bg-blue-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-400"
             >
               Generate My Resume Bullets
