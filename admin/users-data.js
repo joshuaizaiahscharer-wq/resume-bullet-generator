@@ -1,5 +1,27 @@
 import { getSupabaseClient } from "/admin/supabase-client.js";
 
+async function getAdminFetchOptions(options = {}) {
+  const headers = new Headers(options.headers || {});
+
+  try {
+    const supabase = await getSupabaseClient();
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData?.session?.access_token || "";
+
+    if (accessToken) {
+      headers.set("Authorization", `Bearer ${accessToken}`);
+    }
+  } catch (error) {
+    console.warn("Unable to attach Supabase admin token:", error);
+  }
+
+  return {
+    ...options,
+    credentials: "include",
+    headers,
+  };
+}
+
 function mapRow(row) {
   const lastActiveTimestamp = row.last_active ? new Date(row.last_active).getTime() : 0;
   return {
@@ -23,7 +45,7 @@ async function setUserLoggedOut(userId) {
 }
 
 export async function fetchUsers() {
-  const resp = await fetch("/api/admin/users", { credentials: "include" });
+  const resp = await fetch("/api/admin/users", await getAdminFetchOptions());
   if (!resp.ok) throw new Error(`Failed to fetch users: ${resp.status}`);
   const data = await resp.json();
   return (data || []).map(mapRow);
@@ -107,12 +129,11 @@ export async function isAdminUser(userId) {
 }
 
 export async function updateUserPayment(userId, newStatus) {
-  const resp = await fetch(`/api/admin/users/${userId}/payment`, {
+  const resp = await fetch(`/api/admin/users/${userId}/payment`, await getAdminFetchOptions({
     method: "PATCH",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ hasPaid: newStatus }),
-  });
+  }));
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     throw new Error(err.error || "Failed to update user payment.");
@@ -215,14 +236,13 @@ export function slugifyTitle(title) {
 }
 
 export async function generateBlogPostDraft(topic, tone, imagePrompt = "") {
-  const response = await fetch("/api/admin/blog/generate", {
+  const response = await fetch("/api/admin/blog/generate", await getAdminFetchOptions({
     method: "POST",
-    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({ topic, tone, imagePrompt }),
-  });
+  }));
 
   let payload = null;
   try {
@@ -293,12 +313,11 @@ export async function publishBlogPost({ title, content, image, imagePrompt, cust
     customCreatedAt: customCreatedAt || null,
   };
 
-  const resp = await fetch("/api/admin/blog/post", {
+  const resp = await fetch("/api/admin/blog/post", await getAdminFetchOptions({
     method: "POST",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  });
+  }));
 
   const result = await resp.json();
   if (!resp.ok) {
@@ -309,20 +328,10 @@ export async function publishBlogPost({ title, content, image, imagePrompt, cust
 }
 
 export async function runAutomatedBlogGeneration() {
-  const supabase = await getSupabaseClient();
-  const { data: sessionData } = await supabase.auth.getSession();
-  const accessToken = sessionData?.session?.access_token || "";
-
-  const headers = { "Content-Type": "application/json" };
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  const response = await fetch("/api/admin/blog/generate-auto", {
+  const response = await fetch("/api/admin/blog/generate-auto", await getAdminFetchOptions({
     method: "POST",
-    credentials: "include",
-    headers,
-  });
+    headers: { "Content-Type": "application/json" },
+  }));
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
@@ -339,21 +348,11 @@ export async function runAutomatedBlogGeneration() {
 }
 
 export async function runSeoBlogBatchGeneration() {
-  const supabase = await getSupabaseClient();
-  const { data: sessionData } = await supabase.auth.getSession();
-  const accessToken = sessionData?.session?.access_token || "";
-
-  const headers = { "Content-Type": "application/json" };
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
-  }
-
-  const response = await fetch("/api/admin/blog/generate-seo-batch", {
+  const response = await fetch("/api/admin/blog/generate-seo-batch", await getAdminFetchOptions({
     method: "POST",
-    credentials: "include",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({}),
-  });
+  }));
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
