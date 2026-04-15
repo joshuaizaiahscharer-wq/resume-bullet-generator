@@ -22,20 +22,12 @@
     <link rel="shortcut icon" href="/new_favcon.ico?v=1" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=1" />
     <meta name="theme-color" content="#0f172a" />
-    <link rel="stylesheet" href="/style.css" />
+    <link rel="stylesheet" href="/blog.css" />
     <link rel="stylesheet" href="/auth.css" />
     <link rel="stylesheet" href="/admin-dashboard.css" />
   </head>
   <body class="admin-page-body">
-    <nav class="nav nav--wide">
-      <a href="/" class="nav-logo">&#10022; BulletAI</a>
-      <div class="nav-actions">
-        <a href="/" class="nav-link">Bullet Generator</a>
-        <a href="/resume-template-builder" class="nav-link">Resume Template Builder</a>
-        <a href="/admin" class="nav-link nav-link--active">Admin</a>
-        <button id="navAuthBtn" class="nav-auth-btn" type="button" aria-label="Sign in to BulletAI">Sign In</button>
-      </div>
-    </nav>
+    <site-navbar></site-navbar>
 
     <main class="admin-main">
       <section class="admin-card" aria-labelledby="adminTitle">
@@ -143,6 +135,7 @@
     <div id="adminToast" class="admin-toast" role="status" aria-live="polite"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="/shared-navbar.js"></script>
     <script src="/auth.js"></script>
     <script type="module" src="/admin-dashboard.js"></script>
   </body>
