@@ -25,14 +25,6 @@
     }).join("");
   }
 
-  function renderHomeAnchors(activePage) {
-    if (activePage !== "home") return "";
-    return `
-      <a href="#features" class="blog-nav-link">Features</a>
-      <a href="#pricing" class="blog-nav-link">Pricing</a>
-    `;
-  }
-
   function renderNavbarHtml(activePage) {
     return `
       <div class="blog-nav-shell" id="blogNavShell">
@@ -42,7 +34,6 @@
             <span class="blog-logo-text">Bullet<span class="blog-logo-text-accent">AI</span></span>
           </a>
           <div class="blog-nav-center">
-            ${renderHomeAnchors(activePage)}
             ${renderLinks(activePage)}
           </div>
           <button class="blog-nav-toggle" id="blogNavToggle" aria-label="Toggle navigation">
@@ -50,7 +41,6 @@
           </button>
           <div class="blog-nav-actions" id="blogNavActions">
             <a id="navAuthBtn" href="#" class="blog-nav-login-btn" aria-label="Sign in to BulletAI">Log in</a>
-            <a href="/resume-template-builder" class="blog-nav-auth-btn">Get Started</a>
           </div>
         </nav>
       </div>
