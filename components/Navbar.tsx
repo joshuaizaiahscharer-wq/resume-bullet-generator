@@ -27,13 +27,16 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <Image
-            src="/BulletAI_v1.png"
-            alt="BulletAI Logo"
-            width={120}
-            height={40}
-            className="h-8 w-auto object-contain"
+            src="/favicon-32x32.png?v=2"
+            alt="BulletAI"
+            width={32}
+            height={32}
+            className="h-6 w-auto object-contain"
             priority
           />
+          <span className="text-lg font-bold text-white tracking-tight">
+            Bullet<span className="text-blue-500">AI</span>
+          </span>
         </Link>
 
         <div className="flex items-center gap-6">

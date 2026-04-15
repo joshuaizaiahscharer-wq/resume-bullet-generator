@@ -30,7 +30,8 @@
       <div class="blog-nav-shell" id="blogNavShell">
         <nav class="blog-nav" id="blogNav">
           <a href="/" class="blog-logo" aria-label="BulletAI Home">
-            <img src="/BulletAI_v1.png" alt="BulletAI Logo" class="blog-logo-img" />
+            <img src="/favicon-32x32.png?v=2" alt="BulletAI" class="blog-logo-img" />
+            <span class="blog-logo-text">Bullet<span class="blog-logo-text-accent">AI</span></span>
           </a>
           <button class="blog-nav-toggle" id="blogNavToggle" aria-label="Toggle navigation">
             <span></span><span></span><span></span>
