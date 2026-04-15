@@ -35,6 +35,7 @@
     { "source": "/blog", "destination": "/api/index.js" },
     { "source": "/blog/(.*)", "destination": "/api/index.js" },
     { "source": "/jobs", "destination": "/api/index.js" },
+    { "source": "/about", "destination": "/api/index.js" },
     { "source": "/admin", "destination": "/api/index.js" },
     { "source": "/resume-template-builder", "destination": "/api/index.js" },
     { "source": "/resume-generator", "destination": "/api/index.js" },
