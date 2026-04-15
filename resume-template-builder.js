@@ -1159,6 +1159,108 @@ async function downloadResumeAsDocx() {
 }
 
 function initAuthModal() {
+  const modal = document.getElementById("authModal");
+  if (!modal) return;
+
+  document.getElementById("authModalClose")?.addEventListener("click", closeAuthModal);
+
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeAuthModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.hidden) closeAuthModal();
+  });
+
+  const emailInput = document.getElementById("authModalEmailInput");
+  const emailBtn = document.getElementById("authModalEmailBtn");
+  const statusEl = document.getElementById("authModalStatus");
+
+  emailInput?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") emailBtn?.click();
+  });
+
+  emailBtn?.addEventListener("click", async () => {
+    const client = getActiveAuthClient();
+    if (!client) {
+      if (statusEl) {
+        statusEl.className = "auth-modal-status";
+        statusEl.textContent = "Sign-in is unavailable right now. Please refresh and try again.";
+      }
+      return;
+    }
+
+    const email = normalizeEmail(emailInput?.value || "");
+    if (!email || !email.includes("@")) {
+      if (statusEl) statusEl.textContent = "Please enter a valid email address.";
+      return;
+    }
+
+    emailBtn.disabled = true;
+    if (statusEl) {
+      statusEl.textContent = "Sending…";
+      statusEl.className = "auth-modal-status";
+    }
+
+    try {
+      stashResumeBeforeAuthRedirect();
+      await client.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: getAuthReturnUrl() },
+      });
+      emailBtn.textContent = "Link sent ✓";
+      if (statusEl) {
+        statusEl.textContent = "Check your email for the sign-in link!";
+        statusEl.className = "auth-modal-status auth-modal-status--success";
+      }
+    } catch (_err) {
+      if (statusEl) {
+        statusEl.className = "auth-modal-status";
+        statusEl.textContent = "Something went wrong. Please try again.";
+      }
+      emailBtn.disabled = false;
+    }
+  });
+
+  document.getElementById("authModalGoogleBtn")?.addEventListener("click", async () => {
+    const client = getActiveAuthClient();
+    if (!client) {
+      if (statusEl) {
+        statusEl.className = "auth-modal-status";
+        statusEl.textContent = "Google sign-in is unavailable right now. Please refresh and try again.";
+      }
+      return;
+    }
+
+    try {
+      stashResumeBeforeAuthRedirect();
+      const currentPath = window.location.pathname + window.location.search;
+      const callbackUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(currentPath)}`;
+      const oauthResult = await client.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: callbackUrl },
+      });
+
+      const oauthUrl = oauthResult?.data?.url;
+      if (oauthUrl) {
+        window.location.assign(oauthUrl);
+        return;
+      }
+
+      if (statusEl) {
+        statusEl.className = "auth-modal-status";
+        statusEl.textContent = "Google sign-in failed to start. Please try again.";
+      }
+    } catch (err) {
+      const message = String(err?.message || "").toLowerCase();
+      if (statusEl) {
+        statusEl.className = "auth-modal-status";
+        statusEl.textContent = message.includes("provider is not enabled")
+          ? "Google sign-in is not enabled yet. Use email for now."
+          : "Google sign-in failed. Please try again.";
+      }
+    }
+  });
 }
 
 async function downloadResumeAsPdf() {
