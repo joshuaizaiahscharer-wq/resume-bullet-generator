@@ -6,7 +6,12 @@ const API_URL = "/api/generate";
 (function initHeroTyping() {
   const el = document.getElementById("heroTyped");
   if (!el) return;
-  const words = ["interviews.", "callbacks.", "offers.", "results."];
+  const words = [
+    "interview-winning bullet points",
+    "ATS-ready proof points",
+    "recruiter-grabbing results",
+    "stronger career stories",
+  ];
   let idx = 0;
 
   function cycle() {
