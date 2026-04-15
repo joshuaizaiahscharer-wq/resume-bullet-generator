@@ -3,10 +3,10 @@
 
   const NAV_LINKS = [
     { href: "/", label: "Home", key: "home" },
-    { href: "/about", label: "About", key: "about" },
-    { href: "/check-my-resume", label: "Check My Resume", key: "check-my-resume" },
     { href: "/blog", label: "Blog", key: "blog" },
     { href: "/resume-template-builder", label: "Resume Builder", key: "resume-builder" },
+    { href: "/check-my-resume", label: "Check My Resume", key: "check-my-resume" },
+    { href: "/about", label: "About", key: "about" },
   ];
 
   function inferActivePage(pathname) {
