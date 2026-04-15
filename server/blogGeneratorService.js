@@ -214,25 +214,51 @@ async function generateBlogPost(topic) {
   return { title, meta_description, content, keywords, slug };
 }
 
+function getMissingColumnName(error) {
+  const message = String(error?.message || "");
+  const patterns = [
+    /column ["']?([a-zA-Z0-9_]+)["']? does not exist/i,
+    /Could not find the ['"]([a-zA-Z0-9_]+)['"] column/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = message.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+
+  return null;
+}
+
 // ─── DB save ──────────────────────────────────────────────────────────────────
 
 async function saveBlogPost({ title, slug, content, meta_description, keywords }) {
-  const { data, error } = await supabase
-    .from("blog_posts")
-    .insert({
-      title,
-      slug,
-      content,
-      meta_description,
-      keywords,
-      is_published: true,
-      created_at: new Date().toISOString(),
-    })
-    .select("id, slug")
-    .single();
+  const payload = {
+    title,
+    slug,
+    content,
+    meta_description,
+    keywords,
+    is_published: true,
+    created_at: new Date().toISOString(),
+  };
 
-  if (error) throw new Error(`Supabase insert failed: ${error.message}`);
-  return data;
+  while (true) {
+    const { data, error } = await supabase
+      .from("blog_posts")
+      .insert(payload)
+      .select("id, slug")
+      .single();
+
+    if (!error) return data;
+
+    const missingColumn = getMissingColumnName(error);
+    if (missingColumn && Object.prototype.hasOwnProperty.call(payload, missingColumn)) {
+      delete payload[missingColumn];
+      continue;
+    }
+
+    throw new Error(`Supabase insert failed: ${error.message}`);
+  }
 }
 
 // ─── Main entry point ─────────────────────────────────────────────────────────
