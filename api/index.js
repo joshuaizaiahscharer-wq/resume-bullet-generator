@@ -665,6 +665,9 @@ app.get("/_vercel/insights/script.js", (_req, res) => {
   res.type("application/javascript").send("/* Vercel Analytics stub — not active outside Vercel */");
 });
 
+// Serve /public assets at root paths (e.g. /BulletAI_v1.png).
+app.use(express.static(path.join(process.cwd(), "public")));
+
 // Serve static frontend files from project root.
 app.use(express.static(path.join(process.cwd())));
 
