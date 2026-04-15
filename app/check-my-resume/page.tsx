@@ -32,9 +32,15 @@ const CATEGORIES: Array<{ key: keyof Breakdown; label: string }> = [
 ];
 
 function getLabelStyles(label: AnalysisResult["label"]) {
-  if (label === "Strong") return "text-blue-300 bg-blue-500/15 border-blue-400/35";
-  if (label === "Decent") return "text-amber-200 bg-amber-500/15 border-amber-400/35";
-  return "text-rose-200 bg-rose-500/15 border-rose-400/35";
+  if (label === "Strong") return "text-primary bg-primary/10 border-primary/30";
+  if (label === "Decent") return "text-amber-400 bg-amber-400/10 border-amber-400/30";
+  return "text-rose-400 bg-rose-400/10 border-rose-400/30";
+}
+
+function getScoreColor(value: number) {
+  if (value >= 80) return "bg-primary";
+  if (value >= 60) return "bg-amber-400";
+  return "bg-rose-400";
 }
 
 export default function CheckMyResumePage() {
@@ -118,139 +124,175 @@ export default function CheckMyResumePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl">
-      <header className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Check My Resume</h1>
-        <p className="mx-auto mt-2 max-w-2xl text-slate-300">
+    <div className="mx-auto w-full max-w-4xl space-y-8">
+      {/* Header */}
+      <header className="flex flex-col items-center text-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
+          Resume Analysis
+        </span>
+        <h1 className="mt-4 text-2xl font-bold tracking-tight text-foreground md:text-3xl lg:text-4xl">
+          Check My Resume
+        </h1>
+        <p className="mt-3 max-w-xl text-muted-foreground">
           Paste your resume and get a professional evaluation in seconds
         </p>
       </header>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-2xl backdrop-blur sm:p-8">
+      {/* Input Section */}
+      <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
         {!isPaid ? (
           <>
-            <div className="mt-1">
-              <label htmlFor="resumeInput" className="mb-2 block text-sm font-semibold text-slate-300">
-                Resume Input
-              </label>
-              <textarea
-                id="resumeInput"
-                value={resumeText}
-                onChange={(event) => setResumeText(event.target.value)}
-                placeholder="Paste your full resume here..."
-                className="h-72 w-full rounded-xl border border-slate-700 bg-black px-4 py-3 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
-              />
-            </div>
+            <label htmlFor="resumeInput" className="mb-3 block text-sm font-medium text-foreground">
+              Resume Content
+            </label>
+            <textarea
+              id="resumeInput"
+              value={resumeText}
+              onChange={(event) => setResumeText(event.target.value)}
+              placeholder="Paste your full resume here..."
+              className="min-h-[280px] w-full resize-none rounded-xl border border-border bg-input px-4 py-3 text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
 
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={handleAnalyzeResume}
                 disabled={!canAnalyze}
-                className="rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex min-h-[48px] items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {isLoading ? "Analyzing..." : "Analyze Resume"}
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    Analyzing...
+                  </span>
+                ) : (
+                  "Analyze Resume"
+                )}
               </button>
-              {error ? <p className="text-sm text-rose-300">{error}</p> : null}
+              {error && <p className="text-sm text-rose-400">{error}</p>}
             </div>
           </>
         ) : (
           <>
-            <h2 className="text-2xl font-semibold text-white">Your Optimized Resume</h2>
-            <p className="mt-2 text-slate-300">Your resume has been fully rewritten and optimized.</p>
+            <h2 className="text-xl font-bold text-foreground">Your Optimized Resume</h2>
+            <p className="mt-2 text-muted-foreground">Your resume has been fully rewritten and optimized.</p>
           </>
         )}
       </section>
 
-      {!isPaid && analysisResult ? (
-        <section className="mt-6 space-y-6">
-          <article className="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-xl">
-              <div className="flex flex-wrap items-center justify-between gap-4">
-                <h2 className="text-2xl font-semibold text-white">Resume Score</h2>
-                <span className={`rounded-full border px-4 py-1 text-sm font-bold ${getLabelStyles(analysisResult.label)}`}>
-                  {analysisResult.score}% ({analysisResult.label})
-                </span>
-              </div>
+      {/* Results Section */}
+      {!isPaid && analysisResult && (
+        <div className="space-y-6">
+          {/* Score Card */}
+          <article className="rounded-2xl border border-border bg-card p-5 md:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2 className="text-xl font-bold text-foreground">Resume Score</h2>
+              <span className={`rounded-full border px-4 py-1.5 text-sm font-bold ${getLabelStyles(analysisResult.label)}`}>
+                {analysisResult.score}% ({analysisResult.label})
+              </span>
+            </div>
 
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
-                {CATEGORIES.map(({ key, label }) => {
-                  const value = analysisResult.breakdown[key];
-                  return (
-                    <div key={key} className="rounded-xl border border-slate-800 bg-black/60 p-3">
-                      <div className="mb-2 flex items-center justify-between text-sm">
-                        <span className="font-medium text-slate-200">{label}</span>
-                        <span className="text-slate-400">{value}%</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-slate-800">
-                        <div
-                          className="h-2 rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-500"
-                          style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
-                        />
-                      </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {CATEGORIES.map(({ key, label }) => {
+                const value = analysisResult.breakdown[key];
+                return (
+                  <div key={key} className="rounded-xl border border-border bg-muted/30 p-4">
+                    <div className="mb-3 flex items-center justify-between text-sm">
+                      <span className="font-medium text-foreground">{label}</span>
+                      <span className="text-muted-foreground">{value}%</span>
                     </div>
-                  );
-                })}
-              </div>
-          </article>
-
-          <article className="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-xl">
-              <h3 className="text-xl font-semibold text-white">Top 3 Improvements</h3>
-              <div className="mt-4 grid gap-4 md:grid-cols-3">
-                {analysisResult.improvements.slice(0, 3).map((improvement, index) => (
-                  <div key={`${index}-${improvement.slice(0, 20)}`} className="rounded-xl border border-slate-800 bg-black/70 p-4">
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-300">
-                      Improvement {index + 1}
-                    </p>
-                    <p className="text-sm leading-6 text-slate-200">{improvement}</p>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-500 ${getScoreColor(value)}`}
+                        style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+                      />
+                    </div>
                   </div>
-                ))}
-              </div>
+                );
+              })}
+            </div>
           </article>
 
-          <article className="rounded-2xl border border-blue-500/30 bg-gradient-to-br from-slate-950 to-blue-950/30 p-6 shadow-xl sm:p-8">
-              <h3 className="text-2xl font-bold text-white">Fix My Resume</h3>
-              <p className="mt-2 text-slate-300">
-                Let BulletAI fully rewrite and optimize your resume for clarity, structure, and impact.
-              </p>
-              <ul className="mt-4 space-y-2 text-sm text-slate-200">
-                <li>Strong bullet points for every role</li>
-                <li>Improved structure and formatting</li>
-                <li>Professional summary rewrite</li>
-                <li>Clean, job-ready resume</li>
-              </ul>
-              <button
-                type="button"
-                onClick={handleFixResume}
-                disabled={!canFix}
-                className="mt-6 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition-all hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {isLoading ? "Optimizing Resume..." : "Fix My Resume ->"}
-              </button>
-              {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
+          {/* Improvements */}
+          <article className="rounded-2xl border border-border bg-card p-5 md:p-6">
+            <h3 className="text-lg font-bold text-foreground">Top Improvements</h3>
+            <div className="mt-4 grid gap-4 md:grid-cols-3">
+              {analysisResult.improvements.slice(0, 3).map((improvement, index) => (
+                <div key={`${index}-${improvement.slice(0, 20)}`} className="rounded-xl border border-border bg-muted/30 p-4">
+                  <span className="inline-flex rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                    #{index + 1}
+                  </span>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{improvement}</p>
+                </div>
+              ))}
+            </div>
           </article>
-        </section>
-      ) : null}
 
-      {isPaid ? (
-        <section className="mt-6">
-          <article className="rounded-2xl border border-blue-500/25 bg-blue-500/10 p-6 shadow-xl">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-2xl font-semibold text-white">Your Optimized Resume</h2>
-                <button
-                  type="button"
-                  onClick={handleCopyResume}
-                  className="rounded-lg border border-blue-400/40 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-200 transition-all hover:bg-blue-500/20"
-                >
-                  {copied ? "Copied!" : "Copy"}
-                </button>
-              </div>
-              <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-blue-400/20 bg-black/70 p-4 font-sans text-sm leading-6 text-slate-100">
-                {fixedResume}
-              </pre>
-              {error ? <p className="mt-3 text-sm text-rose-300">{error}</p> : null}
+          {/* Fix CTA */}
+          <article className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card p-6 md:p-8">
+            <h3 className="text-xl font-bold text-foreground md:text-2xl">Fix My Resume</h3>
+            <p className="mt-3 text-muted-foreground">
+              Let BulletAI fully rewrite and optimize your resume for clarity, structure, and impact.
+            </p>
+            <ul className="mt-5 space-y-2">
+              {["Strong bullet points for every role", "Improved structure and formatting", "Professional summary rewrite", "Clean, job-ready resume"].map((item) => (
+                <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <svg className="h-4 w-4 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={handleFixResume}
+              disabled={!canFix}
+              className="mt-6 flex min-h-[48px] items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isLoading ? "Optimizing Resume..." : "Fix My Resume"}
+            </button>
+            {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
           </article>
-        </section>
-      ) : null}
+        </div>
+      )}
+
+      {/* Fixed Resume Output */}
+      {isPaid && (
+        <article className="rounded-2xl border border-primary/20 bg-card p-5 md:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-bold text-foreground">Your Optimized Resume</h2>
+            <button
+              type="button"
+              onClick={handleCopyResume}
+              className="flex min-h-[44px] items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-all hover:bg-primary/20"
+            >
+              {copied ? (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy
+                </>
+              )}
+            </button>
+          </div>
+          <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-border bg-muted/30 p-4 font-sans text-sm leading-relaxed text-foreground">
+            {fixedResume}
+          </pre>
+          {error && <p className="mt-3 text-sm text-rose-400">{error}</p>}
+        </article>
+      )}
     </div>
   );
 }

@@ -58,9 +58,9 @@ const pages = [
 type PageSlug = (typeof pages)[number];
 
 type PageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
 function formatSlug(slug: string) {
@@ -86,12 +86,9 @@ function buildExampleBullets(slug: string): string[] {
     `Lowered operating costs by $9,500 annually by improving inventory usage, reducing waste, and negotiating supplier terms.`,
     `Boosted conversion rate by 16% through stronger discovery questions, objection handling, and tailored recommendations.`,
     `Coordinated cross-functional projects that delivered milestones 2 weeks early and improved delivery consistency by 27%.`,
-    `Maintained compliance at 100% across internal audits by enforcing documentation standards and process controls.`,
-    `Achieved a 28% increase in repeat business by elevating service quality and follow-up cadence.`,
-    `Managed high-volume operations during peak periods with zero critical incidents across 9 straight months.`,
   ];
 
-  return templates.slice(0, 12);
+  return templates;
 }
 
 function getTips(slug: string): string[] {
@@ -125,7 +122,9 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  if (!pages.includes(params.slug as PageSlug)) {
+  const { slug } = await params;
+  
+  if (!pages.includes(slug as PageSlug)) {
     return {
       title: "Page Not Found | MyResumeBullets",
       description: "The requested resume bullet example page could not be found.",
@@ -136,10 +135,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const formatted = params.slug.replace(/-/g, " ");
+  const formatted = slug.replace(/-/g, " ");
   const title = `Resume Bullet Examples for ${formatted}`;
   const description = `Generate strong resume bullet points for ${formatted} with real examples and metrics.`;
-  const url = `https://www.myresumebullets.com/resume-bullets/${params.slug}`;
+  const url = `https://www.myresumebullets.com/resume-bullets/${slug}`;
 
   return {
     title,
@@ -162,8 +161,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default function ResumeBulletsSlugPage({ params }: PageProps) {
-  const { slug } = params;
+export default async function ResumeBulletsSlugPage({ params }: PageProps) {
+  const { slug } = await params;
 
   if (!pages.includes(slug as PageSlug)) {
     notFound();
@@ -175,96 +174,102 @@ export default function ResumeBulletsSlugPage({ params }: PageProps) {
   const relatedSlugs = getRelatedSlugs(slug);
 
   return (
-    <main className="min-h-screen bg-black text-slate-100">
-      <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
-        <header className="mb-10 rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-lg backdrop-blur sm:p-8">
-          <p className="mb-3 inline-flex rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-300">
-            SEO Resume Guide
-          </p>
-          <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
-            Resume Bullet Examples for {formattedSlug}
-          </h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
-            Learn how to write strong, achievement-focused resume bullets for {formattedSlug}. Use these examples to
-            turn daily responsibilities into measurable results that improve ATS performance and help you get more
-            interviews.
-          </p>
-        </header>
+    <div className="mx-auto w-full max-w-5xl space-y-8">
+      {/* Header */}
+      <header className="flex flex-col items-center text-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-xs font-medium text-primary">
+          Resume Guide
+        </span>
+        <h1 className="mt-4 max-w-3xl text-balance text-2xl font-bold tracking-tight text-foreground md:text-3xl lg:text-4xl">
+          Resume Bullet Examples for {formattedSlug}
+        </h1>
+        <p className="mt-4 max-w-2xl text-pretty text-muted-foreground">
+          Learn how to write strong, achievement-focused resume bullets for {formattedSlug}. Use these examples to turn daily responsibilities into measurable results.
+        </p>
+      </header>
 
-        <section className="mb-10" aria-labelledby="example-bullets-heading">
-          <h2 id="example-bullets-heading" className="mb-4 text-2xl font-semibold text-white">
-            Example Resume Bullets for {formattedSlug}
-          </h2>
-          <ul className="grid gap-3 sm:gap-4" aria-label={`Resume bullet examples for ${formattedSlug}`}>
-            {bullets.map((bullet, index) => (
-              <li
-                key={`${slug}-bullet-${index}`}
-                className="rounded-xl border border-slate-800 bg-slate-950/70 p-4 text-sm leading-6 text-slate-200 shadow-sm sm:text-base"
-              >
-                {bullet}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="mb-10 rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-lg" aria-labelledby="tool-heading">
-          <h2 id="tool-heading" className="text-2xl font-semibold text-white">
-            Try the MyResumeBullets Generator
-          </h2>
-          <p className="mt-3 text-slate-300">
-            Paste your job title and create resume bullets with action verbs, metrics, and role-specific keywords in
-            seconds.
-          </p>
-          <form className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]" action="#" onSubmit={(e) => e.preventDefault()}>
-            <label htmlFor="jobTitle" className="sr-only">
-              Job title
-            </label>
-            <input
-              id="jobTitle"
-              type="text"
-              placeholder={`e.g. ${formattedSlug}`}
-              className="w-full rounded-xl border border-slate-700 bg-black px-4 py-3 text-slate-100 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-            />
-            <button
-              type="submit"
-              className="rounded-xl bg-blue-500 px-5 py-3 font-semibold text-white transition hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+      {/* Example Bullets */}
+      <section aria-labelledby="example-bullets-heading">
+        <h2 id="example-bullets-heading" className="text-xl font-bold text-foreground md:text-2xl">
+          Example Resume Bullets
+        </h2>
+        <ul className="mt-5 grid gap-3" aria-label={`Resume bullet examples for ${formattedSlug}`}>
+          {bullets.map((bullet, index) => (
+            <li
+              key={`${slug}-bullet-${index}`}
+              className="rounded-xl border border-border bg-card p-4 text-sm leading-relaxed text-muted-foreground transition-colors hover:border-primary/30 md:text-base"
             >
-              Generate Bullets
-            </button>
-          </form>
-        </section>
+              {bullet}
+            </li>
+          ))}
+        </ul>
+      </section>
 
-        <section className="mb-10" aria-labelledby="tips-heading">
-          <h2 id="tips-heading" className="mb-4 text-2xl font-semibold text-white">
-            Tips to Improve Resume Bullets
-          </h2>
-          <ul className="list-disc space-y-2 pl-6 text-slate-300">
-            {tips.map((tip, index) => (
-              <li key={`${slug}-tip-${index}`} className="leading-7">
-                {tip}
-              </li>
-            ))}
-          </ul>
-        </section>
+      {/* Generator Tool */}
+      <section className="rounded-2xl border border-border bg-card p-6 md:p-8" aria-labelledby="tool-heading">
+        <h2 id="tool-heading" className="text-xl font-bold text-foreground md:text-2xl">
+          Try the BulletAI Generator
+        </h2>
+        <p className="mt-3 text-muted-foreground">
+          Create resume bullets with action verbs, metrics, and role-specific keywords in seconds.
+        </p>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+          <label htmlFor="jobTitle" className="sr-only">
+            Job title
+          </label>
+          <input
+            id="jobTitle"
+            type="text"
+            placeholder={`e.g. ${formattedSlug}`}
+            className="flex-1 rounded-xl border border-border bg-input px-4 py-3 text-base text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          <Link
+            href="/resume-template-builder"
+            className="flex min-h-[48px] items-center justify-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:bg-primary/90"
+          >
+            Generate Bullets
+          </Link>
+        </div>
+      </section>
 
-        <nav aria-labelledby="related-pages-heading" className="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-lg">
-          <h2 id="related-pages-heading" className="mb-4 text-2xl font-semibold text-white">
-            Related Resume Bullet Pages
-          </h2>
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {relatedSlugs.map((relatedSlug) => (
-              <li key={relatedSlug}>
-                <Link
-                  href={`/resume-bullets/${relatedSlug}`}
-                  className="inline-flex text-blue-300 hover:text-blue-200 hover:underline"
-                >
-                  Resume Bullet Examples for {formatSlug(relatedSlug)}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-    </main>
+      {/* Tips */}
+      <section aria-labelledby="tips-heading">
+        <h2 id="tips-heading" className="text-xl font-bold text-foreground md:text-2xl">
+          Tips to Improve Your Bullets
+        </h2>
+        <ul className="mt-5 space-y-3">
+          {tips.map((tip, index) => (
+            <li key={`${slug}-tip-${index}`} className="flex items-start gap-3">
+              <svg className="mt-0.5 h-5 w-5 shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              <span className="text-muted-foreground">{tip}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Related Pages */}
+      <nav aria-labelledby="related-pages-heading" className="rounded-2xl border border-border bg-card p-6 md:p-8">
+        <h2 id="related-pages-heading" className="text-xl font-bold text-foreground md:text-2xl">
+          Related Resume Guides
+        </h2>
+        <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+          {relatedSlugs.map((relatedSlug) => (
+            <li key={relatedSlug}>
+              <Link
+                href={`/resume-bullets/${relatedSlug}`}
+                className="group flex items-center gap-2 text-muted-foreground transition-colors hover:text-primary"
+              >
+                <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                {formatSlug(relatedSlug)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
   );
 }
