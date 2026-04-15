@@ -140,6 +140,85 @@ body.landing-page {
   box-shadow: 0 0 34px rgba(255, 255, 255, 0.24);
 }
 
+.landing-keyword-optimizer-v0 {
+  margin-top: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  background: rgba(2, 6, 23, 0.55);
+  padding: 12px;
+}
+
+.landing-keyword-header-v0 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.landing-keyword-title-v0 {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  font-weight: 700;
+}
+
+.landing-keyword-btn-v0 {
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(30, 64, 175, 0.22);
+  color: #dbeafe;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.landing-keyword-status-v0 {
+  margin: 8px 0 0;
+  min-height: 1.2rem;
+  color: #bfdbfe;
+  font-size: 0.84rem;
+}
+
+.landing-keyword-results-v0 {
+  margin-top: 8px;
+}
+
+.landing-keyword-summary-v0 {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 0.84rem;
+}
+
+.landing-keyword-chips-v0 {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.landing-keyword-chip-v0 {
+  border: 1px solid #334155;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.landing-keyword-chip-v0.missing {
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #fecaca;
+  background: rgba(127, 29, 29, 0.24);
+}
+
+.landing-keyword-chip-v0.present {
+  border-color: rgba(96, 165, 250, 0.45);
+  color: #dbeafe;
+  background: rgba(30, 64, 175, 0.24);
+}
+
 .landing-chips-v0 {
   margin-top: 12px;
 }

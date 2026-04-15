@@ -46,6 +46,26 @@ const supportStatus  = document.getElementById("supportStatus");
 const supportBtn     = document.getElementById("supportSubmitBtn");
 const jobDescriptionInput = document.getElementById("jobDescriptionInput");
 const tailorHint = document.getElementById("tailorHint");
+const findLandingKeywordsBtn = document.getElementById("findLandingKeywordsBtn");
+const landingKeywordStatus = document.getElementById("landingKeywordStatus");
+const landingKeywordResults = document.getElementById("landingKeywordResults");
+const landingKeywordSummary = document.getElementById("landingKeywordSummary");
+const landingKeywordChips = document.getElementById("landingKeywordChips");
+
+const ROLE_KEYWORDS = {
+  "software engineer": ["python", "javascript", "api", "microservices", "git", "testing", "agile", "sql", "cloud", "debugging"],
+  "data analyst": ["sql", "excel", "tableau", "power bi", "dashboards", "kpi", "data cleaning", "etl", "reporting", "stakeholders"],
+  "product manager": ["roadmap", "prioritization", "user research", "kpi", "cross-functional", "backlog", "launch", "strategy", "a/b testing", "analytics"],
+  "project manager": ["scope", "timeline", "budget", "risk management", "stakeholder management", "agile", "scrum", "project planning", "delivery", "status reporting"],
+  "marketing manager": ["seo", "sem", "campaign", "conversion", "content strategy", "email marketing", "google analytics", "lead generation", "brand", "roi"],
+  "sales associate": ["customer engagement", "upselling", "cross-selling", "crm", "quota", "pipeline", "closing", "relationship building", "product knowledge", "follow-up"],
+  bartender: ["customer service", "mixology", "cash handling", "inventory", "pos", "compliance", "upselling", "teamwork", "high-volume", "sanitation"],
+  cashier: ["pos", "cash handling", "accuracy", "customer service", "returns", "transaction", "queue management", "reconciliation", "attention to detail", "loss prevention"],
+  nurse: ["patient care", "charting", "emr", "vital signs", "medication administration", "care coordination", "triage", "infection control", "documentation", "communication"],
+  teacher: ["curriculum", "classroom management", "lesson planning", "assessment", "student engagement", "differentiation", "parent communication", "data-driven instruction", "collaboration", "learning outcomes"],
+};
+
+const GENERIC_ROLE_KEYWORDS = ["results", "improved", "increased", "reduced", "collaborated", "led", "managed", "delivered", "optimized", "measurable"];
 
 let currentBullets = [];
 
@@ -94,6 +114,24 @@ if (jobDescriptionInput) {
     tailorHint.classList.add("hidden");
     tailorHint.textContent = "";
     tailorHint.classList.remove("success", "error");
+
+    if (jobTitleInput && jobTitleInput.value.trim()) {
+      renderLandingKeywords(jobTitleInput.value.trim());
+    }
+  });
+}
+
+if (findLandingKeywordsBtn) {
+  findLandingKeywordsBtn.addEventListener("click", () => {
+    const role = String(jobTitleInput?.value || "").trim();
+    if (!role) {
+      setLandingKeywordStatus("Enter a target role first to find keywords.", true);
+      landingKeywordResults?.classList.add("hidden");
+      return;
+    }
+
+    setLandingKeywordStatus(`Showing recruiter keywords for ${role}.`, false);
+    renderLandingKeywords(role);
   });
 }
 
@@ -113,6 +151,66 @@ function setActiveChip(activeChip) {
   chipsContainer.querySelectorAll(".chip").forEach((c) => {
     c.classList.toggle("active", c === activeChip);
   });
+}
+
+function normalizeKeywordText(text) {
+  return String(text || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s\-\/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getRoleKeywords(roleText) {
+  const normalizedRole = normalizeKeywordText(roleText);
+  if (!normalizedRole) return [];
+
+  const exact = ROLE_KEYWORDS[normalizedRole];
+  if (exact) return exact.slice();
+
+  const partial = Object.keys(ROLE_KEYWORDS).find((role) => {
+    return normalizedRole.includes(role) || role.includes(normalizedRole);
+  });
+
+  if (partial) return ROLE_KEYWORDS[partial].slice();
+  return GENERIC_ROLE_KEYWORDS.slice();
+}
+
+function setLandingKeywordStatus(message, isError) {
+  if (!landingKeywordStatus) return;
+  landingKeywordStatus.textContent = message;
+  landingKeywordStatus.classList.toggle("error", Boolean(isError));
+}
+
+function renderLandingKeywords(roleText) {
+  if (!landingKeywordResults || !landingKeywordSummary || !landingKeywordChips) return;
+
+  const roleKeywords = getRoleKeywords(roleText);
+  const sourceText = normalizeKeywordText(String(jobDescriptionInput?.value || ""));
+  const present = [];
+  const missing = [];
+
+  roleKeywords.forEach((keyword) => {
+    if (sourceText && sourceText.includes(normalizeKeywordText(keyword))) {
+      present.push(keyword);
+    } else {
+      missing.push(keyword);
+    }
+  });
+
+  landingKeywordChips.innerHTML = "";
+  missing.concat(present).forEach((keyword) => {
+    const chip = document.createElement("span");
+    chip.className = "landing-keyword-chip-v0 " + (missing.includes(keyword) ? "missing" : "present");
+    chip.textContent = keyword;
+    landingKeywordChips.appendChild(chip);
+  });
+
+  landingKeywordSummary.textContent = sourceText
+    ? `Matched ${present.length} of ${roleKeywords.length} role keywords. Add the red ones where they are accurate.`
+    : "Role keyword set ready. Paste resume content above to compare keyword coverage.";
+
+  landingKeywordResults.classList.remove("hidden");
 }
 
 // ─── Core logic ──────────────────────────────────────────────────────────────

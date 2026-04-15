@@ -72,6 +72,21 @@
             <h2>Resume details</h2>
             <p>Fill in your information, then click Generate Resume to create your locked preview.</p>
           </div>
+          <section class="builder-keyword-optimizer" id="builderKeywordOptimizer" aria-label="Role Keyword Search">
+            <div class="builder-keyword-header">
+              <h3>Role Keyword Search</h3>
+              <button id="builderFindKeywordsBtn" class="ghost-btn" type="button">Find Keywords</button>
+            </div>
+            <p class="builder-keyword-copy">Search recruiter keywords for your target role and compare them against your current resume draft.</p>
+            <div class="builder-keyword-controls">
+              <input id="builderTargetRoleInput" type="text" placeholder="e.g. Product Marketing Manager" aria-label="Target role" />
+            </div>
+            <p id="builderKeywordStatus" class="builder-keyword-status" aria-live="polite"></p>
+            <div id="builderKeywordResults" class="builder-keyword-results hidden">
+              <p id="builderKeywordSummary" class="builder-keyword-summary"></p>
+              <div id="builderKeywordChips" class="builder-keyword-chips"></div>
+            </div>
+          </section>
           <div id="resumeBuilderFormRoot"></div>
         </div>
       </section>

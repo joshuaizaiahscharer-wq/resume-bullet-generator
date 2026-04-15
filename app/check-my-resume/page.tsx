@@ -31,6 +31,41 @@ const CATEGORIES: Array<{ key: keyof Breakdown; label: string }> = [
   { key: "relevance", label: "Relevance" },
 ];
 
+const ROLE_KEYWORDS: Record<string, string[]> = {
+  "software engineer": ["python", "javascript", "api", "microservices", "git", "testing", "agile", "sql", "cloud", "debugging"],
+  "data analyst": ["sql", "excel", "tableau", "power bi", "dashboards", "kpi", "data cleaning", "etl", "reporting", "stakeholders"],
+  "product manager": ["roadmap", "prioritization", "user research", "kpi", "cross-functional", "backlog", "launch", "strategy", "a/b testing", "analytics"],
+  "project manager": ["scope", "timeline", "budget", "risk management", "stakeholder management", "agile", "scrum", "project planning", "delivery", "status reporting"],
+  "marketing manager": ["seo", "sem", "campaign", "conversion", "content strategy", "email marketing", "google analytics", "lead generation", "brand", "roi"],
+  "sales associate": ["customer engagement", "upselling", "cross-selling", "crm", "quota", "pipeline", "closing", "relationship building", "product knowledge", "follow-up"],
+  bartender: ["customer service", "mixology", "cash handling", "inventory", "pos", "compliance", "upselling", "teamwork", "high-volume", "sanitation"],
+  cashier: ["pos", "cash handling", "accuracy", "customer service", "returns", "transaction", "queue management", "reconciliation", "attention to detail", "loss prevention"],
+  nurse: ["patient care", "charting", "emr", "vital signs", "medication administration", "care coordination", "triage", "infection control", "documentation", "communication"],
+  teacher: ["curriculum", "classroom management", "lesson planning", "assessment", "student engagement", "differentiation", "parent communication", "data-driven instruction", "collaboration", "learning outcomes"],
+};
+
+const GENERIC_ROLE_KEYWORDS = ["results", "improved", "increased", "reduced", "collaborated", "led", "managed", "delivered", "optimized", "measurable"];
+
+function normalizeKeywordText(input: string) {
+  return input
+    .toLowerCase()
+    .replace(/[^a-z0-9\s\-\/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getRoleKeywords(roleText: string) {
+  const normalized = normalizeKeywordText(roleText);
+  if (!normalized) return [];
+
+  const exact = ROLE_KEYWORDS[normalized];
+  if (exact) return [...exact];
+
+  const partial = Object.keys(ROLE_KEYWORDS).find((role) => normalized.includes(role) || role.includes(normalized));
+  if (partial) return [...ROLE_KEYWORDS[partial]];
+  return [...GENERIC_ROLE_KEYWORDS];
+}
+
 function getLabelStyles(label: AnalysisResult["label"]) {
   if (label === "Strong") return "text-blue-300 bg-blue-500/15 border-blue-400/35";
   if (label === "Decent") return "text-amber-200 bg-amber-500/15 border-amber-400/35";
@@ -45,9 +80,44 @@ export default function CheckMyResumePage() {
   const [isPaid, setIsPaid] = useState(false);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [targetRole, setTargetRole] = useState("");
+  const [keywordStatus, setKeywordStatus] = useState("");
+  const [keywordSummary, setKeywordSummary] = useState("");
+  const [matchedKeywords, setMatchedKeywords] = useState<Array<{ keyword: string; present: boolean }>>([]);
 
   const canAnalyze = resumeText.trim().length > 0 && !isLoading && !isPaid;
   const canFix = Boolean(analysisResult) && !isLoading && !isPaid;
+
+  function handleFindKeywords() {
+    const role = targetRole.trim();
+    if (!role) {
+      setKeywordStatus("Enter a target role first to search keywords.");
+      setMatchedKeywords([]);
+      setKeywordSummary("");
+      return;
+    }
+
+    const roleKeywords = getRoleKeywords(role);
+    const sourceText = normalizeKeywordText(resumeText);
+
+    const nextKeywords = roleKeywords.map((keyword) => ({
+      keyword,
+      present: sourceText.includes(normalizeKeywordText(keyword)),
+    }));
+
+    const presentCount = nextKeywords.filter((item) => item.present).length;
+    setKeywordStatus(`Showing recruiter keywords for ${role}.`);
+    setKeywordSummary(
+      sourceText
+        ? `Matched ${presentCount} of ${roleKeywords.length} role keywords. Add missing keywords where accurate.`
+        : "Role keyword set ready. Paste your resume to compare keyword coverage."
+    );
+
+    setMatchedKeywords([
+      ...nextKeywords.filter((item) => !item.present),
+      ...nextKeywords.filter((item) => item.present),
+    ]);
+  }
 
   async function handleAnalyzeResume() {
     setError("");
@@ -129,6 +199,53 @@ export default function CheckMyResumePage() {
       <section className="rounded-2xl border border-slate-800 bg-slate-950/80 p-6 shadow-2xl backdrop-blur sm:p-8">
         {!isPaid ? (
           <>
+            <div className="mb-4 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-base font-semibold text-white">Role Keyword Search</h2>
+                <button
+                  type="button"
+                  onClick={handleFindKeywords}
+                  className="rounded-lg border border-blue-400/40 bg-blue-500/10 px-3 py-2 text-xs font-semibold text-blue-100 transition hover:bg-blue-500/20"
+                >
+                  Find Keywords
+                </button>
+              </div>
+              <p className="mt-2 text-sm text-blue-100/90">
+                Search recruiter keywords for your target role and compare against your resume content.
+              </p>
+              <input
+                type="text"
+                value={targetRole}
+                onChange={(event) => setTargetRole(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    handleFindKeywords();
+                  }
+                }}
+                placeholder="e.g. Data Analyst"
+                className="mt-3 w-full rounded-xl border border-slate-700 bg-black px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/25"
+              />
+              {keywordStatus ? <p className="mt-2 text-xs text-blue-200">{keywordStatus}</p> : null}
+              {keywordSummary ? <p className="mt-2 text-sm text-slate-200">{keywordSummary}</p> : null}
+              {matchedKeywords.length > 0 ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {matchedKeywords.map((item) => (
+                    <span
+                      key={`${item.keyword}-${item.present ? "present" : "missing"}`}
+                      className={`rounded-full border px-3 py-1 text-xs ${
+                        item.present
+                          ? "border-blue-400/40 bg-blue-500/15 text-blue-100"
+                          : "border-rose-400/40 bg-rose-500/15 text-rose-100"
+                      }`}
+                    >
+                      {item.keyword}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+
             <div className="mt-1">
               <label htmlFor="resumeInput" className="mb-2 block text-sm font-semibold text-slate-300">
                 Resume Input

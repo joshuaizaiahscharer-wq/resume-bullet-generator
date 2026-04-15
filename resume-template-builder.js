@@ -103,7 +103,28 @@ const elementRefs = {
   lineHeightValue: document.getElementById("lineHeightValue"),
   sectionGapSlider: document.getElementById("sectionGapSlider"),
   sectionGapValue: document.getElementById("sectionGapValue"),
+  builderTargetRoleInput: document.getElementById("builderTargetRoleInput"),
+  builderFindKeywordsBtn: document.getElementById("builderFindKeywordsBtn"),
+  builderKeywordStatus: document.getElementById("builderKeywordStatus"),
+  builderKeywordResults: document.getElementById("builderKeywordResults"),
+  builderKeywordSummary: document.getElementById("builderKeywordSummary"),
+  builderKeywordChips: document.getElementById("builderKeywordChips"),
 };
+
+const ROLE_KEYWORDS = {
+  "software engineer": ["python", "javascript", "api", "microservices", "git", "testing", "agile", "sql", "cloud", "debugging"],
+  "data analyst": ["sql", "excel", "tableau", "power bi", "dashboards", "kpi", "data cleaning", "etl", "reporting", "stakeholders"],
+  "product manager": ["roadmap", "prioritization", "user research", "kpi", "cross-functional", "backlog", "launch", "strategy", "a/b testing", "analytics"],
+  "project manager": ["scope", "timeline", "budget", "risk management", "stakeholder management", "agile", "scrum", "project planning", "delivery", "status reporting"],
+  "marketing manager": ["seo", "sem", "campaign", "conversion", "content strategy", "email marketing", "google analytics", "lead generation", "brand", "roi"],
+  "sales associate": ["customer engagement", "upselling", "cross-selling", "crm", "quota", "pipeline", "closing", "relationship building", "product knowledge", "follow-up"],
+  bartender: ["customer service", "mixology", "cash handling", "inventory", "pos", "compliance", "upselling", "teamwork", "high-volume", "sanitation"],
+  cashier: ["pos", "cash handling", "accuracy", "customer service", "returns", "transaction", "queue management", "reconciliation", "attention to detail", "loss prevention"],
+  nurse: ["patient care", "charting", "emr", "vital signs", "medication administration", "care coordination", "triage", "infection control", "documentation", "communication"],
+  teacher: ["curriculum", "classroom management", "lesson planning", "assessment", "student engagement", "differentiation", "parent communication", "data-driven instruction", "collaboration", "learning outcomes"],
+};
+
+const GENERIC_ROLE_KEYWORDS = ["results", "improved", "increased", "reduced", "collaborated", "led", "managed", "delivered", "optimized", "measurable"];
 
 let cloudAuthAvailable = false;
 const LOCAL_RESUME_KEY_PREFIX = "savedResume";
@@ -244,6 +265,104 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/\"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function normalizeKeywordText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s\-\/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getRoleKeywords(roleText) {
+  const normalizedRole = normalizeKeywordText(roleText);
+  if (!normalizedRole) return [];
+
+  const exact = ROLE_KEYWORDS[normalizedRole];
+  if (exact) return exact.slice();
+
+  const partial = Object.keys(ROLE_KEYWORDS).find((role) => {
+    return normalizedRole.includes(role) || role.includes(normalizedRole);
+  });
+
+  if (partial) return ROLE_KEYWORDS[partial].slice();
+  return GENERIC_ROLE_KEYWORDS.slice();
+}
+
+function buildResumeKeywordSourceText() {
+  const data = resumeBuilderState.formData || {};
+  const blocks = [
+    data.professionalSummary,
+    data.skills,
+    data.certifications,
+    (data.workExperience || [])
+      .map((item) => [item.role, item.company, item.details].filter(Boolean).join(" "))
+      .join(" "),
+    (data.projects || [])
+      .map((item) => [item.name, item.description].filter(Boolean).join(" "))
+      .join(" "),
+  ];
+
+  return normalizeKeywordText(blocks.join(" "));
+}
+
+function setBuilderKeywordStatus(message, isError) {
+  if (!elementRefs.builderKeywordStatus) return;
+  elementRefs.builderKeywordStatus.textContent = message || "";
+  elementRefs.builderKeywordStatus.classList.toggle("error", Boolean(isError));
+}
+
+function renderBuilderKeywordResults(roleText) {
+  const resultsEl = elementRefs.builderKeywordResults;
+  const summaryEl = elementRefs.builderKeywordSummary;
+  const chipsEl = elementRefs.builderKeywordChips;
+  if (!resultsEl || !summaryEl || !chipsEl) return;
+
+  const keywords = getRoleKeywords(roleText);
+  const sourceText = buildResumeKeywordSourceText();
+  const present = [];
+  const missing = [];
+
+  keywords.forEach((keyword) => {
+    if (sourceText && sourceText.includes(normalizeKeywordText(keyword))) {
+      present.push(keyword);
+    } else {
+      missing.push(keyword);
+    }
+  });
+
+  chipsEl.innerHTML = "";
+  missing.concat(present).forEach((keyword) => {
+    const chip = document.createElement("span");
+    chip.className = "builder-keyword-chip " + (missing.includes(keyword) ? "missing" : "present");
+    chip.textContent = keyword;
+    chipsEl.appendChild(chip);
+  });
+
+  summaryEl.textContent = sourceText
+    ? `Matched ${present.length} of ${keywords.length} role keywords. Add missing keywords where accurate.`
+    : "Role keyword set ready. Start filling your resume to see keyword coverage.";
+
+  resultsEl.classList.remove("hidden");
+}
+
+function handleBuilderKeywordSearch() {
+  const role = String(elementRefs.builderTargetRoleInput?.value || "").trim();
+  if (!role) {
+    setBuilderKeywordStatus("Enter a target role first to search keywords.", true);
+    elementRefs.builderKeywordResults?.classList.add("hidden");
+    return;
+  }
+
+  setBuilderKeywordStatus(`Showing recruiter keywords for ${role}.`, false);
+  renderBuilderKeywordResults(role);
+}
+
+function refreshBuilderKeywordResultsIfNeeded() {
+  const role = String(elementRefs.builderTargetRoleInput?.value || "").trim();
+  if (!role) return;
+  renderBuilderKeywordResults(role);
 }
 
 function normalizeEmail(value) {
@@ -1583,6 +1702,7 @@ function ResumeBuilderForm() {
       const value = getElementValue(target);
       updateFormDataByKey(key, value);
       scheduleLocalAutoSave();
+      refreshBuilderKeywordResultsIfNeeded();
 
       // Address autocomplete debounce
       if (target.hasAttribute("data-address-autocomplete")) {
@@ -2185,6 +2305,19 @@ function updateLockStateUi() {
 
 function bindGlobalEvents() {
   initAuthModal();
+
+  if (elementRefs.builderFindKeywordsBtn) {
+    elementRefs.builderFindKeywordsBtn.addEventListener("click", handleBuilderKeywordSearch);
+  }
+
+  if (elementRefs.builderTargetRoleInput) {
+    elementRefs.builderTargetRoleInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        handleBuilderKeywordSearch();
+      }
+    });
+  }
 
   if (elementRefs.downloadBtn) {
     elementRefs.downloadBtn.addEventListener("click", async () => {
