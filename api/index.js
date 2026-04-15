@@ -271,6 +271,38 @@ async function getAdminProfileByReplitSub(replitSub) {
   return data || null;
 }
 
+async function getAdminProfileByUserId(userId) {
+  if (!userId) return null;
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, is_admin")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[admin] Failed to load user profile by id:", error.message);
+    throw new Error("Failed to verify admin access.");
+  }
+
+  return data || null;
+}
+
+async function getSupabaseBearerUser(req) {
+  const authHeader = String(req.get("authorization") || "");
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+  const jwt = match?.[1];
+  if (!jwt) return null;
+
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser(jwt);
+    if (error || !user?.id) return null;
+    return user;
+  } catch (_err) {
+    return null;
+  }
+}
+
 function isAdminPasswordSession(req) {
   return req.session && req.session.adminPasswordAuth === true;
 }
@@ -279,12 +311,21 @@ async function requireAdminAccess(req, res, next) {
   if (isAdminPasswordSession(req)) {
     return next();
   }
+
   if (req.isAuthenticated && req.isAuthenticated()) {
     const replitSub = req.user && req.user.claims && req.user.claims.sub;
     const profile = await getAdminProfileByReplitSub(replitSub).catch(() => null);
     if (profile?.is_admin) return next();
     return res.status(403).json({ error: "Admin access required." });
   }
+
+  const bearerUser = await getSupabaseBearerUser(req);
+  if (bearerUser?.id) {
+    const profile = await getAdminProfileByUserId(bearerUser.id).catch(() => null);
+    if (profile?.is_admin) return next();
+    return res.status(403).json({ error: "Admin access required." });
+  }
+
   return res.status(401).json({ message: "Unauthorized" });
 }
 

@@ -309,10 +309,19 @@ export async function publishBlogPost({ title, content, image, imagePrompt, cust
 }
 
 export async function runAutomatedBlogGeneration() {
+  const supabase = await getSupabaseClient();
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token || "";
+
+  const headers = { "Content-Type": "application/json" };
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`;
+  }
+
   const response = await fetch("/api/admin/blog/generate-auto", {
     method: "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers,
   });
 
   const payload = await response.json().catch(() => ({}));
