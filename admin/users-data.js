@@ -308,6 +308,27 @@ export async function publishBlogPost({ title, content, image, imagePrompt, cust
   return result;
 }
 
+export async function runAutomatedBlogGeneration() {
+  const response = await fetch("/api/admin/blog/generate-auto", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload?.error || `Automation failed (${response.status}).`);
+  }
+
+  return {
+    ok: Boolean(payload?.success || payload?.ok),
+    id: payload?.id || null,
+    slug: payload?.slug || "",
+    title: payload?.title || "",
+    url: payload?.url || (payload?.slug ? `/blog/${payload.slug}` : ""),
+  };
+}
+
 async function updateCurrentUserPresence(user, isLoggedIn) {
   const supabase = await getSupabaseClient();
   const nowIso = new Date().toISOString();

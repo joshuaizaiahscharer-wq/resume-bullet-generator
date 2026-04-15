@@ -6,6 +6,7 @@ import {
   getOrCreateUserData,
   maybeTrackPaymentFromUrl,
   publishBlogPost,
+  runAutomatedBlogGeneration,
   subscribeToUsers,
   syncCurrentUserPresence,
   updateUserPayment,
@@ -23,6 +24,7 @@ const dashboardState = {
   currentUserId: null,
   blogDraft: null,
   blogLoading: false,
+  blogAutomationLoading: false,
 };
 
 function escapeHtml(value) {
@@ -98,6 +100,7 @@ function setBlogGeneratorStatus(message, tone = "neutral") {
 function syncBlogGeneratorUiState() {
   const generateBtn = document.getElementById("generateBlogBtn");
   const publishBtn = document.getElementById("publishBlogBtn");
+  const runAutoBtn = document.getElementById("runAutoBlogBtn");
 
   if (generateBtn) {
     generateBtn.disabled = dashboardState.blogLoading;
@@ -107,6 +110,11 @@ function syncBlogGeneratorUiState() {
   if (publishBtn) {
     publishBtn.disabled =
       dashboardState.blogLoading || !dashboardState.blogDraft?.title || !dashboardState.blogDraft?.content;
+  }
+
+  if (runAutoBtn) {
+    runAutoBtn.disabled = dashboardState.blogLoading || dashboardState.blogAutomationLoading;
+    runAutoBtn.textContent = dashboardState.blogAutomationLoading ? "Running Automation..." : "Run Automation Now";
   }
 }
 
@@ -220,6 +228,32 @@ async function handlePublishBlogPost() {
     showToast("Publish failed", "error");
   } finally {
     if (publishBtn) publishBtn.disabled = false;
+  }
+}
+
+async function handleRunAutoBlogGeneration() {
+  if (dashboardState.blogAutomationLoading) return;
+
+  dashboardState.blogAutomationLoading = true;
+  syncBlogGeneratorUiState();
+  setBlogGeneratorStatus("Running automated blog generation...", "neutral");
+
+  try {
+    const result = await runAutomatedBlogGeneration();
+    const title = result?.title ? `: ${result.title}` : "";
+    const url = result?.url || (result?.slug ? `/blog/${result.slug}` : "");
+    setBlogGeneratorStatus(
+      `Automation completed${title}${url ? ` (${url})` : ""}`,
+      "success"
+    );
+    showToast("Automation run completed", "success");
+  } catch (error) {
+    const message = String(error?.message || "Automation failed.");
+    setBlogGeneratorStatus(message, "error");
+    showToast("Automation failed", "error");
+  } finally {
+    dashboardState.blogAutomationLoading = false;
+    syncBlogGeneratorUiState();
   }
 }
 
@@ -426,6 +460,7 @@ function bindControls() {
 
   document.getElementById("generateBlogBtn")?.addEventListener("click", handleGenerateBlogPost);
   document.getElementById("publishBlogBtn")?.addEventListener("click", handlePublishBlogPost);
+  document.getElementById("runAutoBlogBtn")?.addEventListener("click", handleRunAutoBlogGeneration);
   syncBlogGeneratorUiState();
 }
 
