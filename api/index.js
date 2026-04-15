@@ -1172,7 +1172,7 @@ app.post("/api/support", async (req, res) => {
   }
 });
 
-// ─── POST /api/admin/password-login ──────────────────────────────────────────
+// ─── POST /api/admin/password-login ───────────────────────────��──────────────
 app.post("/api/admin/password-login", async (req, res) => {
   const { password } = req.body || {};
   const adminPassword = process.env.ADMIN_PASSWORD;
@@ -2238,37 +2238,103 @@ app.post("/api/download-optimized-resume", async (req, res) => {
 
 app.post("/api/stripe/checkout", async (req, res) => {
   try {
-    if (!STRIPE_CHECK_MY_RESUME_PRICE_ID) {
-      return res.status(500).json({
-        error: "STRIPE_CHECK_MY_RESUME_PRICE_ID is not configured.",
-      });
-    }
-
-    const stripe = getStripeClient();
-    const baseUrl =
-      String(process.env.NEXT_PUBLIC_BASE_URL || "").trim() ||
-      String(process.env.SITE_URL || "").trim() ||
-      `${req.protocol}://${req.get("host")}`;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
-          price: STRIPE_CHECK_MY_RESUME_PRICE_ID,
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        product: "check_my_resume",
-        product_id: STRIPE_CHECK_MY_RESUME_PRODUCT_ID,
-      },
-      success_url: `${baseUrl}/check-my-resume?paid=true`,
-      cancel_url: `${baseUrl}/check-my-resume`,
-    });
-
-    return res.status(200).json({ url: session.url });
+  const stripe = getStripeClient();
+  const baseUrl =
+  String(process.env.NEXT_PUBLIC_BASE_URL || "").trim() ||
+  String(process.env.SITE_URL || "").trim() ||
+  `${req.protocol}://${req.get("host")}`;
+  
+  // Support new pricing page products or fallback to check-my-resume flow
+  const { productId } = req.body || {};
+  
+  // Product configuration for landing page pricing
+  const LANDING_PRODUCTS = {
+  "one-time-resume": {
+  name: "One-Time Access",
+  description: "24-hour access to BulletAI resume optimization",
+  priceInCents: 999,
+  mode: "payment",
+  successUrl: `${baseUrl}/resume-template-builder?paid=true`,
+  cancelUrl: `${baseUrl}/#pricing`,
+  },
+  "monthly-subscription": {
+  name: "Monthly Pro",
+  description: "Monthly subscription to BulletAI Pro features",
+  priceInCents: 1999,
+  mode: "subscription",
+  successUrl: `${baseUrl}/resume-template-builder?paid=true`,
+  cancelUrl: `${baseUrl}/#pricing`,
+  },
+  "lifetime-access": {
+  name: "Lifetime Access",
+  description: "One-time payment for lifetime BulletAI access",
+  priceInCents: 4999,
+  mode: "payment",
+  successUrl: `${baseUrl}/resume-template-builder?paid=true`,
+  cancelUrl: `${baseUrl}/#pricing`,
+  },
+  };
+  
+  // If a landing page product is requested, use inline price_data
+  if (productId && LANDING_PRODUCTS[productId]) {
+  const product = LANDING_PRODUCTS[productId];
+  const isSubscription = product.mode === "subscription";
+  
+  const sessionConfig = {
+  mode: product.mode,
+  line_items: [
+  {
+  price_data: {
+  currency: "usd",
+  product_data: {
+  name: product.name,
+  description: product.description,
+  },
+  unit_amount: product.priceInCents,
+  ...(isSubscription && {
+  recurring: { interval: "month" },
+  }),
+  },
+  quantity: 1,
+  },
+  ],
+  metadata: {
+  product: productId,
+  },
+  success_url: product.successUrl,
+  cancel_url: product.cancelUrl,
+  };
+  
+  const session = await stripe.checkout.sessions.create(sessionConfig);
+  return res.status(200).json({ url: session.url });
+  }
+  
+  // Default: check-my-resume checkout (legacy flow)
+  if (!STRIPE_CHECK_MY_RESUME_PRICE_ID) {
+  return res.status(500).json({
+  error: "STRIPE_CHECK_MY_RESUME_PRICE_ID is not configured.",
+  });
+  }
+  
+  const session = await stripe.checkout.sessions.create({
+  mode: "payment",
+  line_items: [
+  {
+  price: STRIPE_CHECK_MY_RESUME_PRICE_ID,
+  quantity: 1,
+  },
+  ],
+  metadata: {
+  product: "check_my_resume",
+  product_id: STRIPE_CHECK_MY_RESUME_PRODUCT_ID,
+  },
+  success_url: `${baseUrl}/check-my-resume?paid=true`,
+  cancel_url: `${baseUrl}/check-my-resume`,
+  });
+  
+  return res.status(200).json({ url: session.url });
   } catch (error) {
-    console.error("/api/stripe/checkout error", error);
+  console.error("/api/stripe/checkout error", error);
     return res.status(500).json({ error: "Failed to create checkout session." });
   }
 });

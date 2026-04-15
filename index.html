@@ -3,27 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Generate powerful resume bullet points instantly with AI. Improve your resume and get more interviews today." />
+    <meta name="description" content="Turn your resume into powerful bullet points instantly with BulletAI. AI-powered, ATS-optimized, and ready in seconds." />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="AI Resume Bullet Generator | Improve Your Resume Fast" />
-    <meta property="og:description" content="Generate powerful resume bullet points instantly with AI. Improve your resume and get more interviews today." />
+    <meta property="og:title" content="BulletAI - Turn Your Resume Into Powerful Bullet Points Instantly" />
+    <meta property="og:description" content="Transform your resume with AI-powered bullet points. ATS-optimized, professionally crafted, and ready in seconds." />
     <meta property="og:url" content="https://www.myresumebullets.com/" />
     <meta property="og:image" content="https://www.myresumebullets.com/favicon-512x512.png?v=1" />
     <link rel="canonical" href="https://www.myresumebullets.com/" />
     <meta name="google-site-verification" content="VEIGdEbFNNwkV64kj97Igmt_5KO8trlNUXJtaIqVAw0" />
-    <title>AI Resume Bullet Generator | Improve Your Resume Fast</title>
+    <title>BulletAI - Turn Your Resume Into Powerful Bullet Points Instantly</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="icon" href="/new_favcon.ico?v=1" />
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=1" />
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon-512x512.png?v=1" />
     <link rel="shortcut icon" href="/new_favcon.ico?v=1" />
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon-180x180.png?v=1" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="theme-color" content="#030712" />
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -32,417 +29,338 @@
         "url": "https://www.myresumebullets.com"
       }
     </script>
-    <link rel="stylesheet" href="/blog.css" />
-    <link rel="stylesheet" href="style.css" />
-    <link rel="stylesheet" href="/auth.css" />
+    <link rel="stylesheet" href="/landing.css" />
   </head>
   <body>
-    <site-navbar active-page="home"></site-navbar>
-
-    <!-- Hero -->
-    <header class="hero">
-      <span class="badge">✦ Powered by GPT</span>
-      <h1>AI Resume Bullet Generator That Gets You Interviews</h1>
-      <p class="hero-sub">
-        Turn basic job experience into powerful, results-driven resume bullet points in seconds.
-      </p>
-      <div class="hero-trust">
-        <span class="trust-item">✓ Optimized for ATS systems</span>
-        <span class="trust-sep">·</span>
-        <span class="trust-item">✓ Designed to impress recruiters</span>
-        <span class="trust-sep">·</span>
-        <span class="trust-item">✓ Built for students, job seekers, and professionals</span>
-      </div>
-      <p class="hero-sub">Used by 1,000+ job seekers</p>
-    </header>
-
-    <!-- Stats bar -->
-    <div class="stats-bar" aria-label="Key stats">
-      <div class="stat-item">
-        <span class="stat-number">50k<span class="stat-plus">+</span></span>
-        <span class="stat-label">Resumes improved</span>
-      </div>
-      <div class="stat-divider" aria-hidden="true"></div>
-      <div class="stat-item">
-        <span class="stat-number">10</span>
-        <span class="stat-label">Bullets per job</span>
-      </div>
-      <div class="stat-divider" aria-hidden="true"></div>
-      <div class="stat-item">
-        <span class="stat-number">~15s</span>
-        <span class="stat-label">Generation time</span>
-      </div>
-      <div class="stat-divider" aria-hidden="true"></div>
-      <div class="stat-item">
-        <span class="stat-number">500<span class="stat-plus">+</span></span>
-        <span class="stat-label">Job titles supported</span>
-      </div>
-    </div>
-
-    <!-- Card -->
-    <main class="main">
-      <div class="card">
-        <label class="input-label" for="jobTitle">Job Title</label>
-        <label class="input-label" for="jobDescriptionInput">Paste Job Description (Optional)</label>
-        <textarea
-          id="jobDescriptionInput"
-          class="jd-textarea"
-          placeholder="Paste a job posting to tailor your resume bullets..."
-          aria-label="Paste Job Description (Optional)"
-        ></textarea>
-        <p id="tailorHint" class="optimizer-status hidden" aria-live="polite"></p>
-
-        <div class="input-group">
-          <input
-            type="text"
-            id="jobTitle"
-            placeholder="e.g. Bartender, Software Engineer, Project Manager"
-            aria-label="Job title"
-            autocomplete="off"
-          />
-          <button id="generateBtn">
-            <span class="btn-text">Generate My Resume Bullets</span>
-            <span class="btn-arrow">→</span>
-          </button>
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="navbar-inner">
+        <div class="navbar-left">
+          <a href="/" class="logo">
+            <img src="/new_favcon.ico?v=1" alt="BulletAI" class="logo-icon" />
+            <span class="logo-text">Bullet<span class="logo-accent">AI</span></span>
+          </a>
+          <div class="nav-links">
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#pricing" class="nav-link">Pricing</a>
+            <a href="/blog" class="nav-link">Blog</a>
+          </div>
         </div>
-
-        <!-- Quick-pick chips -->
-        <div class="chips" id="chips" aria-label="Quick-pick job titles">
-          <button class="chip" type="button">Software Engineer</button>
-          <button class="chip" type="button">Product Manager</button>
-          <button class="chip" type="button">Data Analyst</button>
-          <button class="chip" type="button">Marketing Manager</button>
-          <button class="chip" type="button">Bartender</button>
-          <button class="chip" type="button">Cashier</button>
-          <button class="chip" type="button">Nurse</button>
-          <button class="chip" type="button">Teacher</button>
+        <div class="navbar-right">
+          <a href="/resume-template-builder" class="btn btn-primary">Get Started</a>
         </div>
+      </div>
+    </nav>
 
-        <div id="status" class="status hidden" aria-live="polite"></div>
+    <main>
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="hero-bg-effects">
+          <div class="hero-glow"></div>
+          <div class="hero-grid"></div>
+        </div>
+        <div class="hero-content">
+          <div class="badge">
+            <svg class="badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+              <path d="M5 19l1 3 3-1-1-3-3 1z"/>
+              <path d="M19 19l-1 3-3-1 1-3 3 1z"/>
+            </svg>
+            <span>AI-Powered Resume Optimization</span>
+          </div>
+          <h1 class="hero-title">
+            Turn your resume into <span class="text-gradient">powerful bullet points</span> instantly
+          </h1>
+          <p class="hero-subtitle">
+            Transform basic job descriptions into compelling, results-driven statements that get you interviews. ATS-optimized and recruiter-approved.
+          </p>
 
-        <section id="resultsSection" class="results hidden" aria-live="polite">
-          <div class="results-header">
-            <h2 id="resultsHeading">Bullet Points</h2>
-            <div class="results-actions">
-              <button id="regenerateBtn" class="icon-btn" title="Regenerate">↻ Regenerate</button>
-              <button id="copyBtn" class="copy-btn">Copy All</button>
+          <!-- Input Box -->
+          <div class="hero-input-wrapper">
+            <div class="hero-input-card">
+              <textarea id="resumeInput" class="hero-textarea" placeholder="Paste your resume or job experience here..."></textarea>
+              <div class="hero-input-footer">
+                <p class="input-hint">Supports full resume text, job descriptions, or bullet points</p>
+                <button id="generateBtn" class="btn btn-primary btn-generate" disabled>
+                  Generate Bullets
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
 
-          <ul id="bulletList"></ul>
-        </section>
+          <!-- Trust Indicators -->
+          <div class="trust-indicators">
+            <div class="trust-item">
+              <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 13l4 4L19 7"/>
+              </svg>
+              <span>No credit card required</span>
+            </div>
+            <div class="trust-item">
+              <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 13l4 4L19 7"/>
+              </svg>
+              <span>ATS-optimized output</span>
+            </div>
+            <div class="trust-item">
+              <svg class="trust-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M5 13l4 4L19 7"/>
+              </svg>
+              <span>Results in seconds</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      </div>
+      <!-- Features Section -->
+      <section id="features" class="features">
+        <div class="section-container">
+          <div class="section-header">
+            <h2 class="section-title">Everything you need to <span class="text-primary">stand out</span></h2>
+            <p class="section-subtitle">Built with the latest AI technology and resume best practices to help you land more interviews.</p>
+          </div>
+          <div class="features-grid">
+            <article class="feature-card">
+              <div class="feature-icon-wrapper">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/>
+                </svg>
+              </div>
+              <h3 class="feature-title">AI-Powered Writing</h3>
+              <p class="feature-desc">Advanced AI transforms your experience into compelling, professional bullet points that showcase your achievements.</p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon-wrapper">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+              <h3 class="feature-title">ATS-Optimized</h3>
+              <p class="feature-desc">Every bullet point is crafted to pass Applicant Tracking Systems with optimized keywords and formatting.</p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon-wrapper">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                </svg>
+              </div>
+              <h3 class="feature-title">Lightning Fast</h3>
+              <p class="feature-desc">Generate professionally written resume bullets in seconds, not hours. Save time on your job search.</p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon-wrapper">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="6"/>
+                  <circle cx="12" cy="12" r="2"/>
+                </svg>
+              </div>
+              <h3 class="feature-title">Role-Specific</h3>
+              <p class="feature-desc">Tailored suggestions based on your target industry and job title for maximum relevance.</p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon-wrapper">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <h3 class="feature-title">Multiple Formats</h3>
+              <p class="feature-desc">Export your optimized resume in PDF, DOCX, or plain text. Ready for any application portal.</p>
+            </article>
+            <article class="feature-card">
+              <div class="feature-icon-wrapper">
+                <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+              </div>
+              <h3 class="feature-title">Instant Improvements</h3>
+              <p class="feature-desc">See before and after comparisons of your bullets with clear impact metrics and action verbs.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Pricing Section -->
+      <section id="pricing" class="pricing">
+        <div class="pricing-bg-effect"></div>
+        <div class="section-container">
+          <div class="section-header">
+            <h2 class="section-title">Simple, transparent pricing</h2>
+            <p class="section-subtitle">Choose the plan that works best for your job search. No hidden fees.</p>
+          </div>
+          <div class="pricing-grid">
+            <!-- One-Time Access -->
+            <article class="pricing-card">
+              <div class="pricing-header">
+                <h3 class="pricing-name">One-Time Access</h3>
+                <p class="pricing-desc">Perfect for a single job application push</p>
+              </div>
+              <div class="pricing-price">
+                <span class="price-amount">$9.99</span>
+              </div>
+              <ul class="pricing-features">
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Generate unlimited bullet points</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Download optimized resume</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>ATS-friendly formatting</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>24-hour access</span>
+                </li>
+              </ul>
+              <button class="btn btn-secondary btn-pricing" data-product="one-time-resume">Get Started</button>
+            </article>
+
+            <!-- Monthly Pro (Popular) -->
+            <article class="pricing-card pricing-card--popular">
+              <div class="popular-badge">Most Popular</div>
+              <div class="pricing-header">
+                <h3 class="pricing-name">Monthly Pro</h3>
+                <p class="pricing-desc">Best for active job seekers</p>
+              </div>
+              <div class="pricing-price">
+                <span class="price-amount">$19.99</span>
+                <span class="price-period">/mo</span>
+              </div>
+              <ul class="pricing-features">
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Unlimited bullet generation</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Priority AI processing</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Resume templates library</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Export to PDF & DOCX</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Cancel anytime</span>
+                </li>
+              </ul>
+              <button class="btn btn-primary btn-pricing" data-product="monthly-subscription">Get Started</button>
+            </article>
+
+            <!-- Lifetime Access -->
+            <article class="pricing-card">
+              <div class="pricing-header">
+                <h3 class="pricing-name">Lifetime Access</h3>
+                <p class="pricing-desc">One payment, forever access</p>
+              </div>
+              <div class="pricing-price">
+                <span class="price-amount">$49.99</span>
+              </div>
+              <ul class="pricing-features">
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Everything in Monthly Pro</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Lifetime updates</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Early access to new features</span>
+                </li>
+                <li class="pricing-feature">
+                  <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>
+                  <span>Priority support</span>
+                </li>
+              </ul>
+              <button class="btn btn-secondary btn-pricing" data-product="lifetime-access">Get Started</button>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- CTA Section -->
+      <section class="cta">
+        <div class="section-container">
+          <div class="cta-card">
+            <div class="cta-glow cta-glow--top"></div>
+            <div class="cta-glow cta-glow--bottom"></div>
+            <div class="cta-content">
+              <h2 class="cta-title">Ready to transform your resume?</h2>
+              <p class="cta-subtitle">Join thousands of job seekers who have improved their resumes and landed more interviews with BulletAI.</p>
+              <div class="cta-buttons">
+                <a href="/resume-template-builder" class="btn btn-primary">
+                  Start Free Trial
+                  <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </a>
+                <a href="#pricing" class="btn btn-secondary">View Pricing</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
-
-    <!-- How it works -->
-    <section class="how-it-works" id="how-it-works" aria-labelledby="hiw-heading">
-      <div class="section-header">
-        <p class="section-eyebrow">Simple process</p>
-        <h2 class="section-title" id="hiw-heading">How it works</h2>
-        <p class="section-desc">Three steps from raw experience to recruiter-ready output.</p>
-      </div>
-      <div class="steps-grid">
-        <div class="step-card">
-          <div class="step-num-wrap"><span class="step-num">1</span></div>
-          <h3 class="step-title">Enter Your Experience</h3>
-          <p class="step-desc">Add your role, achievements, or a target job description so the AI resume bullet generator has context to work from.</p>
-        </div>
-        <div class="step-connector" aria-hidden="true">→</div>
-        <div class="step-card">
-          <div class="step-num-wrap"><span class="step-num">2</span></div>
-          <h3 class="step-title">Let AI Improve It</h3>
-          <p class="step-desc">The engine rewrites weak lines into stronger resume bullet examples with action verbs, metrics, and clearer impact.</p>
-        </div>
-        <div class="step-connector" aria-hidden="true">→</div>
-        <div class="step-card">
-          <div class="step-num-wrap"><span class="step-num">3</span></div>
-          <h3 class="step-title">Copy &amp; Use Instantly</h3>
-          <p class="step-desc">Copy your best options and paste directly into your resume. Then tailor for each role to increase interview conversion.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="features-section" aria-labelledby="what-is-ai-generator-heading">
-      <div class="section-header">
-        <p class="section-eyebrow">Core SEO Content</p>
-        <h2 class="section-title" id="what-is-ai-generator-heading">What is an AI resume bullet generator?</h2>
-      </div>
-      <div class="footer-inner">
-        <p class="footer-copy">
-          An AI resume bullet generator is a writing assistant that transforms plain job duties into stronger, measurable achievement statements.
-          Most candidates describe work in broad terms like helped, managed, or responsible for, but recruiters evaluate outcomes, ownership,
-          and relevance. This tool takes your existing experience and rewrites it in a clearer, higher-impact format so your value is easier to scan.
-        </p>
-        <p class="footer-copy">
-          In real hiring workflows, your resume is usually reviewed in stages: first by ATS resume screening, then by quick recruiter scans,
-          then by deeper human review for shortlisted profiles. If your bullets are vague, repetitive, or missing role-specific language, your
-          application can stall before interviews begin. A strong AI resume bullet generator helps bridge that gap by producing polished drafts
-          that align with role expectations and keyword intent.
-        </p>
-        <p class="footer-copy">
-          The goal is not robotic wording. The goal is clarity. High-performing resume bullet examples combine action, context, and results
-          in one line. For example, instead of saying you helped a team, you can show scope, quality, and performance outcomes. This makes
-          your resume easier to trust and easier to compare against job requirements.
-        </p>
-      </div>
-    </section>
-
-    <section class="features-section" aria-labelledby="why-bullets-matter-heading">
-      <div class="section-header">
-        <h2 class="section-title" id="why-bullets-matter-heading">Why resume bullets matter</h2>
-      </div>
-      <div class="footer-inner">
-        <p class="footer-copy">
-          Resume bullets are the most important proof points on your resume. Titles and companies provide context, but bullets communicate
-          contribution. When recruiters compare candidates, they look for evidence of results. Strong bullets tell them what changed because
-          you were there. Weak bullets list tasks anyone in the role might perform.
-        </p>
-        <p class="footer-copy">
-          This matters for indexing and matching too. ATS resume systems evaluate keyword relevance and section clarity. Human recruiters then
-          review for impact and fit. If your bullets are dense, generic, or not aligned to the target role, even a strong background can be
-          overlooked. Clear writing improves both machine interpretation and human trust.
-        </p>
-        <p class="footer-copy">
-          Better bullets also improve interview performance. The same lines you submit become your talking points in calls and panels.
-          When bullets are specific and measurable, your stories are easier to explain and defend. That creates stronger interview answers,
-          better confidence, and higher conversion from applications to offers.
-        </p>
-      </div>
-    </section>
-
-    <!-- Features -->
-    <section class="features-section" aria-labelledby="features-heading">
-      <div class="section-header">
-        <p class="section-eyebrow">Why BulletAI</p>
-        <h2 class="section-title" id="features-heading">Built for real job seekers</h2>
-        <p class="section-desc">Every bullet is engineered to pass ATS filters and impress hiring managers.</p>
-      </div>
-      <div class="features-grid">
-        <div class="feature-card">
-          <span class="feature-icon" aria-hidden="true">⚡</span>
-          <h3 class="feature-title">Action-verb led</h3>
-          <p class="feature-desc">Every bullet opens with a powerful action verb — the #1 best practice recommended by career coaches and recruiters.</p>
-        </div>
-        <div class="feature-card">
-          <span class="feature-icon" aria-hidden="true">📊</span>
-          <h3 class="feature-title">Quantified results</h3>
-          <p class="feature-desc">Bullets include realistic metrics and outcomes that show impact, not just responsibilities.</p>
-        </div>
-        <div class="feature-card">
-          <span class="feature-icon" aria-hidden="true">🎯</span>
-          <h3 class="feature-title">ATS-optimized</h3>
-          <p class="feature-desc">Industry-relevant keywords help your resume sail through automated screening systems and reach human eyes.</p>
-        </div>
-        <div class="feature-card">
-          <span class="feature-icon" aria-hidden="true">🔁</span>
-          <h3 class="feature-title">Infinite variations</h3>
-          <p class="feature-desc">Hit Regenerate for a fresh set of bullets any time. Never submit the same resume twice.</p>
-        </div>
-        <div class="feature-card">
-          <span class="feature-icon" aria-hidden="true">🌍</span>
-          <h3 class="feature-title">Every industry</h3>
-          <p class="feature-desc">Works for any role from entry-level to executive across tech, healthcare, retail, and hundreds of other sectors.</p>
-        </div>
-        <div class="feature-card">
-          <span class="feature-icon" aria-hidden="true">🔒</span>
-          <h3 class="feature-title">No sign-up needed</h3>
-          <p class="feature-desc">Fully free, no account, no email, no credit card. Open the page and start generating immediately.</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- Before / After example -->
-    <section class="before-after-section" aria-labelledby="ba-heading">
-      <div class="section-header">
-        <p class="section-eyebrow">See the difference</p>
-        <h2 class="section-title" id="ba-heading">Weak vs. strong resume bullet</h2>
-        <p class="section-desc">This is the kind of upgrade BulletAI produces for every job title.</p>
-      </div>
-      <div class="ba-grid">
-        <div class="ba-card ba-card--before">
-          <p class="ba-label">❌ Before</p>
-          <p class="ba-text">Responsible for helping customers and processing transactions at the register.</p>
-        </div>
-        <div class="ba-arrow" aria-hidden="true">→</div>
-        <div class="ba-card ba-card--after">
-          <p class="ba-label">✅ After</p>
-          <p class="ba-text">Processed 200+ daily transactions with 99.8% accuracy, reducing checkout wait times by 20% during peak hours.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="features-section" aria-labelledby="tool-content-heading">
-      <div class="section-header">
-        <h2 class="section-title" id="tool-content-heading">What this tool does</h2>
-        <p class="section-desc">A practical guide for writing better resume bullets with AI support.</p>
-      </div>
-      <div class="footer-inner">
-        <h3>How to write strong resume bullets</h3>
-        <p class="footer-copy">
-          Start each bullet with a direct action verb such as built, improved, led, launched, reduced, or optimized.
-          Then add context about what you worked on and finish with the outcome. This simple structure creates readable,
-          high-impact bullets that work for ATS resume screening and human reviewers.
-        </p>
-        <p class="footer-copy">
-          Use measurable details whenever possible. Metrics do not need to be perfect to be useful. You can reference team size,
-          customer volume, timeline compression, quality scores, revenue impact, or efficiency gains. Concrete details make your
-          claims easier to trust and easier for recruiters to compare.
-        </p>
-        <h3>Examples of strong vs weak bullets</h3>
-        <ul class="example-bullets">
-          <li><strong>Weak:</strong> Helped with onboarding new hires.</li>
-          <li><strong>Strong:</strong> Built onboarding checklist and training flow for 12 new hires, reducing ramp-up time by 2 weeks.</li>
-          <li><strong>Weak:</strong> Worked on reports for leadership.</li>
-          <li><strong>Strong:</strong> Automated weekly performance dashboard for leadership, cutting manual reporting time by 35%.</li>
-          <li><strong>Weak:</strong> Supported customer requests.</li>
-          <li><strong>Strong:</strong> Resolved 40+ daily customer requests while maintaining a 96% satisfaction rating.</li>
-        </ul>
-        <h3>Why recruiters care about bullet points</h3>
-        <p class="footer-copy">
-          Recruiters scan quickly and prioritize evidence. Bullet points are where that evidence lives. Strong bullets show scope,
-          ownership, and outcomes in a format that is easy to review in seconds. They also reveal communication quality, which matters
-          across nearly every role.
-        </p>
-        <p class="footer-copy">
-          If your bullets are generic, recruiters may assume your impact was limited even if your real work was strong.
-          That is why resume tips focused on bullet quality consistently improve interview rates. Use this AI resume bullet generator
-          to speed up drafts, then tailor each result for role fit. Personalized, specific bullets outperform generic templates.
-        </p>
-      </div>
-    </section>
-
-    <section class="explore-more" aria-labelledby="tool-cta-heading">
-      <div class="explore-more-inner">
-        <h2 id="tool-cta-heading">Improve your resume instantly with AI → Try the tool</h2>
-        <p>Need advanced formatting and exports? Build your polished final resume in our full builder.</p>
-        <a href="/resume-template-builder" class="explore-more-link">Open Resume Tool &rarr;</a>
-      </div>
-    </section>
-
-    <!-- Popular Job Pages -->
-    <section class="job-links" aria-labelledby="popular-jobs-heading">
-      <p class="input-label" id="popular-jobs-heading">Popular job pages</p>
-      <div class="job-links-grid">
-        <a href="/resume-bullet-points-for-bartender">Bartender</a>
-        <a href="/resume-bullet-points-for-cashier">Cashier</a>
-        <a href="/resume-bullet-points-for-sales-associate">Sales Associate</a>
-        <a href="/jobs">View all jobs &rarr;</a>
-      </div>
-    </section>
-
-    <!-- FAQ -->
-    <section class="faq-section" id="faq" aria-labelledby="faq-heading">
-      <div class="section-header">
-        <p class="section-eyebrow">Got questions?</p>
-        <h2 class="section-title" id="faq-heading">Frequently asked questions</h2>
-      </div>
-      <div class="faq-list">
-        <details class="faq-item">
-          <summary class="faq-question">Is BulletAI really free?</summary>
-          <p class="faq-answer">Yes — 100% free. No account, no credit card, no hidden fees. Just open the page and generate.</p>
-        </details>
-        <details class="faq-item">
-          <summary class="faq-question">How many bullet points do I get?</summary>
-          <p class="faq-answer">You get 10 unique, tailored bullet points per generation. Hit "Regenerate" as many times as you like for fresh variations.</p>
-        </details>
-        <details class="faq-item">
-          <summary class="faq-question">Will these bullets pass ATS filters?</summary>
-          <p class="faq-answer">Yes. The AI uses industry-specific keywords and strong action verbs — two of the biggest factors in passing applicant tracking systems.</p>
-        </details>
-        <details class="faq-item">
-          <summary class="faq-question">Can I use the bullets exactly as generated?</summary>
-          <p class="faq-answer">Absolutely, but we recommend personalizing them with real numbers and specifics from your own experience. Recruiters love specificity.</p>
-        </details>
-        <details class="faq-item">
-          <summary class="faq-question">What job titles does it support?</summary>
-          <p class="faq-answer">Any job title — from entry-level roles like Cashier or Barista to senior positions like VP of Engineering or Chief Marketing Officer. If the job exists, BulletAI can write bullets for it.</p>
-        </details>
-        <details class="faq-item">
-          <summary class="faq-question">How is this different from ChatGPT?</summary>
-          <p class="faq-answer">BulletAI uses a specialized prompt fine-tuned specifically for resume bullet generation. You get structured, ready-to-use output without crafting a prompt yourself.</p>
-        </details>
-      </div>
-    </section>
-
-    <!-- Support -->
-    <section class="support-section" id="support" aria-labelledby="support-heading">
-      <div class="section-header">
-        <p class="section-eyebrow">Need help?</p>
-        <h2 class="section-title" id="support-heading">Contact support</h2>
-        <p class="section-desc">Send our team a message and we&apos;ll get back to you as soon as possible.</p>
-      </div>
-      <div class="support-card">
-        <form id="supportForm" class="support-form" novalidate>
-          <div class="support-row support-row--two">
-            <div>
-              <label class="input-label" for="supportName">Name (optional)</label>
-              <input type="text" id="supportName" name="name" maxlength="120" placeholder="Your name" />
-            </div>
-            <div>
-              <label class="input-label" for="supportEmail">Email</label>
-              <input type="email" id="supportEmail" name="email" maxlength="200" placeholder="you@example.com" required />
-            </div>
-          </div>
-          <div class="support-row">
-            <label class="input-label" for="supportMessage">How can we help?</label>
-            <textarea
-              id="supportMessage"
-              name="message"
-              rows="5"
-              maxlength="4000"
-              placeholder="Describe your issue, question, or feedback."
-              required
-            ></textarea>
-          </div>
-          <div class="support-actions">
-            <button id="supportSubmitBtn" type="submit">Send message</button>
-            <p id="supportStatus" class="support-status hidden" aria-live="polite"></p>
-          </div>
-        </form>
-      </div>
-    </section>
-
-    <section class="explore-more" aria-labelledby="learn-about-heading">
-      <div class="explore-more-inner">
-        <h3 id="learn-about-heading">Learn about BulletAI</h3>
-        <p>See our mission, writing principles, and how our tools help job seekers stand out.</p>
-        <a href="/about" class="explore-more-link">Read About Page &rarr;</a>
-      </div>
-    </section>
-
-    <section class="explore-more" aria-labelledby="explore-more-heading">
-      <div class="explore-more-inner">
-        <h3 id="explore-more-heading">Explore More</h3>
-        <p>Check out our latest tips and guides</p>
-        <a href="/blog" class="explore-more-link">Visit Blog &rarr;</a>
-      </div>
-    </section>
 
     <!-- Footer -->
     <footer class="footer">
       <div class="footer-inner">
-        <p class="footer-logo">&#10022; BulletAI</p>
-        <p class="footer-copy">Built with the OpenAI API &mdash; results may vary. Always personalize bullets with your own experience.</p>
-        <div class="footer-links">
-          <a href="/">Home</a>
-          <a href="/resume-template-builder">Resume Template Builder</a>
-          <a href="/blog/how-to-make-a-resume-with-no-experience">No Experience Resume Guide</a>
-          <a href="/blog/resume-mistakes-to-avoid">Resume Mistakes To Avoid</a>
-          <a href="/jobs">All job pages</a>
-          <a href="#support">Contact support</a>
-          <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">OpenAI API</a>
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a href="/" class="logo">
+              <img src="/new_favcon.ico?v=1" alt="BulletAI" class="logo-icon" />
+              <span class="logo-text">Bullet<span class="logo-accent">AI</span></span>
+            </a>
+            <p class="footer-tagline">AI-powered resume optimization to help you land more interviews.</p>
+          </div>
+          <div class="footer-links-group">
+            <h4 class="footer-links-title">Product</h4>
+            <ul class="footer-links">
+              <li><a href="/resume-template-builder">Resume Builder</a></li>
+              <li><a href="/check-my-resume">Check My Resume</a></li>
+              <li><a href="#pricing">Pricing</a></li>
+            </ul>
+          </div>
+          <div class="footer-links-group">
+            <h4 class="footer-links-title">Resources</h4>
+            <ul class="footer-links">
+              <li><a href="/blog">Blog</a></li>
+              <li><a href="/blog/how-to-make-a-resume-with-no-experience">No Experience Guide</a></li>
+              <li><a href="/blog/resume-mistakes-to-avoid">Resume Mistakes</a></li>
+            </ul>
+          </div>
+          <div class="footer-links-group">
+            <h4 class="footer-links-title">Company</h4>
+            <ul class="footer-links">
+              <li><a href="/about">About</a></li>
+              <li><a href="/#support">Contact</a></li>
+              <li><a href="/jobs">Jobs</a></li>
+            </ul>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <p class="footer-copyright">&copy; 2026 BulletAI. All rights reserved.</p>
         </div>
       </div>
     </footer>
 
-    <script src="/shared-navbar.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-    <script src="/auth.js"></script>
-    <script src="script.js"></script>
-    <script>
-      window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/insights/script.js"></script>
+    <script src="/landing.js"></script>
   </body>
 </html>
