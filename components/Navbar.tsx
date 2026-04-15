@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -24,8 +25,15 @@ export default function Navbar() {
   return (
     <div className="w-full border-b border-gray-800 bg-[#0B0B0F] backdrop-blur">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-lg font-bold text-white tracking-tight">
-          Bullet<span className="text-blue-500">AI</span>
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/BulletAI_v1.png"
+            alt="BulletAI Logo"
+            width={120}
+            height={40}
+            className="h-8 w-auto object-contain"
+            priority
+          />
         </Link>
 
         <div className="flex items-center gap-6">
