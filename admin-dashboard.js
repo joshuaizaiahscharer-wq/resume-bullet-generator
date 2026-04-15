@@ -7,6 +7,7 @@ import {
   maybeTrackPaymentFromUrl,
   publishBlogPost,
   runAutomatedBlogGeneration,
+  runSeoBlogBatchGeneration,
   subscribeToUsers,
   syncCurrentUserPresence,
   updateUserPayment,
@@ -25,6 +26,7 @@ const dashboardState = {
   blogDraft: null,
   blogLoading: false,
   blogAutomationLoading: false,
+  blogSeoBatchLoading: false,
 };
 
 function escapeHtml(value) {
@@ -101,6 +103,7 @@ function syncBlogGeneratorUiState() {
   const generateBtn = document.getElementById("generateBlogBtn");
   const publishBtn = document.getElementById("publishBlogBtn");
   const runAutoBtn = document.getElementById("runAutoBlogBtn");
+  const runSeoBatchBtn = document.getElementById("runSeoBatchBtn");
 
   if (generateBtn) {
     generateBtn.disabled = dashboardState.blogLoading;
@@ -115,6 +118,14 @@ function syncBlogGeneratorUiState() {
   if (runAutoBtn) {
     runAutoBtn.disabled = dashboardState.blogLoading || dashboardState.blogAutomationLoading;
     runAutoBtn.textContent = dashboardState.blogAutomationLoading ? "Running Automation..." : "Run Automation Now";
+  }
+
+  if (runSeoBatchBtn) {
+    runSeoBatchBtn.disabled =
+      dashboardState.blogLoading || dashboardState.blogAutomationLoading || dashboardState.blogSeoBatchLoading;
+    runSeoBatchBtn.textContent = dashboardState.blogSeoBatchLoading
+      ? "Generating SEO Batch..."
+      : "Generate 10 SEO Posts";
   }
 }
 
@@ -253,6 +264,30 @@ async function handleRunAutoBlogGeneration() {
     showToast("Automation failed", "error");
   } finally {
     dashboardState.blogAutomationLoading = false;
+    syncBlogGeneratorUiState();
+  }
+}
+
+async function handleRunSeoBatchGeneration() {
+  if (dashboardState.blogSeoBatchLoading) return;
+
+  dashboardState.blogSeoBatchLoading = true;
+  syncBlogGeneratorUiState();
+  setBlogGeneratorStatus("Generating 10 SEO posts. This may take a few minutes...", "neutral");
+
+  try {
+    const result = await runSeoBlogBatchGeneration();
+    setBlogGeneratorStatus(
+      `SEO batch finished: ${result.created || 0} created, ${result.skipped || 0} skipped, ${result.failed || 0} failed.`,
+      result.failed ? "error" : "success"
+    );
+    showToast(result.failed ? "SEO batch completed with issues" : "SEO batch completed", result.failed ? "error" : "success");
+  } catch (error) {
+    const message = String(error?.message || "SEO batch failed.");
+    setBlogGeneratorStatus(message, "error");
+    showToast("SEO batch failed", "error");
+  } finally {
+    dashboardState.blogSeoBatchLoading = false;
     syncBlogGeneratorUiState();
   }
 }
@@ -461,6 +496,7 @@ function bindControls() {
   document.getElementById("generateBlogBtn")?.addEventListener("click", handleGenerateBlogPost);
   document.getElementById("publishBlogBtn")?.addEventListener("click", handlePublishBlogPost);
   document.getElementById("runAutoBlogBtn")?.addEventListener("click", handleRunAutoBlogGeneration);
+  document.getElementById("runSeoBatchBtn")?.addEventListener("click", handleRunSeoBatchGeneration);
   syncBlogGeneratorUiState();
 }
 
