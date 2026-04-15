@@ -590,18 +590,48 @@ async function signInOrOut() {
   if (!cloudAuthAvailable) return;
 
   if (resumeBuilderState.signedInEmail) {
-    window.location.href = "/api/logout";
+    const client = getActiveAuthClient();
+    if (!client) return;
+    try {
+      await client.auth.signOut();
+      resumeBuilderState.signedInEmail = "";
+      await fetchAccessState();
+      updateAuthUi();
+    } catch (_err) {
+      if (elementRefs.authStatus) {
+        elementRefs.authStatus.textContent = "Sign-out failed. Please try again.";
+      }
+    }
     return;
   }
 
-  window.location.href = "/api/login";
+  openAuthModal();
 }
 
 function openAuthModal() {
-  window.location.href = "/api/login";
+  const modal = document.getElementById("authModal");
+  if (!modal) return;
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+
+  const statusEl = document.getElementById("authModalStatus");
+  if (statusEl) {
+    statusEl.textContent = "";
+    statusEl.className = "auth-modal-status";
+  }
+
+  const emailInput = document.getElementById("authModalEmailInput");
+  if (emailInput instanceof HTMLInputElement) {
+    emailInput.value = "";
+    setTimeout(() => emailInput.focus(), 50);
+  }
 }
 
 function closeAuthModal() {
+  const modal = document.getElementById("authModal");
+  if (!modal) return;
+  modal.hidden = true;
+  modal.setAttribute("aria-hidden", "true");
 }
 
 function getResumePdfTheme(style, customization) {

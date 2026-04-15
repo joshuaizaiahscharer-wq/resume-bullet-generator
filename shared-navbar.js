@@ -35,7 +35,7 @@
           </button>
           <div class="blog-nav-actions" id="blogNavActions">
             ${renderLinks(activePage)}
-            <a id="navAuthBtn" href="/api/login" class="blog-nav-auth-btn" aria-label="Sign in to BulletAI">Sign In</a>
+            <a id="navAuthBtn" href="#" class="blog-nav-auth-btn" aria-label="Sign in to BulletAI">Sign In</a>
           </div>
         </nav>
       </div>
@@ -51,13 +51,13 @@
       btn.dataset.state = "signed-in";
       btn.setAttribute("aria-label", "Signed in" + (email ? " as " + email : "") + ". Click to sign out.");
       btn.title = "Sign out";
-      btn.href = "/api/logout";
+      btn.href = "#";
     } else {
       btn.textContent = "Sign In";
       btn.dataset.state = "signed-out";
       btn.setAttribute("aria-label", "Sign in to BulletAI");
       btn.title = "";
-      btn.href = "/api/login";
+      btn.href = "#";
     }
   }
 

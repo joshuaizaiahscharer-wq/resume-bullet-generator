@@ -9,7 +9,15 @@ if (fs.existsSync(envLocalPath)) {
 }
 dotenv.config();
 
-const { setupAuth, registerAuthRoutes, isAuthenticated } = require("../lib/replitAuth");
+let setupAuth = async () => {};
+let registerAuthRoutes = () => {};
+let isAuthenticated = (_req, res) => res.status(401).json({ message: "Unauthorized" });
+
+try {
+  ({ setupAuth, registerAuthRoutes, isAuthenticated } = require("../lib/replitAuth"));
+} catch (err) {
+  console.warn("[auth] Replit auth module unavailable; using Supabase-only auth flow.", err.message);
+}
 
 const crypto = require("crypto");
 const express = require("express");
@@ -542,6 +550,8 @@ async function fetchPublishedBlogPostBySlug(slug) {
 app._authReady = setupAuth(app).then(() => {
   registerAuthRoutes(app);
   console.log("[auth] Replit Auth routes registered.");
+}).catch((err) => {
+  console.warn("[auth] Replit auth setup failed; continuing without it.", err?.message || err);
 });
 
 // ─── Core middleware (after auth session/passport are queued) ─────────────────
