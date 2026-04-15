@@ -9,6 +9,12 @@
   const paywallModal = document.getElementById("paywall-modal");
   const paywallUnlockBtn = document.getElementById("paywall-unlock-btn");
   const paywallCancelBtn = document.getElementById("paywall-cancel-btn");
+  const targetRoleInput = document.getElementById("target-role-input");
+  const findKeywordsBtn = document.getElementById("find-keywords-btn");
+  const keywordStatus = document.getElementById("keyword-status");
+  const keywordResults = document.getElementById("keyword-results");
+  const keywordMatchSummary = document.getElementById("keyword-match-summary");
+  const keywordChips = document.getElementById("keyword-chips");
 
   const errorText = document.getElementById("error-text");
   const analysisSection = document.getElementById("analysis-section");
@@ -36,6 +42,21 @@
     { key: "impact", label: "Impact" },
     { key: "relevance", label: "Relevance" },
   ];
+
+  const roleKeywordMap = {
+    "software engineer": ["python", "javascript", "api", "microservices", "git", "testing", "agile", "sql", "cloud", "debugging"],
+    "data analyst": ["sql", "excel", "tableau", "power bi", "dashboards", "kpi", "data cleaning", "etl", "reporting", "stakeholders"],
+    "product manager": ["roadmap", "prioritization", "user research", "kpi", "cross-functional", "backlog", "launch", "strategy", "a/b testing", "analytics"],
+    "project manager": ["scope", "timeline", "budget", "risk management", "stakeholder management", "agile", "scrum", "project planning", "delivery", "status reporting"],
+    "marketing manager": ["seo", "sem", "campaign", "conversion", "content strategy", "email marketing", "google analytics", "lead generation", "brand", "roi"],
+    "sales associate": ["customer engagement", "upselling", "cross-selling", "crm", "quota", "pipeline", "closing", "relationship building", "product knowledge", "follow-up"],
+    bartender: ["customer service", "mixology", "cash handling", "inventory", "pos", "compliance", "upselling", "teamwork", "high-volume", "sanitation"],
+    cashier: ["pos", "cash handling", "accuracy", "customer service", "returns", "transaction", "queue management", "reconciliation", "attention to detail", "loss prevention"],
+    nurse: ["patient care", "charting", "emr", "vital signs", "medication administration", "care coordination", "triage", "infection control", "documentation", "communication"],
+    teacher: ["curriculum", "classroom management", "lesson planning", "assessment", "student engagement", "differentiation", "parent communication", "data-driven instruction", "collaboration", "learning outcomes"],
+  };
+
+  const genericKeywords = ["results", "improved", "increased", "reduced", "collaborated", "led", "managed", "delivered", "optimized", "measurable"];
 
   let isLoading = false;
   let isPaid = false;
@@ -93,6 +114,93 @@
 
   function setError(message) {
     errorText.textContent = message || "";
+  }
+
+  function setKeywordStatus(message, isError) {
+    if (!keywordStatus) return;
+    keywordStatus.textContent = message || "";
+    keywordStatus.classList.toggle("error", Boolean(isError));
+  }
+
+  function normalizeText(text) {
+    return String(text || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9\s\-\/]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function getRoleKeywords(roleText) {
+    const normalizedRole = normalizeText(roleText);
+    if (!normalizedRole) return [];
+
+    const exact = roleKeywordMap[normalizedRole];
+    if (exact) return exact.slice();
+
+    const partialMatch = Object.keys(roleKeywordMap).find(function (role) {
+      return normalizedRole.includes(role) || role.includes(normalizedRole);
+    });
+
+    if (partialMatch) {
+      return roleKeywordMap[partialMatch].slice();
+    }
+
+    return genericKeywords.slice();
+  }
+
+  function renderKeywordResults(roleText) {
+    if (!keywordResults || !keywordMatchSummary || !keywordChips) return;
+
+    const roleKeywords = getRoleKeywords(roleText);
+    const resumeText = normalizeText(resumeInput ? resumeInput.value : "");
+    const presentKeywords = [];
+    const missingKeywords = [];
+
+    roleKeywords.forEach(function (keyword) {
+      const normalizedKeyword = normalizeText(keyword);
+      if (!normalizedKeyword) return;
+      if (resumeText && resumeText.includes(normalizedKeyword)) {
+        presentKeywords.push(keyword);
+      } else {
+        missingKeywords.push(keyword);
+      }
+    });
+
+    keywordChips.innerHTML = "";
+
+    missingKeywords.concat(presentKeywords).forEach(function (keyword) {
+      const chip = document.createElement("span");
+      chip.className = "keyword-chip " + (missingKeywords.indexOf(keyword) !== -1 ? "missing" : "present");
+      chip.textContent = keyword;
+      keywordChips.appendChild(chip);
+    });
+
+    if (resumeText) {
+      keywordMatchSummary.textContent =
+        "Matched " +
+        presentKeywords.length +
+        " of " +
+        roleKeywords.length +
+        " role keywords. Add the red keywords where they are truthful to improve recruiter matching.";
+    } else {
+      keywordMatchSummary.textContent = "Keyword set ready. Paste your resume text to see which keywords are already covered.";
+    }
+
+    keywordResults.classList.remove("hidden");
+  }
+
+  function handleKeywordSearch() {
+    if (!targetRoleInput) return;
+
+    const roleText = String(targetRoleInput.value || "").trim();
+    if (!roleText) {
+      setKeywordStatus("Enter a target role to search recruiter keywords.", true);
+      if (keywordResults) keywordResults.classList.add("hidden");
+      return;
+    }
+
+    setKeywordStatus("Showing role-specific keywords for " + roleText + ".", false);
+    renderKeywordResults(roleText);
   }
 
   function setLoading(loading, mode) {
@@ -333,12 +441,29 @@
       scorePill.textContent = String(data.score || 0) + "% (" + String(data.label || "Weak") + ")";
       renderBreakdown(data.breakdown || {});
       renderImprovements(data.improvements || []);
+
+      if (targetRoleInput && targetRoleInput.value.trim()) {
+        renderKeywordResults(targetRoleInput.value.trim());
+      }
       showAnalysisSections();
     } catch (error) {
       setError(error && error.message ? error.message : "Unable to analyze resume.");
     } finally {
       setLoading(false, "analyze");
     }
+  }
+
+  if (findKeywordsBtn) {
+    findKeywordsBtn.addEventListener("click", handleKeywordSearch);
+  }
+
+  if (targetRoleInput) {
+    targetRoleInput.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        handleKeywordSearch();
+      }
+    });
   }
 
   async function fixResume() {

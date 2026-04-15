@@ -25,6 +25,20 @@
         <h1 id="page-title">Check My Resume</h1>
         <p id="page-subtext">Paste your resume and get a professional evaluation in seconds</p>
 
+        <div id="keyword-optimizer" class="keyword-optimizer">
+          <h2>Role Keyword Search</h2>
+          <p class="keyword-subtext">Find recruiter keywords for your target role, then compare them against your resume text.</p>
+          <div class="keyword-controls">
+            <input id="target-role-input" type="text" placeholder="Search a target role (e.g. Data Analyst)" aria-label="Target role" />
+            <button id="find-keywords-btn" type="button">Find Keywords</button>
+          </div>
+          <p id="keyword-status" class="keyword-status" aria-live="polite"></p>
+          <div id="keyword-results" class="keyword-results hidden">
+            <p id="keyword-match-summary" class="keyword-match-summary"></p>
+            <div id="keyword-chips" class="keyword-chips"></div>
+          </div>
+        </div>
+
         <label class="field-label" for="resume-input">Resume Input</label>
         <textarea id="resume-input" placeholder="Paste your full resume here..."></textarea>
 

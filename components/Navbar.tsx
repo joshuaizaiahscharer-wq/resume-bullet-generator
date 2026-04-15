@@ -43,6 +43,7 @@ export default function Navbar() {
           {navLink("/", "Home")}
           {navLink("/about", "About")}
           {navLink("/check-my-resume", "Check My Resume")}
+          {navLink("/check-my-resume#keyword-optimizer", "Keyword Search")}
           {navLink("/blog", "Blog")}
         </div>
 

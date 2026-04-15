@@ -6,12 +6,14 @@
     { href: "/blog", label: "Blog", key: "blog" },
     { href: "/resume-template-builder", label: "Resume Builder", key: "resume-builder" },
     { href: "/check-my-resume", label: "Check My Resume", key: "check-my-resume" },
+    { href: "/check-my-resume#keyword-optimizer", label: "Keyword Search", key: "keyword-search" },
     { href: "/about", label: "About", key: "about" },
   ];
 
   function inferActivePage(pathname) {
     if (!pathname || pathname === "/") return "home";
     if (pathname.startsWith("/about")) return "about";
+    if (pathname.startsWith("/check-my-resume") && window.location.hash === "#keyword-optimizer") return "keyword-search";
     if (pathname.startsWith("/check-my-resume")) return "check-my-resume";
     if (pathname.startsWith("/blog")) return "blog";
     if (pathname.startsWith("/resume-template-builder")) return "resume-builder";
