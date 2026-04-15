@@ -25,6 +25,14 @@
     }).join("");
   }
 
+  function renderHomeAnchors(activePage) {
+    if (activePage !== "home") return "";
+    return `
+      <a href="#features" class="blog-nav-link">Features</a>
+      <a href="#pricing" class="blog-nav-link">Pricing</a>
+    `;
+  }
+
   function renderNavbarHtml(activePage) {
     return `
       <div class="blog-nav-shell" id="blogNavShell">
@@ -33,12 +41,16 @@
             <img src="/new_favcon.ico?v=1" alt="BulletAI" class="blog-logo-img" />
             <span class="blog-logo-text">Bullet<span class="blog-logo-text-accent">AI</span></span>
           </a>
+          <div class="blog-nav-center">
+            ${renderHomeAnchors(activePage)}
+            ${renderLinks(activePage)}
+          </div>
           <button class="blog-nav-toggle" id="blogNavToggle" aria-label="Toggle navigation">
             <span></span><span></span><span></span>
           </button>
           <div class="blog-nav-actions" id="blogNavActions">
-            ${renderLinks(activePage)}
-            <a id="navAuthBtn" href="#" class="blog-nav-auth-btn" aria-label="Sign in to BulletAI">Sign In</a>
+            <a id="navAuthBtn" href="#" class="blog-nav-login-btn" aria-label="Sign in to BulletAI">Log in</a>
+            <a href="/resume-template-builder" class="blog-nav-auth-btn">Get Started</a>
           </div>
         </nav>
       </div>
@@ -56,7 +68,7 @@
       btn.title = "Sign out";
       btn.href = "#";
     } else {
-      btn.textContent = "Sign In";
+      btn.textContent = "Log in";
       btn.dataset.state = "signed-out";
       btn.setAttribute("aria-label", "Sign in to BulletAI");
       btn.title = "";

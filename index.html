@@ -42,69 +42,39 @@
 
     <div class="landing-shell">
       <header class="landing-hero-v0">
-        <div class="landing-hero-grid">
-          <div class="landing-copy-v0">
-            <span class="landing-badge-v0">AI Resume Writing Assistant</span>
-            <h1>Turn your resume into powerful bullet points instantly.</h1>
-            <p class="landing-sub-v0">
-              BulletAI helps job seekers transform vague experience into recruiter-ready, ATS-friendly bullet points with a clean, modern workflow inspired by the best SaaS tools.
-            </p>
-            <div class="landing-cta-row-v0">
-              <a href="#generator" class="landing-primary-link">Generate Bullets</a>
-              <a href="/check-my-resume" class="landing-secondary-link">Check My Resume</a>
-            </div>
-            <div class="landing-trust-v0">
-              <span>Used by 1,000+ job seekers</span>
-              <span>ATS-optimized output</span>
-              <span>Fast copy-ready results</span>
-            </div>
-            <div class="landing-metrics-v0" aria-label="Key product stats">
-              <div>
-                <strong>50k+</strong>
-                <span>resumes improved</span>
-              </div>
-              <div>
-                <strong>10</strong>
-                <span>bullets per generation</span>
-              </div>
-              <div>
-                <strong>~15s</strong>
-                <span>average turnaround</span>
-              </div>
-            </div>
-          </div>
+        <div class="landing-copy-v0 landing-copy-v0--centered">
+          <span class="landing-badge-v0">Powered by Advanced AI</span>
+          <h1>Turn your resume into <span class="landing-gradient-text-v0">powerful bullet points</span> instantly</h1>
+          <p class="landing-sub-v0 landing-sub-v0--centered">
+            Paste your resume and let AI transform your experience into ATS-optimized, impactful bullet points that get you noticed.
+          </p>
 
-          <div class="landing-generator-v0" id="generator">
-            <div class="landing-generator-head">
-              <p class="landing-generator-kicker">Generate better resume bullets</p>
-              <h2>Paste your experience and generate instantly</h2>
-              <p>Your existing generator is fully preserved, now wrapped in the new landing-page presentation.</p>
-            </div>
-
-            <label class="input-label" for="jobDescriptionInput">Paste resume or job description</label>
+          <div class="landing-generator-v0 landing-generator-v0--centered" id="generator">
             <textarea
               id="jobDescriptionInput"
               class="jd-textarea landing-textarea-v0"
-              placeholder="Paste a resume, job description, or rough experience notes here..."
-              aria-label="Paste resume or job description"
+              placeholder="Paste your resume or job experience here..."
+              aria-label="Paste your resume or job experience here"
             ></textarea>
             <p id="tailorHint" class="optimizer-status hidden" aria-live="polite"></p>
 
-            <div class="landing-generator-row-v0">
-              <div class="landing-job-input-wrap">
-                <label class="input-label" for="jobTitle">Target job title</label>
-                <input
-                  type="text"
-                  id="jobTitle"
-                  placeholder="e.g. Product Manager, Bartender, Software Engineer"
-                  aria-label="Job title"
-                  autocomplete="off"
-                />
+            <div class="landing-generator-bar-v0">
+              <p class="landing-generator-support-v0">Supports any format</p>
+              <div class="landing-generator-row-v0">
+                <div class="landing-job-input-wrap">
+                  <input
+                    type="text"
+                    id="jobTitle"
+                    placeholder="Enter target role e.g. Software Engineer"
+                    aria-label="Job title"
+                    autocomplete="off"
+                  />
+                </div>
+                <button id="generateBtn" class="landing-generate-btn-v0">
+                  <span class="btn-text">Generate Bullets</span>
+                  <span class="btn-arrow">→</span>
+                </button>
               </div>
-              <button id="generateBtn" class="landing-generate-btn-v0">
-                <span class="btn-text">Generate Bullets</span>
-                <span class="btn-arrow">→</span>
-              </button>
             </div>
 
             <div class="chips landing-chips-v0" id="chips" aria-label="Quick-pick job titles">
@@ -130,6 +100,12 @@
               </div>
               <ul id="bulletList"></ul>
             </section>
+          </div>
+
+          <div class="landing-trust-v0 landing-trust-v0--centered">
+            <span>No sign-up required</span>
+            <span>100% private</span>
+            <span>Instant results</span>
           </div>
         </div>
       </header>
