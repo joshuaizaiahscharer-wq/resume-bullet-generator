@@ -139,7 +139,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const formatted = params.slug.replace(/-/g, " ");
   const title = `Resume Bullet Examples for ${formatted}`;
   const description = `Generate strong resume bullet points for ${formatted} with real examples and metrics.`;
-  const url = `https://myresumebullets.com/resume-bullets/${params.slug}`;
+  const url = `https://www.myresumebullets.com/resume-bullets/${params.slug}`;
 
   return {
     title,

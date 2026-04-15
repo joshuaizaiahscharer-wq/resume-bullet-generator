@@ -146,8 +146,8 @@ Requirements:
 - Use clear HTML headings: <h2> for main sections, <h3> for sub-sections
 - Use <ul> and <li> for bullet lists
 - Keep paragraphs short (2–4 sentences)
-- Include one natural internal link: <a href="/resume-bullets">Resume Bullet Generator</a>
-- End with a CTA paragraph: <p>Ready to build stronger resume bullets? <a href="/resume-bullets">Try the Resume Bullet Generator</a> — it's free to start.</p>
+- Include one natural internal link: <a href="/resume-template-builder">Resume Template Builder</a>
+- End with a CTA paragraph: <p>Improve your resume instantly with AI — <a href="/resume-template-builder">Try the tool</a>.</p>
 - Format: valid HTML using only <h2>, <h3>, <p>, <ul>, <li>, <a>
 - Be practical and specific — no filler phrases, no vague claims
 - Optimize for a Google featured snippet on the main question
@@ -321,4 +321,73 @@ async function runDailyBlogGeneration() {
   }
 }
 
-module.exports = { runDailyBlogGeneration };
+async function runDailyBlogGenerationForTopic(topicInput) {
+  const topic = String(topicInput || "").trim();
+  if (!topic) {
+    return { ok: false, error: "Topic is required." };
+  }
+
+  try {
+    const { titles: existingTitles, slugs: existingSlugs } =
+      await getExistingPostsIndex();
+
+    // Skip obviously duplicate topics to avoid near-identical posts.
+    if (existingTitles.some((existing) => isTooSimilar(topic, existing))) {
+      return {
+        ok: true,
+        skipped: true,
+        reason: "similar topic already exists",
+        topic,
+      };
+    }
+
+    const postData = await generateBlogPost(topic);
+    postData.slug = ensureUniqueSlug(
+      postData.slug || slugify(postData.title),
+      existingSlugs
+    );
+
+    const saved = await saveBlogPost(postData);
+    return {
+      ok: true,
+      id: saved.id,
+      slug: saved.slug,
+      title: postData.title,
+      topic,
+    };
+  } catch (err) {
+    return { ok: false, error: err.message, topic };
+  }
+}
+
+async function runSeoTopicBatch(topics) {
+  const requestedTopics = Array.isArray(topics) ? topics : [];
+  const normalizedTopics = requestedTopics
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+
+  const results = [];
+  for (const topic of normalizedTopics) {
+    // Run serially to avoid rate-limit spikes and simplify logging.
+    const result = await runDailyBlogGenerationForTopic(topic);
+    results.push(result);
+  }
+
+  const created = results.filter((r) => r.ok && !r.skipped).length;
+  const skipped = results.filter((r) => r.ok && r.skipped).length;
+  const failed = results.filter((r) => !r.ok).length;
+
+  return {
+    ok: failed === 0,
+    created,
+    skipped,
+    failed,
+    results,
+  };
+}
+
+module.exports = {
+  runDailyBlogGeneration,
+  runDailyBlogGenerationForTopic,
+  runSeoTopicBatch,
+};

@@ -43,8 +43,49 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 });
 
-// Use SITE_URL for sitemap/robots. In production, set this in Vercel env vars.
-const SITE_URL = (process.env.SITE_URL || "http://localhost:3000").replace(/\/$/, "");
+function normalizeSiteUrl(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "https://www.myresumebullets.com";
+
+  try {
+    const parsed = new URL(raw.includes("://") ? raw : `https://${raw}`);
+    if (parsed.hostname === "myresumebullets.com") {
+      parsed.hostname = "www.myresumebullets.com";
+      parsed.protocol = "https:";
+    }
+    return parsed.toString().replace(/\/$/, "");
+  } catch (_err) {
+    return "https://www.myresumebullets.com";
+  }
+}
+
+// Use SITE_URL for sitemap/robots/canonical URLs.
+const SITE_URL = normalizeSiteUrl(
+  process.env.SITE_URL || process.env.NEXT_PUBLIC_BASE_URL || "https://www.myresumebullets.com"
+);
+
+app.use((req, res, next) => {
+  const host = String(req.get("host") || "").toLowerCase();
+  if (!host) return next();
+
+  // Keep localhost/dev/preview domains untouched.
+  if (host.startsWith("localhost") || host.startsWith("127.0.0.1") || host.includes("vercel.app")) {
+    return next();
+  }
+
+  const hostname = host.split(":")[0];
+  const isApex = hostname === "myresumebullets.com";
+  const isWww = hostname === "www.myresumebullets.com";
+  if (!isApex && !isWww) return next();
+
+  const forwardedProto = String(req.get("x-forwarded-proto") || req.protocol || "http").toLowerCase();
+  const needsHttps = forwardedProto !== "https";
+  const needsWww = isApex;
+  if (!needsHttps && !needsWww) return next();
+
+  const targetHost = isApex ? "www.myresumebullets.com" : hostname;
+  return res.redirect(301, `https://${targetHost}${req.originalUrl}`);
+});
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PRICE_ID = process.env.STRIPE_PRICE_ID || "";
@@ -1399,7 +1440,7 @@ app.get("/auth/callback", (req, res) => {
 });
 
 app.get("/admin-dashboard", (req, res) => {
-  return res.redirect(302, "/admin");
+  return res.redirect(301, "/admin");
 });
 
 function clampScore(value, min, max) {
@@ -2530,6 +2571,34 @@ app.post("/api/admin/blog/generate-auto", requireAdminAccess, async (req, res) =
   }
 });
 
+// ─── POST /api/admin/blog/generate-seo-batch ────────────────────────────────
+// Generates a fixed SEO topic batch (or caller-provided topics) for content seeding.
+app.post("/api/admin/blog/generate-seo-batch", requireAdminAccess, async (req, res) => {
+  try {
+    const requestedTopics = Array.isArray(req.body?.topics) ? req.body.topics : null;
+    const defaultTopics = require("../data/seoBlogTopics");
+    const topics = requestedTopics && requestedTopics.length ? requestedTopics : defaultTopics;
+
+    const { runSeoTopicBatch } = require("../server/blogGeneratorService");
+    const result = await runSeoTopicBatch(topics);
+
+    if (!result.ok) {
+      return res.status(500).json({
+        error: "Some SEO posts failed to generate.",
+        ...result,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (err) {
+    console.error("[/api/admin/blog/generate-seo-batch] Unexpected error:", err.message);
+    return res.status(500).json({ error: err.message || "SEO batch generation failed." });
+  }
+});
+
 // ─── GET /api/cron/blog-generate ────────────────────────────────────────────
 // Vercel Cron trigger for daily automated blog generation.
 // Protect with CRON_SECRET (Authorization: Bearer <CRON_SECRET>).
@@ -2931,11 +3000,30 @@ function escapeXml(str) {
     .replace(/'/g, "&apos;");
 }
 
-const PAGE_HEAD = (title, description) => `
+const PAGE_HEAD = (title, description, canonicalPath = "/") => {
+  const canonicalUrl = `${SITE_URL}${canonicalPath.startsWith("/") ? canonicalPath : `/${canonicalPath}`}`;
+  const websiteJsonLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "BulletAI",
+    url: SITE_URL,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${SITE_URL}/blog?query={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
+  });
+
+  return `
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google-site-verification" content="VEIGdEbFNNwkV64kj97Igmt_5KO8trlNUXJtaIqVAw0" />
   <meta name="description" content="${escapeHtml(description)}" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="${escapeHtml(title)}" />
+  <meta property="og:description" content="${escapeHtml(description)}" />
+  <meta property="og:url" content="${escapeHtml(canonicalUrl)}" />
+  <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=1" />
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=1" />
   <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=1" />
@@ -2947,7 +3035,9 @@ const PAGE_HEAD = (title, description) => `
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/style.css" />`;
+  <link rel="stylesheet" href="/style.css" />
+  <script type="application/ld+json">${websiteJsonLd}</script>`;
+};
 
 function renderClusterPage(cluster, pageType) {
   const page = cluster.pages[pageType];
@@ -3005,7 +3095,7 @@ function renderClusterPage(cluster, pageType) {
 
   return `<!DOCTYPE html>
 <html lang="en">
-  <head>${PAGE_HEAD(`${page.pageTitle} | BulletAI`, page.metaDescription)}
+  <head>${PAGE_HEAD(`${page.pageTitle} | BulletAI`, page.metaDescription, `/${page.slug}`)}
   </head>
   <body>
     <nav class="nav">
@@ -3078,7 +3168,8 @@ ${pageLinks}
 <html lang="en">
   <head>${PAGE_HEAD(
     "Resume Resource Clusters by Job Title | BulletAI",
-    "Browse resume bullet points, summaries, skills, cover letters, and no-experience examples grouped by job title."
+    "Browse resume bullet points, summaries, skills, cover letters, and no-experience examples grouped by job title.",
+    "/jobs"
   )}
   </head>
   <body>
