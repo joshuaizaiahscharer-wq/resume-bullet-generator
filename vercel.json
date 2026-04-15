@@ -5,12 +5,16 @@
     { "src": "**/*", "use": "@vercel/static" }
   ],
   "rewrites": [
+    { "source": "/api/generate", "destination": "/api/index.js" },
+    { "source": "/api/support", "destination": "/api/index.js" },
     { "source": "/check-my-resume", "destination": "/api/index.js" },
     { "source": "/auth/callback", "destination": "/api/index.js" },
     { "source": "/api/login", "destination": "/api/index.js" },
     { "source": "/api/logout", "destination": "/api/index.js" },
     { "source": "/api/callback", "destination": "/api/index.js" },
     { "source": "/api/auth/user", "destination": "/api/index.js" },
+    { "source": "/api/admin/(.*)", "destination": "/api/index.js" },
+    { "source": "/api/resume-builder/(.*)", "destination": "/api/index.js" },
     { "source": "/api/admin/support", "destination": "/api/index.js" },
     { "source": "/api/admin/usage", "destination": "/api/index.js" },
     { "source": "/api/admin/blog/generate", "destination": "/api/index.js" },

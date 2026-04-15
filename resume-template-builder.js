@@ -494,7 +494,7 @@ async function initCloudAuth() {
     cloudAuthAvailable = true;
 
     const resp = await fetch("/api/auth/user", { credentials: "include" });
-    const user = resp.ok ? await resp.json() : null;
+    const user = resp.ok ? await resp.json().catch(() => null) : null;
 
     resumeBuilderState.signedInEmail = normalizeEmail((user && user.email) || "");
     resumeBuilderState.hasPaid = false;
@@ -2041,7 +2041,7 @@ async function fetchAccessState(supabaseToken) {
       resumeBuilderState.isUnlocked = false;
       return;
     }
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     resumeBuilderState.isUnlocked = Boolean(data?.isUnlocked);
     resumeBuilderState.hasPaid = resumeBuilderState.isUnlocked;
   } catch (_err) {
@@ -2367,7 +2367,7 @@ async function handleRevise(key, fieldType, btn, form) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: currentText, fieldType }),
     });
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.revised) throw new Error(data.error || "Revision failed.");
 
     // Save current value for undo before overwriting
@@ -2484,7 +2484,7 @@ async function handleBulletAssistantGenerate(jobTitle, entryIndex, btn) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jobTitle, pageType: "resume-builder" }),
     });
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
 
     if (!response.ok || !data.bullets || data.bullets.length === 0) {
       throw new Error(data.error || "No bullets returned.");
