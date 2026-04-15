@@ -31,10 +31,10 @@ export default function Navbar() {
             alt="BulletAI"
             width={32}
             height={32}
-            className="h-6 w-auto object-contain"
+            className="h-7 w-auto object-contain rounded"
             priority
           />
-          <span className="text-lg font-bold text-white tracking-tight">
+          <span className="text-xl font-extrabold text-white tracking-tight leading-none">
             Bullet<span className="text-blue-500">AI</span>
           </span>
         </Link>
