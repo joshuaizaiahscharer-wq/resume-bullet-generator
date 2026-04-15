@@ -402,6 +402,25 @@ function parseBlogDraftFallback(value, topic) {
   return { title, content };
 }
 
+function normalizeGeneratedBlogContent(content) {
+  let value = String(content || "").trim();
+  value = value
+    .replace(/^```html\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  if (
+    value.length >= 2 &&
+    ((value.startsWith("\"") && value.endsWith("\"")) ||
+      (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    value = value.slice(1, -1).trim();
+  }
+
+  return value;
+}
+
 function extractResponseText(response) {
   if (response?.output_text) {
     return String(response.output_text).trim();
@@ -2381,7 +2400,7 @@ app.post("/api/admin/blog/generate", requireAdminAccess, async (req, res) => {
       const parsed = parseJsonPayload(text);
       const fallback = parseBlogDraftFallback(text, topic);
       const title = String(parsed?.title || fallback.title || topic).trim();
-      const content = String(parsed?.content || fallback.content || "").trim();
+      const content = normalizeGeneratedBlogContent(parsed?.content || fallback.content || "");
 
       const imageResult = await generateBlogImageUrl(client, title || topic, customImagePrompt);
 

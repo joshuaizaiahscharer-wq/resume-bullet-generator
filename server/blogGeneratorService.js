@@ -181,6 +181,25 @@ function parseGenerationResponse(rawText) {
   return JSON.parse(cleaned.slice(start, end + 1));
 }
 
+function normalizeGeneratedContent(content) {
+  let value = String(content || "").trim();
+  value = value
+    .replace(/^```html\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  if (
+    value.length >= 2 &&
+    ((value.startsWith("\"") && value.endsWith("\"")) ||
+      (value.startsWith("'") && value.endsWith("'")))
+  ) {
+    value = value.slice(1, -1).trim();
+  }
+
+  return value;
+}
+
 async function generateBlogPost(topic) {
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -203,7 +222,7 @@ async function generateBlogPost(topic) {
 
   const title = String(parsed.title || topic).trim();
   const meta_description = String(parsed.meta_description || "").trim();
-  const content = String(parsed.content || "").trim();
+  const content = normalizeGeneratedContent(parsed.content || "");
   const keywords = Array.isArray(parsed.keywords)
     ? parsed.keywords.map((k) => String(k).trim()).filter(Boolean)
     : [];
