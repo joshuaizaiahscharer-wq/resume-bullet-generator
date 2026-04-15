@@ -423,7 +423,10 @@
       var config = await resp.json();
 
       var supabaseUrl = (config && config.supabaseUrl) || '';
-      var supabaseKey = (config && config.supabasePublishableKey) || '';
+      var supabaseKey =
+        (config && config.supabasePublishableKey) ||
+        (config && config.supabaseAnonKey) ||
+        '';
       if (!supabaseUrl || !supabaseKey) return;
 
       if (window.__bulletSupabaseClient) {
