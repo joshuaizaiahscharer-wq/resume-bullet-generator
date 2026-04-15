@@ -84,12 +84,20 @@ site-navbar {
   box-shadow: 0 14px 34px rgba(2, 6, 23, 0.38);
 }
 .blog-logo {
+  display: flex;
+  align-items: center;
   font-size: 1.03rem;
   font-weight: 800;
   color: #f8fafc;
   letter-spacing: -0.02em;
   text-decoration: none;
   white-space: nowrap;
+}
+.blog-logo-img {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 .blog-nav-actions {
   display: flex;

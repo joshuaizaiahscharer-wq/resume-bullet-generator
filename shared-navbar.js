@@ -29,7 +29,9 @@
     return `
       <div class="blog-nav-shell" id="blogNavShell">
         <nav class="blog-nav" id="blogNav">
-          <a href="/" class="blog-logo">&#10022; BulletAI</a>
+          <a href="/" class="blog-logo" aria-label="BulletAI Home">
+            <img src="/BulletAI_v1.png" alt="BulletAI Logo" class="blog-logo-img" />
+          </a>
           <button class="blog-nav-toggle" id="blogNavToggle" aria-label="Toggle navigation">
             <span></span><span></span><span></span>
           </button>
