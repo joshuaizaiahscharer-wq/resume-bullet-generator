@@ -7,9 +7,7 @@ export const metadata: Metadata = {
   description: "AI tools to optimize resumes and generate stronger professional content.",
   icons: {
     icon: [
-      { url: "/favicon.ico?v=2" },
-      { url: "/favicon-16x16.png?v=2", sizes: "16x16", type: "image/png" },
-      { url: "/favicon-32x32.png?v=2", sizes: "32x32", type: "image/png" },
+      { url: "/new_favcon.ico?v=1" },
     ],
   },
 };
