@@ -1435,6 +1435,10 @@ app.get("/resume-template-builder", (req, res) => {
   res.sendFile(path.join(process.cwd(), "resume-template-builder.html"));
 });
 
+app.get("/resume-generator", (req, res) => {
+  return res.redirect(301, "/resume-template-builder");
+});
+
 app.get("/auth/callback", (req, res) => {
   res.sendFile(path.join(process.cwd(), "auth-callback.html"));
 });

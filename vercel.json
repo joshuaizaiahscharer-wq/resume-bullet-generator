@@ -37,6 +37,7 @@
     { "source": "/jobs", "destination": "/api/index.js" },
     { "source": "/admin", "destination": "/api/index.js" },
     { "source": "/resume-template-builder", "destination": "/api/index.js" },
+    { "source": "/resume-generator", "destination": "/api/index.js" },
     { "source": "/resume-bullet-points-for-(.*)", "destination": "/api/index.js" },
     { "source": "/(.*)-resume-summary-examples", "destination": "/api/index.js" },
     { "source": "/(.*)-skills-for-resume", "destination": "/api/index.js" },

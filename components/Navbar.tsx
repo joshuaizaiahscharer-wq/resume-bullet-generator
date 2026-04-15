@@ -36,9 +36,12 @@ export default function Navbar() {
         </div>
 
         <div>
-          <button className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition">
+          <Link
+            href="/resume-generator"
+            className="bg-blue-500 hover:bg-blue-600 text-white text-sm px-4 py-2 rounded-md transition"
+          >
             Get Started
-          </button>
+          </Link>
         </div>
       </div>
     </div>
