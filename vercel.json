@@ -1,10 +1,14 @@
 {
   "version": 2,
+  "crons": [
+    { "path": "/api/cron/blog-generate", "schedule": "0 6 * * *" }
+  ],
   "builds": [
     { "src": "api/index.js", "use": "@vercel/node" },
     { "src": "**/*", "use": "@vercel/static" }
   ],
   "rewrites": [
+    { "source": "/api/cron/blog-generate", "destination": "/api/index.js" },
     { "source": "/api/generate", "destination": "/api/index.js" },
     { "source": "/api/support", "destination": "/api/index.js" },
     { "source": "/check-my-resume", "destination": "/api/index.js" },

@@ -2470,6 +2470,44 @@ app.post("/api/admin/blog/generate-auto", requireAdminAccess, async (req, res) =
   }
 });
 
+// ─── GET /api/cron/blog-generate ────────────────────────────────────────────
+// Vercel Cron trigger for daily automated blog generation.
+// Protect with CRON_SECRET (Authorization: Bearer <CRON_SECRET>).
+app.get("/api/cron/blog-generate", async (req, res) => {
+  const configuredSecret = String(process.env.CRON_SECRET || "").trim();
+  const authHeader = String(req.get("authorization") || "").trim();
+
+  if (configuredSecret) {
+    const expected = `Bearer ${configuredSecret}`;
+    if (authHeader !== expected) {
+      return res.status(401).json({ error: "Unauthorized cron request." });
+    }
+  }
+
+  try {
+    const { runDailyBlogGeneration } = require("../server/blogGeneratorService");
+    const result = await runDailyBlogGeneration();
+
+    if (!result.ok) {
+      return res.status(500).json({
+        ok: false,
+        error: result.error || "Blog generation failed.",
+      });
+    }
+
+    return res.status(200).json({
+      ok: true,
+      id: result.id,
+      slug: result.slug,
+      title: result.title,
+      url: `/blog/${result.slug}`,
+    });
+  } catch (err) {
+    console.error("[/api/cron/blog-generate] Unexpected error:", err.message);
+    return res.status(500).json({ ok: false, error: err.message || "Blog generation failed." });
+  }
+});
+
 async function resolveResumeOwnerUserId(req) {
   const replitSub = req.user && req.user.claims && req.user.claims.sub;
   const replitEmail = String((req.user && req.user.claims && req.user.claims.email) || "")
