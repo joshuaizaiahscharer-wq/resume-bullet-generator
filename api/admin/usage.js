@@ -1,7 +1,7 @@
 // api/admin/usage.js
 // Returns top 20 most searched job titles with counts.
 //
-// Protected by Replit Auth session + is_admin check.
+// Protected by Replit Auth session + is_admin check (Replit auth disabled).
 // In the Express server this route is registered in api/index.js with
 // isAuthenticated middleware. This file is kept as the Vercel serverless
 // function entry point and delegates auth to the same middleware.
@@ -11,7 +11,8 @@
 
 require("dotenv").config();
 const supabase = require("../../lib/supabase");
-const { isAuthenticated } = require("../../lib/replitAuth");
+// const { isAuthenticated } = require("../../lib/replitAuth");
+const isAuthenticated = (_req, res) => res.status(401).json({ error: "Unauthorized" });
 
 function isMissingUserIdColumn(error) {
   const msg = String(error?.message || "").toLowerCase();

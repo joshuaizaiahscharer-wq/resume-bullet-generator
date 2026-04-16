@@ -13,11 +13,12 @@ let setupAuth = async () => {};
 let registerAuthRoutes = () => {};
 let isAuthenticated = (_req, res) => res.status(401).json({ message: "Unauthorized" });
 
-try {
-  ({ setupAuth, registerAuthRoutes, isAuthenticated } = require("../lib/replitAuth"));
-} catch (err) {
-  console.warn("[auth] Replit auth module unavailable; using Supabase-only auth flow.", err.message);
-}
+// Replit auth disabled
+// try {
+//   ({ setupAuth, registerAuthRoutes, isAuthenticated } = require("../lib/replitAuth"));
+// } catch (err) {
+//   console.warn("[auth] Replit auth module unavailable; using Supabase-only auth flow.", err.message);
+// }
 
 const crypto = require("crypto");
 const express = require("express");
@@ -645,15 +646,14 @@ async function fetchPublishedBlogPostBySlug(slug) {
   }
 }
 
-// ─── Replit Auth (session + passport — must register before all other middleware) ─
-// setupAuth is async (it discovers OIDC config); we attach a _authReady promise so
-// server.js can await it before calling app.listen. Errors propagate for fail-fast.
-app._authReady = setupAuth(app).then(() => {
-  registerAuthRoutes(app);
-  console.log("[auth] Replit Auth routes registered.");
-}).catch((err) => {
-  console.warn("[auth] Replit auth setup failed; continuing without it.", err?.message || err);
-});
+// ─── Replit Auth (disabled) ─
+// app._authReady = setupAuth(app).then(() => {
+//   registerAuthRoutes(app);
+//   console.log("[auth] Replit Auth routes registered.");
+// }).catch((err) => {
+//   console.warn("[auth] Replit auth setup failed; continuing without it.", err?.message || err);
+// });
+app._authReady = Promise.resolve();
 
 // ─── Core middleware (after auth session/passport are queued) ─────────────────
 app.use(cors());
@@ -2317,49 +2317,8 @@ app.get("/api/resume-builder/access", async (req, res) => {
   if (DISABLE_RESUME_BUILDER_PAYWALL) return res.json({ isUnlocked: true });
   if (process.env.RESUME_TEMPLATE_BUILDER_UNLOCKED === "true") return res.json({ isUnlocked: true });
 
-  // ── Replit Auth (always authoritative when logged in) ──
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    const replitSub = req.user?.claims?.sub || null;
-    const replitEmail = req.user?.claims?.email || null;
-    console.log("[access] Replit Auth — sub:", replitSub, "email:", replitEmail);
-
-    try {
-      let profile = null;
-
-      // 1) Check by replit_sub (fast path)
-      if (replitSub) {
-        const { data } = await supabase
-          .from("users").select("id, has_paid").eq("replit_sub", replitSub).maybeSingle();
-        profile = data;
-      }
-
-      // 2) Fallback: check by email
-      if (!profile && replitEmail) {
-        const { data } = await supabase
-          .from("users").select("id, has_paid").ilike("email", replitEmail).maybeSingle();
-        profile = data;
-        // Back-fill replit_sub for next time
-        if (profile?.id && replitSub) {
-          supabase.from("users").update({ replit_sub: replitSub }).eq("id", profile.id)
-            .then(() => {}).catch(() => {});
-        }
-      }
-
-      if (profile?.has_paid) {
-        setResumeUnlockCookie(res, profile.id || replitSub);
-        console.log("[access] Unlocked for Replit user:", replitEmail);
-        return res.json({ isUnlocked: true });
-      } else {
-        // User is logged in but NOT paid — clear any stale cookie
-        clearResumeUnlockCookie(res);
-        console.log("[access] Locked (not paid) for Replit user:", replitEmail);
-        return res.json({ isUnlocked: false });
-      }
-    } catch (_err) {
-      console.error("[access] Replit Auth DB error:", _err.message);
-      return res.json({ isUnlocked: false });
-    }
-  }
+  // ── Replit Auth (disabled) ──
+  // if (req.isAuthenticated && req.isAuthenticated()) { ... }
 
   // ── Supabase JWT (always authoritative when provided) ──
   const authHeader = req.headers["authorization"] || "";
