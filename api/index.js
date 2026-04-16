@@ -335,20 +335,19 @@ async function getSupabaseBearerUser(req) {
   const match = authHeader.match(/^Bearer\s+(.+)$/i);
   const jwt = match?.[1];
   if (!jwt) return null;
-
-  try {
-    return await getUserFromSupabaseJwt(jwt);
-  } catch (_err) {
-    return null;
-  }
+  return getUserFromSupabaseJwt(jwt);
 }
 
 async function getUserFromSupabaseJwt(jwt) {
   const token = String(jwt || "").trim();
   if (!token) return null;
 
-  if (SUPABASE_URL_PUBLIC && SUPABASE_PUBLISHABLE_KEY) {
-    const authClient = createClient(SUPABASE_URL_PUBLIC, SUPABASE_PUBLISHABLE_KEY, {
+  const authUrl = SUPABASE_URL_PUBLIC || process.env.SUPABASE_URL || "";
+  const authKey = SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  if (!authUrl || !authKey) return null;
+
+  try {
+    const authClient = createClient(authUrl, authKey, {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       global: {
         headers: {
@@ -360,13 +359,12 @@ async function getUserFromSupabaseJwt(jwt) {
     const { data: { user }, error } = await authClient.auth.getUser();
     if (!error && user?.id) return user;
     if (error?.message) {
-      console.warn("[auth] Supabase bearer token verification via publishable client failed:", error.message);
+      console.warn("[auth] Supabase bearer token verification failed:", error.message);
     }
+    return null;
+  } catch (_err) {
+    return null;
   }
-
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user?.id) return null;
-  return user;
 }
 
 function isAdminPasswordSession(req) {
