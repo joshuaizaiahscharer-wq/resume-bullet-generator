@@ -43,7 +43,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
 });
-let supabaseJwtVerifierClient = null;
+let jwtVerifierClient = null;
 
 function normalizeSiteUrl(value) {
   const raw = String(value || "").trim();
@@ -348,13 +348,13 @@ async function getUserFromSupabaseJwt(jwt) {
   if (!authUrl || !authKey) return null;
 
   try {
-    if (!supabaseJwtVerifierClient) {
-      supabaseJwtVerifierClient = createClient(authUrl, authKey, {
+    if (!jwtVerifierClient) {
+      jwtVerifierClient = createClient(authUrl, authKey, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
       });
     }
 
-    const { data: { user }, error } = await supabaseJwtVerifierClient.auth.getUser(token);
+    const { data: { user }, error } = await jwtVerifierClient.auth.getUser(token);
     if (!error && user?.id) return user;
     if (error) console.warn("[auth] Supabase bearer token verification failed.");
     return null;
@@ -2303,7 +2303,7 @@ app.post("/api/resume-builder/sync-payment", async (req, res) => {
   try {
     const user = await getUserFromSupabaseJwt(jwt);
     if (!user?.id) {
-      console.error("[sync-payment] getUser error: invalid or expired token");
+      console.error("[sync-payment] Unable to resolve user from provided token.");
       return res.json({ isUnlocked: false });
     }
 
