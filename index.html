@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Generate powerful resume bullet points instantly with AI. Improve your resume and get more interviews today." />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="AI Resume Bullet Generator | Improve Your Resume Fast" />
+    <meta property="og:title" content="AI Resume Bullet Generator | Improve Your Resume Today" />
     <meta property="og:description" content="Generate powerful resume bullet points instantly with AI. Improve your resume and get more interviews today." />
     <meta property="og:url" content="https://www.myresumebullets.com/" />
     <meta property="og:image" content="https://www.myresumebullets.com/favicon-512x512.png?v=1" />
@@ -51,6 +51,13 @@
           </p>
 
           <div class="landing-generator-v0 landing-generator-v0--centered" id="generator">
+            <textarea
+              id="jobDescriptionInput"
+              class="jd-textarea landing-textarea-v0"
+              placeholder="Paste your resume or job experience here..."
+              aria-label="Paste your resume or job experience here"
+            ></textarea>
+            <p id="tailorHint" class="optimizer-status hidden" aria-live="polite"></p>
 
             <div class="landing-generator-bar-v0">
               <p class="landing-generator-support-v0">Supports any Job Title</p>
@@ -61,13 +68,24 @@
                     id="jobTitle"
                     placeholder="Enter target role e.g. Software Engineer"
                     aria-label="Job title"
-                    autocomplete="on"
+                    autocomplete="off"
                   />
                 </div>
                 <button id="generateBtn" class="landing-generate-btn-v0">
                   <span class="btn-text">Generate Bullets</span>
                   <span class="btn-arrow">→</span>
                 </button>
+              </div>
+              <div class="landing-keyword-optimizer-v0" id="landingKeywordOptimizer">
+                <div class="landing-keyword-header-v0">
+                  <p class="landing-keyword-title-v0">Role Keyword Search</p>
+                  <button id="findLandingKeywordsBtn" class="landing-keyword-btn-v0" type="button">Find Keywords</button>
+                </div>
+                <p id="landingKeywordStatus" class="landing-keyword-status-v0" aria-live="polite"></p>
+                <div id="landingKeywordResults" class="landing-keyword-results-v0 hidden">
+                  <p id="landingKeywordSummary" class="landing-keyword-summary-v0"></p>
+                  <div id="landingKeywordChips" class="landing-keyword-chips-v0"></div>
+                </div>
               </div>
             </div>
 
