@@ -314,8 +314,12 @@ function renderAuthGate(message) {
   if (gate) {
     gate.dataset.denied = "false";
     gate.hidden = false;
+    const title = gate.querySelector(".admin-gate-title");
     const subtitle = gate.querySelector(".admin-gate-subtitle");
+    const button = gate.querySelector("#adminGateSignInBtn");
+    if (title) title.textContent = "Sign in to access admin controls.";
     if (subtitle && message) subtitle.textContent = message;
+    if (button) button.hidden = false;
   }
   if (dashboard) dashboard.hidden = true;
 }
@@ -517,7 +521,7 @@ async function initDashboard() {
     if (!currentUser) {
       dashboardState.isAdmin = false;
       console.log("Admin state:", dashboardState.isAdmin);
-      renderAccessDenied("Please sign in to continue.");
+      renderAuthGate("Please sign in to continue.");
       return;
     }
 
@@ -556,10 +560,10 @@ async function initDashboard() {
     await refreshUsers();
     await subscribeToUsers(refreshUsers);
   } catch (error) {
+    dashboardState.isAdmin = false;
+    renderAuthGate(String(error?.message || "Unable to verify your session right now. Please try signing in again."));
     const root = document.getElementById("adminTableRoot");
-    if (root) {
-      root.innerHTML = `<div class="empty-state">Unable to load users: ${String(error?.message || "Unknown error")}</div>`;
-    }
+    if (root) root.innerHTML = "";
   }
 
   bindControls();
