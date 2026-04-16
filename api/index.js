@@ -43,6 +43,7 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
 });
+let supabaseJwtVerifierClient = null;
 
 function normalizeSiteUrl(value) {
   const raw = String(value || "").trim();
@@ -343,24 +344,19 @@ async function getUserFromSupabaseJwt(jwt) {
   if (!token) return null;
 
   const authUrl = SUPABASE_URL_PUBLIC || process.env.SUPABASE_URL || "";
-  const authKey = SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const authKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
   if (!authUrl || !authKey) return null;
 
   try {
-    const authClient = createClient(authUrl, authKey, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    });
-
-    const { data: { user }, error } = await authClient.auth.getUser();
-    if (!error && user?.id) return user;
-    if (error?.message) {
-      console.warn("[auth] Supabase bearer token verification failed:", error.message);
+    if (!supabaseJwtVerifierClient) {
+      supabaseJwtVerifierClient = createClient(authUrl, authKey, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
     }
+
+    const { data: { user }, error } = await supabaseJwtVerifierClient.auth.getUser(token);
+    if (!error && user?.id) return user;
+    if (error) console.warn("[auth] Supabase bearer token verification failed.");
     return null;
   } catch (_err) {
     return null;
