@@ -26,7 +26,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <img
-            src="/Bullet_AI_logo2.0.jpg"
+            src="/bullet-ai-logo-2.jpg"
             alt="BulletAI"
             className="h-10 w-auto max-w-[180px] object-contain"
           />

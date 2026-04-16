@@ -30,7 +30,7 @@
       <div class="blog-nav-shell" id="blogNavShell">
         <nav class="blog-nav" id="blogNav">
           <a href="/" class="blog-logo" aria-label="BulletAI Home">
-            <img src="/Bullet_AI_logo2.0.jpg" alt="BulletAI" class="blog-logo-img" />
+            <img src="/bullet-ai-logo-2.jpg" alt="BulletAI" class="blog-logo-img" />
           </a>
           <div class="blog-nav-center">
             ${renderLinks(activePage)}
