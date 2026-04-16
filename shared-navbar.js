@@ -32,13 +32,11 @@
           <a href="/" class="blog-logo" aria-label="BulletAI Home">
             <img src="/WebLogo_3.png?v=1" alt="AI" class="blog-logo-img" />
           </a>
-          <div class="blog-nav-center">
-            ${renderLinks(activePage)}
-          </div>
-          <button class="blog-nav-toggle" id="blogNavToggle" aria-label="Toggle navigation">
+          <button class="blog-nav-toggle" id="blogNavToggle" aria-label="Toggle navigation" aria-expanded="false">
             <span></span><span></span><span></span>
           </button>
-          <div class="blog-nav-actions" id="blogNavActions">
+          <div class="blog-nav-menu" id="blogNavMenu">
+            ${renderLinks(activePage)}
             <a id="navAuthBtn" href="#" class="blog-nav-login-btn" aria-label="Sign in to BulletAI">Log in</a>
           </div>
         </nav>
@@ -72,23 +70,28 @@
       this.innerHTML = renderNavbarHtml(activePage);
 
       const navShell = this.querySelector("#blogNavShell");
-      const nav = this.querySelector("#blogNav");
       const navToggle = this.querySelector("#blogNavToggle");
-      const navActions = this.querySelector("#blogNavActions");
-      if (!navShell || !nav || !navToggle || !navActions) return;
+      const navMenu = this.querySelector("#blogNavMenu");
+      if (!navShell || !navToggle || !navMenu) return;
 
       navToggle.addEventListener("click", () => {
-        navActions.classList.toggle("open");
-        navToggle.classList.toggle("open");
+        const isOpen = navMenu.classList.toggle("open");
+        navToggle.classList.toggle("open", isOpen);
+        navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
       });
 
-      let lastY = 0;
+      navMenu.addEventListener("click", (event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLElement) || !target.closest("a")) return;
+        navMenu.classList.remove("open");
+        navToggle.classList.remove("open");
+        navToggle.setAttribute("aria-expanded", "false");
+      });
+
       window.addEventListener(
         "scroll",
         () => {
-          const y = window.scrollY;
-          navShell.classList.toggle("blog-nav-shell--scrolled", y > 24);
-          lastY = y;
+          navShell.classList.toggle("blog-nav-shell--scrolled", window.scrollY > 24);
         },
         { passive: true }
       );
