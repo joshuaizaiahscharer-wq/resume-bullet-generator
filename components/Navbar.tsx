@@ -27,7 +27,7 @@ export default function Navbar() {
         <Link href="/" className="flex items-center gap-2">
           <span className="text-xl font-extrabold text-white tracking-tight leading-none">Bullet</span>
           <img
-            src="/bullet-ai-logo-3.png?v=1"
+            src="/Website_Logo2.png?v=1"
             alt="AI"
             className="h-10 w-10 object-contain rounded-full"
           />
