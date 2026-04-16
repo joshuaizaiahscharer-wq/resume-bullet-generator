@@ -28,7 +28,7 @@ export default function Navbar() {
           <img
             src="/Website_Logo2.png?v=1"
             alt="AI"
-            className="h-10 w-10 object-contain rounded-full bg-white p-1"
+            className="h-12 w-12 object-contain rounded-full bg-white p-[3px]"
           />
         </Link>
 

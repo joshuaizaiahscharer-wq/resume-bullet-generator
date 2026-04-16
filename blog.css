@@ -90,13 +90,13 @@ site-navbar {
 }
 
 .blog-logo-img {
-  height: 36px;
-  width: 36px;
+  height: 48px;
+  width: 48px;
   object-fit: contain;
   display: block;
   border-radius: 9999px;
   background: #ffffff;
-  padding: 4px;
+  padding: 3px;
 }
 .blog-nav-center {
   display: flex;
