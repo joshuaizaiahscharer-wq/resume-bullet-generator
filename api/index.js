@@ -359,6 +359,9 @@ async function getUserFromSupabaseJwt(jwt) {
 
     const { data: { user }, error } = await authClient.auth.getUser();
     if (!error && user?.id) return user;
+    if (error?.message) {
+      console.warn("[auth] Supabase bearer token verification via publishable client failed:", error.message);
+    }
   }
 
   const { data: { user }, error } = await supabase.auth.getUser(token);
