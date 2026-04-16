@@ -59,6 +59,7 @@ body.landing-page {
 }
 
 .landing-gradient-text-v0 {
+  font-size: 0.86em;
   background: linear-gradient(90deg, #ffffff 0%, #82b5ff 50%, #ffffff 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -116,7 +117,7 @@ body.landing-page {
 }
 
 .landing-generator-v0 #jobTitle {
-  min-height: 56px;
+  min-height: 76px;
   border-radius: 14px;
   border: 1px solid rgba(148, 163, 184, 0.18);
   background: rgba(2, 6, 18, 0.72);
