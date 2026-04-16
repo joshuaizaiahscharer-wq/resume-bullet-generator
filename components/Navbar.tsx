@@ -25,10 +25,11 @@ export default function Navbar() {
     <div className="w-full border-b border-gray-800 bg-[#0B0B0F] backdrop-blur">
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
+          <span className="text-xl font-extrabold text-white tracking-tight leading-none">Bullet</span>
           <img
-            src="/bullet-ai-logo-2.jpg?v=1"
-            alt="BulletAI"
-            className="h-10 w-auto max-w-[180px] object-contain"
+            src="/bullet-ai-logo-3.png?v=1"
+            alt="AI"
+            className="h-10 w-10 object-contain rounded-full"
           />
         </Link>
 

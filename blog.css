@@ -80,7 +80,7 @@ site-navbar {
 .blog-logo {
   display: flex;
   align-items: center;
-  gap: 0;
+  gap: 8px;
   font-size: 1.03rem;
   font-weight: 600;
   color: #f8fafc;
@@ -88,12 +88,21 @@ site-navbar {
   text-decoration: none;
   white-space: nowrap;
 }
+
+.blog-logo-word {
+  font-size: 1.18rem;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
 .blog-logo-img {
-  height: 40px;
-  width: auto;
-  max-width: 180px;
+  height: 36px;
+  width: 36px;
   object-fit: contain;
   display: block;
+  border-radius: 9999px;
 }
 .blog-nav-center {
   display: flex;
