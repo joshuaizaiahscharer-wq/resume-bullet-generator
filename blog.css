@@ -90,9 +90,9 @@ site-navbar {
 }
 
 .blog-logo-img {
-  height: 52px;
+  height: 46px;
   width: auto;
-  max-width: 220px;
+  max-width: 196px;
   object-fit: contain;
   display: block;
   border-radius: 10px;
