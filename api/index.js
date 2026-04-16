@@ -24,6 +24,7 @@ const express = require("express");
 const cors = require("cors");
 const OpenAI = require("openai");
 const multer = require("multer");
+const { createClient } = require("@supabase/supabase-js");
 const mammoth = require("mammoth");
 const PDFDocument = require("pdfkit");
 const { AlignmentType, Document, Packer, Paragraph, TextRun } = require("docx");
@@ -336,12 +337,33 @@ async function getSupabaseBearerUser(req) {
   if (!jwt) return null;
 
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(jwt);
-    if (error || !user?.id) return null;
-    return user;
+    return await getUserFromSupabaseJwt(jwt);
   } catch (_err) {
     return null;
   }
+}
+
+async function getUserFromSupabaseJwt(jwt) {
+  const token = String(jwt || "").trim();
+  if (!token) return null;
+
+  if (SUPABASE_URL_PUBLIC && SUPABASE_PUBLISHABLE_KEY) {
+    const authClient = createClient(SUPABASE_URL_PUBLIC, SUPABASE_PUBLISHABLE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    });
+
+    const { data: { user }, error } = await authClient.auth.getUser();
+    if (!error && user?.id) return user;
+  }
+
+  const { data: { user }, error } = await supabase.auth.getUser(token);
+  if (error || !user?.id) return null;
+  return user;
 }
 
 function isAdminPasswordSession(req) {
@@ -2282,9 +2304,9 @@ app.post("/api/resume-builder/sync-payment", async (req, res) => {
   if (!jwt) return res.json({ isUnlocked: false });
 
   try {
-    const { data: { user }, error } = await supabase.auth.getUser(jwt);
-    if (error || !user?.id) {
-      console.error("[sync-payment] getUser error:", error?.message);
+    const user = await getUserFromSupabaseJwt(jwt);
+    if (!user?.id) {
+      console.error("[sync-payment] getUser error: invalid or expired token");
       return res.json({ isUnlocked: false });
     }
 
@@ -2366,8 +2388,8 @@ app.get("/api/resume-builder/access", async (req, res) => {
   const supabaseJwt = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
   if (supabaseJwt) {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser(supabaseJwt);
-      if (!error && user?.id) {
+      const user = await getUserFromSupabaseJwt(supabaseJwt);
+      if (user?.id) {
         const { data: profile } = await supabase
           .from("users").select("has_paid").eq("id", user.id).maybeSingle();
         if (profile?.has_paid) {
