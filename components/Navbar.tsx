@@ -26,7 +26,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
           <img
-            src="/Website_Logo2.png?v=1"
+            src="/WebLogo_3.png?v=1"
             alt="AI"
             className="h-12 w-auto max-w-[220px] object-contain rounded-md bg-white px-2 py-1"
           />
