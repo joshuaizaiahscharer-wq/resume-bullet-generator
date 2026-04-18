@@ -112,6 +112,9 @@ site-navbar {
   align-items: center;
   gap: 10px;
 }
+.blog-nav-mobile-links {
+  display: none;
+}
 .blog-nav-link {
   font-size: 0.9rem;
   font-weight: 500;
@@ -782,6 +785,12 @@ site-navbar {
     -webkit-backdrop-filter: blur(12px);
   }
   .blog-nav-actions.open { display: flex; }
+  .blog-nav-mobile-links {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
   .blog-nav-link,
   .blog-nav-auth-btn,
   .blog-nav-login-btn {

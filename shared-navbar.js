@@ -39,6 +39,9 @@
             <span></span><span></span><span></span>
           </button>
           <div class="blog-nav-actions" id="blogNavActions">
+            <div class="blog-nav-mobile-links">
+              ${renderLinks(activePage)}
+            </div>
             <a id="navAuthBtn" href="#" class="blog-nav-login-btn" aria-label="Sign in to BulletAI">Log in</a>
           </div>
         </nav>
