@@ -1003,13 +1003,11 @@ body.resume-builder-body {
 }
 
 .resume-preview-shell.is-locked .resume-locked-body {
-  filter: blur(8px);
   pointer-events: none;
   user-select: none;
 }
 
 .resume-preview-shell.is-locked .resume-preview-document {
-  filter: blur(8px);
   pointer-events: none;
   user-select: none;
 }
